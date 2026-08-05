@@ -156,6 +156,37 @@ This compiles your TypeScript code and exports the production-ready assets to th
 
 ---
 
+## 🚀 Deployment
+
+This project includes client-side routing. To deploy it properly to **Vercel** without routing issues (preventing 404 errors on refreshing sub-pages), follow these steps:
+
+### 1. Vercel Configuration (Included)
+We have configured [`vercel.json`](file:///c:/JobTracker/vercel.json) in the root of the project to rewrite all client routes back to the main entry point:
+```json
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+```
+
+### 2. Deployment Steps
+1. **Push your code to GitHub/GitLab/Bitbucket** (Ensure your latest changes are pushed).
+2. Go to the [Vercel Dashboard](https://vercel.com/) and click **"Add New"** > **"Project"**.
+3. Import your `Job-Tracker` repository.
+4. In the **Build and Output Settings**, Vercel should automatically detect **Vite** and configure the build command as `npm run build` and output directory as `dist`.
+5. Under **Environment Variables**, add the variables from your `.env` file:
+   * `VITE_FIREBASE_API_KEY`
+   * `VITE_FIREBASE_AUTH_DOMAIN`
+   * `VITE_FIREBASE_PROJECT_ID`
+   * `VITE_FIREBASE_STORAGE_BUCKET`
+   * `VITE_FIREBASE_MESSAGING_SENDER_ID`
+   * `VITE_FIREBASE_APP_ID`
+6. Click **Deploy**. Vercel will build and launch your application!
+
+---
+
 ## 📄 License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
+
