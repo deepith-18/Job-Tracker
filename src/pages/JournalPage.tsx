@@ -197,32 +197,189 @@ const JournalNotesContent: React.FC = () => {
 };
 
 // ── DOCUMENTS TAB
+interface UserDocument {
+  id: string;
+  name: string;
+  type: string;
+  date: string;
+  size: string;
+  url?: string;
+}
+
+const DEFAULT_DOCS: UserDocument[] = [
+  {
+    id: '1',
+    name: 'Software Engineer Resume v3.pdf',
+    type: 'Resume',
+    date: '2025-01-15',
+    size: '124 KB',
+    url: 'data:text/plain;charset=utf-8,' + encodeURIComponent('Sample Software Engineer Resume Content'),
+  },
+  {
+    id: '2',
+    name: 'Google Cover Letter.docx',
+    type: 'Cover Letter',
+    date: '2025-01-18',
+    size: '48 KB',
+    url: 'data:text/plain;charset=utf-8,' + encodeURIComponent('Sample Google Cover Letter Content'),
+  },
+  {
+    id: '3',
+    name: 'Portfolio Link.txt',
+    type: 'Portfolio',
+    date: '2025-01-10',
+    size: '1 KB',
+    url: 'data:text/plain;charset=utf-8,' + encodeURIComponent('https://github.com/my-portfolio'),
+  },
+];
+
 const JournalDocumentsContent: React.FC = () => {
-  const docs = [
-    { id: '1', name: 'Software Engineer Resume v3.pdf', type: 'Resume', date: '2025-01-15', size: '124 KB' },
-    { id: '2', name: 'Google Cover Letter.docx', type: 'Cover Letter', date: '2025-01-18', size: '48 KB' },
-    { id: '3', name: 'Portfolio Link.txt', type: 'Portfolio', date: '2025-01-10', size: '1 KB' },
-  ];
+  const { addToast } = useToast();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const [docs, setDocs] = useState<UserDocument[]>(() => {
+    try {
+      const saved = localStorage.getItem('cos_user_documents');
+      return saved ? JSON.parse(saved) : DEFAULT_DOCS;
+    } catch {
+      return DEFAULT_DOCS;
+    }
+  });
+
+  const saveDocs = (newDocs: UserDocument[]) => {
+    setDocs(newDocs);
+    try {
+      localStorage.setItem('cos_user_documents', JSON.stringify(newDocs));
+    } catch {
+      // Ignore quota error if file too large
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      const sizeKb = Math.round(file.size / 1024);
+      const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
+
+      let docType = 'Document';
+      const lname = file.name.toLowerCase();
+      if (lname.includes('resume') || lname.includes('cv')) docType = 'Resume';
+      else if (lname.includes('cover')) docType = 'Cover Letter';
+      else if (lname.includes('portfolio')) docType = 'Portfolio';
+
+      const newDoc: UserDocument = {
+        id: Date.now().toString(),
+        name: file.name,
+        type: docType,
+        date: new Date().toISOString().split('T')[0],
+        size: sizeStr,
+        url: dataUrl,
+      };
+
+      const updated = [newDoc, ...docs];
+      saveDocs(updated);
+      addToast(`Document Uploaded 📄`, `Saved "${file.name}" to your journal`, 'success');
+      if (e.target) e.target.value = '';
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  const handleDownload = (doc: UserDocument) => {
+    if (!doc.url) {
+      addToast('Download Failed', 'File URL not available', 'error');
+      return;
+    }
+    const a = document.createElement('a');
+    a.href = doc.url;
+    a.download = doc.name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    addToast('Downloading File 💾', `Downloading "${doc.name}"`, 'success');
+  };
+
+  const handleDelete = (id: string, name: string) => {
+    const filtered = docs.filter((d) => d.id !== id);
+    saveDocs(filtered);
+    addToast('Document Deleted 🗑️', `Removed "${name}"`, 'info');
+  };
 
   return (
     <div className="pb">
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-        <button className="btn btn-primary">+ Upload Document</button>
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        style={{ display: 'none' }}
+        accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg"
+      />
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div style={{ fontSize: 13, color: 'var(--t2)' }}>
+          Manage your resumes, cover letters, and portfolio files ({docs.length} files)
+        </div>
+        <button onClick={handleUploadClick} className="btn btn-primary">
+          + Upload Document
+        </button>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {docs.map((doc) => (
-          <div key={doc.id} className="card" style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--accent-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
-              {doc.type === 'Resume' ? '📄' : doc.type === 'Cover Letter' ? '✉️' : '🔗'}
+
+      {docs.length === 0 ? (
+        <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--t3)' }}>
+          <div style={{ fontSize: 36, marginBottom: 10 }}>📁</div>
+          <div style={{ fontWeight: 700 }}>No documents uploaded yet</div>
+          <div style={{ fontSize: 13, marginTop: 4 }}>Click "+ Upload Document" to add your resume or cover letter</div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {docs.map((doc) => (
+            <div key={doc.id} className="card card-hover" style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  background: 'var(--accent-bg)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 22,
+                  flexShrink: 0,
+                }}
+              >
+                {doc.type === 'Resume' ? '📄' : doc.type === 'Cover Letter' ? '✉️' : doc.type === 'Portfolio' ? '🔗' : '📁'}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--t1)' }}>{doc.name}</div>
+                <div style={{ fontSize: 12, color: 'var(--t2)', marginTop: 2 }}>
+                  {doc.type} • {doc.size} • {doc.date}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => handleDownload(doc)} className="btn btn-ghost btn-sm">
+                  ⬇ Download
+                </button>
+                <button
+                  onClick={() => handleDelete(doc.id, doc.name)}
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: '#ef4444' }}
+                  title="Delete document"
+                >
+                  🗑️
+                </button>
+              </div>
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>{doc.name}</div>
-              <div style={{ fontSize: 12, color: 'var(--t2)', marginTop: 2 }}>{doc.type} • {doc.size} • {doc.date}</div>
-            </div>
-            <button className="btn btn-ghost btn-sm">Download</button>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
