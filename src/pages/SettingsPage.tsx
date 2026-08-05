@@ -33,8 +33,62 @@ export const SettingsPage: React.FC = () => {
             👤 Profile & Account
           </h3>
 
-          <div style={{ marginBottom: 20, fontSize: 13, color: 'var(--t2)' }}>
-            Signed in as: <strong>{user?.email}</strong>
+          {/* Account & Sync Diagnostic Panel */}
+          <div
+            style={{
+              background: 'var(--accent-bg)',
+              border: '1px solid var(--border)',
+              borderRadius: 14,
+              padding: '16px 18px',
+              marginBottom: 24,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10 }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Authenticated Account
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--t1)', marginTop: 2 }}>
+                  {user?.email || 'Not signed in'}
+                </div>
+              </div>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: '4px 10px',
+                  borderRadius: 20,
+                  background: user?.providerData?.[0]?.providerId === 'google.com' ? '#e0f2fe' : '#f3e8ff',
+                  color: user?.providerData?.[0]?.providerId === 'google.com' ? '#0369a1' : '#7e22ce',
+                  border: user?.providerData?.[0]?.providerId === 'google.com' ? '1px solid #bae6fd' : '1px solid #e9d5ff',
+                }}
+              >
+                {user?.providerData?.[0]?.providerId === 'google.com' ? 'Google OAuth' : 'Email/Password'}
+              </span>
+            </div>
+
+            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              <div style={{ fontSize: 12, color: 'var(--t2)', fontFamily: 'monospace' }}>
+                UID: <strong style={{ color: 'var(--t1)' }}>{user?.uid}</strong>
+              </div>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: 11, padding: '4px 10px' }}
+                onClick={() => {
+                  if (user?.uid) {
+                    navigator.clipboard.writeText(user.uid);
+                    addToast('UID Copied! 📋', 'Compare this UID with your mobile device', 'success');
+                  }
+                }}
+              >
+                📋 Copy UID
+              </button>
+            </div>
+
+            <div style={{ marginTop: 10, fontSize: 11.5, color: 'var(--t3)', lineHeight: 1.4 }}>
+              💡 <strong>Cross-Device Sync Tip:</strong> Make sure your Mobile device has the <strong>exact same UID</strong> shown above. If you signed in via Email/Password on Desktop and Google button on Mobile, Firebase creates two distinct UIDs. Log in using the exact same method on both devices to sync changes.
+            </div>
           </div>
 
           <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

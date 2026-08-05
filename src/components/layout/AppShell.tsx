@@ -4,6 +4,8 @@ import { signOutUser } from '../../firebase/auth';
 import { useAuthStore } from '../../store/authStore';
 import { MobileCommandHub } from './MobileCommandHub';
 
+import { useApplications } from '../../hooks/useApplications';
+
 interface AppShellProps {
   children: React.ReactNode;
 }
@@ -75,6 +77,7 @@ const NAV_SECTIONS = [
 
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const user = useAuthStore((s) => s.user);
+  const { error } = useApplications();
   const navigate = useNavigate();
   const location = useLocation();
   const streak = getStreak();
@@ -87,6 +90,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   };
 
   const initial = user?.email?.charAt(0).toUpperCase() ?? '?';
+  const providerId = user?.providerData?.[0]?.providerId === 'google.com' ? 'Google OAuth' : 'Email/Password';
   const closeMobile = () => setMobileOpen(false);
 
   const isActive = (match: string[]) =>
@@ -176,7 +180,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           <div
             className="s-user"
             onClick={handleSignOut}
-            title={collapsed ? `${user?.email} — Sign out` : 'Sign out'}
+            title={collapsed ? `${user?.email} (${providerId}) — Sign out` : 'Sign out'}
           >
             <div className="s-avatar">{initial}</div>
             {!collapsed && (
@@ -184,14 +188,52 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                 <div style={{ fontSize: 12, color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {user?.email}
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--side-dim)', marginTop: 1 }}>Click to sign out</div>
+                <div style={{ fontSize: 10, color: 'var(--side-dim)', marginTop: 1 }}>
+                  {providerId} • Click to sign out
+                </div>
               </div>
             )}
           </div>
         </div>
       </aside>
 
-      <div className="main">{children}</div>
+      <div className="main">
+        {/* Sync Error Banner if Firestore failed */}
+        {error && (
+          <div
+            style={{
+              background: '#fef2f2',
+              borderBottom: '1px solid #fecaca',
+              padding: '10px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              fontSize: 13,
+              color: '#991b1b',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>⚠️</span>
+              <div>
+                <strong>Database Sync Alert:</strong> {error}
+              </div>
+            </div>
+            <NavLink
+              to="/diagnostics"
+              style={{
+                color: '#7f1d1d',
+                fontWeight: 700,
+                textDecoration: 'underline',
+                fontSize: 12,
+              }}
+            >
+              Run Diagnostics →
+            </NavLink>
+          </div>
+        )}
+        {children}
+      </div>
       <MobileCommandHub />
     </div>
   );
