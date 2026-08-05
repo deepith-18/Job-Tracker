@@ -85,8 +85,15 @@ export const AuthPage: React.FC = () => {
       navigate('/dashboard');
     } catch (err: unknown) {
       const code = (err as { code?: string }).code ?? '';
+      const message = (err as { message?: string }).message ?? '';
       if (code !== 'auth/popup-closed-by-user') {
-        setError('Google authentication failed. Please try again.');
+        if (code === 'auth/operation-not-allowed') {
+          setError('Google Sign-In is not enabled in Firebase Console. Go to Authentication > Sign-in method to enable it.');
+        } else if (code === 'auth/unauthorized-domain') {
+          setError('This domain is not authorized in Firebase Console. Go to Authentication > Settings > Authorized domains.');
+        } else {
+          setError(`Google authentication failed: ${message || code || 'Unknown error'}`);
+        }
       }
     } finally {
       setGoogleLoading(false);
