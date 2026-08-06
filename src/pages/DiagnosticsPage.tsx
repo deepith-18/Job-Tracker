@@ -13,16 +13,27 @@ export const DiagnosticsPage: React.FC = () => {
 
   const providerId = user?.providerData?.[0]?.providerId === 'google.com' ? 'Google OAuth' : 'Email/Password';
 
-  const handleTestConnection = () => {
+  const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+
+  const handleTestConnection = async () => {
+    if (!user) {
+      addToast('Authentication Error', 'Please sign in first to test Firestore write permissions', 'error');
+      return;
+    }
     setTestingDb(true);
-    setTimeout(() => {
+    try {
+      const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+      const { db } = await import('../firebase/config');
+      const pingRef = doc(db, 'users', user.uid);
+      await setDoc(pingRef, { ping: true, lastPing: serverTimestamp() }, { merge: true });
+      addToast('Cloud Firestore Server Connected! ⚡', `Write verified to project "${projectId}" for ${user.email}`, 'success');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Write failed';
+      console.error('Firestore ping failed:', err);
+      addToast('Cloud Firestore Permission Denied ⚠️', `Cloud Firestore server rejected the write to project "${projectId}". Ensure Rules tab in Firebase Console is published! Details: ${msg}`, 'error');
+    } finally {
       setTestingDb(false);
-      if (error) {
-        addToast('Firestore Connection Warning ⚠️', error, 'error');
-      } else {
-        addToast('Firebase Firestore Connected ⚡', `Active for ${user?.email} (${applications.length} apps synced)`, 'success');
-      }
-    }, 600);
+    }
   };
 
   return (
@@ -52,10 +63,10 @@ export const DiagnosticsPage: React.FC = () => {
 
           <div className="card" style={{ padding: 20 }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 4 }}>
-              📦 Total Synced Records
+              🔥 Firebase Project ID
             </div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--t1)' }}>{applications.length} Applications</div>
-            <div style={{ fontSize: 12, color: 'var(--t2)', marginTop: 4 }}>Auth Method: {providerId}</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', fontFamily: 'monospace' }}>{projectId || 'Not Set'}</div>
+            <div style={{ fontSize: 12, color: 'var(--t2)', marginTop: 4 }}>Auth: {providerId} • Synced: {applications.length} apps</div>
           </div>
 
           <div className="card" style={{ padding: 20 }}>
