@@ -15,7 +15,9 @@ export const useDocuments = () => {
       return;
     }
 
-    setLoading(true);
+    if (documents.length === 0) {
+      setLoading(true);
+    }
     const unsubscribe = subscribeToDocuments(
       user.uid,
       (items) => {

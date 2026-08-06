@@ -21,7 +21,9 @@ export const useContacts = () => {
       return;
     }
 
-    setLoading(true);
+    if (contacts.length === 0) {
+      setLoading(true);
+    }
     const unsubscribe = subscribeToContacts(
       user.uid,
       (items) => {

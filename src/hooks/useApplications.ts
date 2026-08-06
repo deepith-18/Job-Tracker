@@ -14,12 +14,20 @@ export const useApplications = () => {
       return;
     }
 
-    setLoading(true);
+    // Only set loading if we don't already have applications in store
+    if (applications.length === 0) {
+      setLoading(true);
+    }
 
     const unsubscribe = subscribeToApplications(
       user.uid,
-      (apps) => setApplications(apps),
-      (err) => setError(err.message)
+      (apps) => {
+        setApplications(apps);
+      },
+      (err) => {
+        console.error('Applications subscription error:', err);
+        setError(err.message || 'Failed to sync applications with Firestore');
+      }
     );
 
     return unsubscribe;
@@ -27,3 +35,4 @@ export const useApplications = () => {
 
   return { applications, loading, error };
 };
+

@@ -243,9 +243,33 @@ export const saveUserSettings = async (uid: string, settings: Partial<UserSettin
       uid,
       goal: settings.goal ?? 100,
       streak: settings.streak ?? 1,
-      lastActive: settings.lastActive ?? '',
+      lastActive: settings.lastActive ?? new Date().toDateString(),
       updatedAt: serverTimestamp(),
     });
   });
 };
+
+export const initializeUserCollections = async (uid: string, email?: string | null) => {
+  try {
+    const { setDoc } = await import('firebase/firestore');
+    const userRef = doc(db, 'users', uid);
+    await setDoc(userRef, {
+      uid,
+      email: email || '',
+      lastLogin: serverTimestamp(),
+    }, { merge: true });
+
+    const settingsRef = doc(db, SETTINGS_COL, uid);
+    await setDoc(settingsRef, {
+      uid,
+      goal: 100,
+      streak: 1,
+      lastActive: new Date().toDateString(),
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  } catch (err) {
+    console.error('Failed to initialize user collections in Firestore:', err);
+  }
+};
+
 
