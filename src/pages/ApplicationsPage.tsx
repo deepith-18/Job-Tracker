@@ -110,10 +110,19 @@ export const ApplicationsPage: React.FC = () => {
   }, [applications, sortKey, statusFilter, search]);
 
   const handleAdd = async (data: ApplicationFormData) => {
-    if (!user) return;
-    await addApplication(user.uid, data);
-    addToast(`Added ${data.company}`, 'Application saved', 'success');
-    setModal({ type: 'closed' });
+    if (!user) {
+      addToast('Please sign in to add applications', undefined, 'error');
+      throw new Error('Please sign in to add applications');
+    }
+    try {
+      await addApplication(user.uid, data);
+      addToast(`Added ${data.company}`, 'Application saved', 'success');
+      setModal({ type: 'closed' });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to save application';
+      addToast('Error adding application', msg, 'error');
+      throw err;
+    }
   };
 
   const handleEdit = async (data: ApplicationFormData) => {

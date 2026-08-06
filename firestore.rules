@@ -2,16 +2,23 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /applications/{appId} {
-      // Allow listing/querying — Firestore enforces the where('uid','==',uid) client-side filter
-      allow list: if request.auth != null;
-      // Allow reading a single doc only if it belongs to the user
-      allow get: if request.auth != null && resource.data.uid == request.auth.uid;
-      // Allow creating only if uid matches the logged-in user
-      allow create: if request.auth != null
-                    && request.resource.data.uid == request.auth.uid;
-      // Allow updating/deleting only the owner's documents
-      allow update, delete: if request.auth != null
-                             && resource.data.uid == request.auth.uid;
+      allow list, get: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.uid == request.auth.uid;
+    }
+    match /documents/{docId} {
+      allow list, get: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.uid == request.auth.uid;
+    }
+    match /referral_contacts/{contactId} {
+      allow list, get: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.uid == request.auth.uid;
+    }
+    match /user_settings/{userId} {
+      allow get, list, write: if request.auth != null && (request.auth.uid == userId || (resource != null && resource.data.uid == request.auth.uid));
     }
   }
 }
+

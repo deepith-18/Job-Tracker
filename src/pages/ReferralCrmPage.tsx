@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppShell } from '../components/layout/AppShell';
 import { useToast } from '../components/ui/ToastContext';
+import { useContacts } from '../hooks/useContacts';
 
 interface Contact {
   id: string;
@@ -39,8 +40,9 @@ const INITIAL_CONTACTS: Contact[] = [
 
 export const ReferralCrmPage: React.FC = () => {
   const { addToast } = useToast();
+  const { contacts: firestoreContacts, loading, addContact, updateContact, deleteContact } = useContacts();
 
-  const [contacts, setContacts] = useState<Contact[]>(INITIAL_CONTACTS);
+  const contacts = firestoreContacts.length === 0 && !loading ? INITIAL_CONTACTS : firestoreContacts;
   const [modal, setModal] = useState<{ open: boolean; editContact?: Contact }>({ open: false });
 
   // Form inputs
@@ -74,50 +76,48 @@ export const ReferralCrmPage: React.FC = () => {
     setModal({ open: true, editContact: c });
   };
 
-  const handleDeleteContact = (id: string, name: string) => {
+  const handleDeleteContact = async (id: string, name: string) => {
     if (!window.confirm(`Delete contact "${name}"?`)) return;
-    setContacts((prev) => prev.filter((c) => c.id !== id));
-    addToast('Contact Deleted 🗑️', name, 'info');
+    try {
+      await deleteContact(id);
+      addToast('Contact Deleted 🗑️', name, 'info');
+    } catch {
+      addToast('Error', 'Failed to delete contact', 'error');
+    }
   };
 
-  const handleSaveContact = (e: React.FormEvent) => {
+  const handleSaveContact = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nameInput.trim()) return;
 
-    if (modal.editContact) {
-      setContacts((prev) =>
-        prev.map((c) =>
-          c.id === modal.editContact?.id
-            ? {
-                ...c,
-                name: nameInput.trim(),
-                company: companyInput.trim() || 'Tech Company',
-                role: roleInput.trim() || 'Engineer',
-                email: emailInput.trim(),
-                linkedIn: linkedInInput.trim(),
-                status: statusInput,
-                notes: notesInput.trim(),
-              }
-            : c
-        )
-      );
-      addToast('Contact Updated ✏️', nameInput, 'success');
-    } else {
-      const newC: Contact = {
-        id: Math.random().toString(36).substring(2, 9),
-        name: nameInput.trim(),
-        company: companyInput.trim() || 'Tech Company',
-        role: roleInput.trim() || 'Engineer',
-        email: emailInput.trim(),
-        linkedIn: linkedInInput.trim(),
-        status: statusInput,
-        notes: notesInput.trim(),
-      };
-      setContacts((prev) => [newC, ...prev]);
-      addToast('Contact Added 🤝', nameInput, 'success');
+    try {
+      if (modal.editContact) {
+        await updateContact(modal.editContact.id, {
+          name: nameInput.trim(),
+          company: companyInput.trim() || 'Tech Company',
+          role: roleInput.trim() || 'Engineer',
+          email: emailInput.trim(),
+          linkedIn: linkedInInput.trim(),
+          status: statusInput,
+          notes: notesInput.trim(),
+        });
+        addToast('Contact Updated ✏️', nameInput, 'success');
+      } else {
+        await addContact({
+          name: nameInput.trim(),
+          company: companyInput.trim() || 'Tech Company',
+          role: roleInput.trim() || 'Engineer',
+          email: emailInput.trim(),
+          linkedIn: linkedInInput.trim(),
+          status: statusInput,
+          notes: notesInput.trim(),
+        });
+        addToast('Contact Added 🤝', nameInput, 'success');
+      }
+      setModal({ open: false });
+    } catch {
+      addToast('Save Error', 'Failed to save contact to Firestore', 'error');
     }
-
-    setModal({ open: false });
   };
 
   return (

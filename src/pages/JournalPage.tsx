@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 import { useApplications } from '../hooks/useApplications';
+import { useDocuments } from '../hooks/useDocuments';
 import { useToast } from '../components/ui/ToastContext';
 import { updateApplication } from '../firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -236,24 +237,7 @@ const DEFAULT_DOCS: UserDocument[] = [
 const JournalDocumentsContent: React.FC = () => {
   const { addToast } = useToast();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  const [docs, setDocs] = useState<UserDocument[]>(() => {
-    try {
-      const saved = localStorage.getItem('cos_user_documents');
-      return saved ? JSON.parse(saved) : DEFAULT_DOCS;
-    } catch {
-      return DEFAULT_DOCS;
-    }
-  });
-
-  const saveDocs = (newDocs: UserDocument[]) => {
-    setDocs(newDocs);
-    try {
-      localStorage.setItem('cos_user_documents', JSON.stringify(newDocs));
-    } catch {
-      // Ignore quota error if file too large
-    }
-  };
+  const { documents, loading, addDocument, removeDocument } = useDocuments();
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -264,7 +248,7 @@ const JournalDocumentsContent: React.FC = () => {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const dataUrl = event.target?.result as string;
       const sizeKb = Math.round(file.size / 1024);
       const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
@@ -275,25 +259,25 @@ const JournalDocumentsContent: React.FC = () => {
       else if (lname.includes('cover')) docType = 'Cover Letter';
       else if (lname.includes('portfolio')) docType = 'Portfolio';
 
-      const newDoc: UserDocument = {
-        id: Date.now().toString(),
-        name: file.name,
-        type: docType,
-        date: new Date().toISOString().split('T')[0],
-        size: sizeStr,
-        url: dataUrl,
-      };
-
-      const updated = [newDoc, ...docs];
-      saveDocs(updated);
-      addToast(`Document Uploaded 📄`, `Saved "${file.name}" to your journal`, 'success');
+      try {
+        await addDocument({
+          name: file.name,
+          type: docType,
+          date: new Date().toISOString().split('T')[0],
+          size: sizeStr,
+          url: dataUrl,
+        });
+        addToast(`Document Uploaded 📄`, `Saved "${file.name}" to your journal`, 'success');
+      } catch {
+        addToast('Upload Error', 'Failed to save document to Firestore', 'error');
+      }
       if (e.target) e.target.value = '';
     };
 
     reader.readAsDataURL(file);
   };
 
-  const handleDownload = (doc: UserDocument) => {
+  const handleDownload = (doc: { name: string; url?: string }) => {
     if (!doc.url) {
       addToast('Download Failed', 'File URL not available', 'error');
       return;
@@ -307,11 +291,16 @@ const JournalDocumentsContent: React.FC = () => {
     addToast('Downloading File 💾', `Downloading "${doc.name}"`, 'success');
   };
 
-  const handleDelete = (id: string, name: string) => {
-    const filtered = docs.filter((d) => d.id !== id);
-    saveDocs(filtered);
-    addToast('Document Deleted 🗑️', `Removed "${name}"`, 'info');
+  const handleDelete = async (id: string, name: string) => {
+    try {
+      await removeDocument(id);
+      addToast('Document Deleted 🗑️', `Removed "${name}"`, 'info');
+    } catch {
+      addToast('Delete Error', 'Failed to delete document', 'error');
+    }
   };
+
+  const docs = documents.length === 0 && !loading ? DEFAULT_DOCS : documents;
 
   return (
     <div className="pb">

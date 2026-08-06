@@ -80,6 +80,7 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
       return;
     }
     setLoading(true);
+    setErrors({});
     try {
       await onSubmit({
         company: form.company.trim(),
@@ -94,6 +95,9 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
         rating: form.rating,
         rejectionReasons: form.rejectionReasons,
       });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to save application';
+      setErrors({ form: msg });
     } finally {
       setLoading(false);
     }
@@ -101,6 +105,11 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {errors.form && (
+        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '10px 14px', borderRadius: 12, fontSize: 13, fontWeight: 600 }}>
+          ⚠️ {errors.form}
+        </div>
+      )}
       {/* Spacious 2-Column Section Layout */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {/* Left Column: Company & Role */}

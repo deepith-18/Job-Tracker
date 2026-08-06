@@ -1,32 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { signOutUser } from '../../firebase/auth';
 import { useAuthStore } from '../../store/authStore';
 import { MobileCommandHub } from './MobileCommandHub';
-
 import { useApplications } from '../../hooks/useApplications';
+import { useUserSettings } from '../../hooks/useUserSettings';
 
 interface AppShellProps {
   children: React.ReactNode;
 }
-
-// Streak logic (localStorage)
-const getStreak = (): number => {
-  const today = new Date().toDateString();
-  const yesterday = new Date(Date.now() - 86400000).toDateString();
-  const last = localStorage.getItem('cos_last');
-  const streak = parseInt(localStorage.getItem('cos_streak') || '0');
-  if (last === today) return streak;
-  if (last === yesterday) {
-    const n = streak + 1;
-    localStorage.setItem('cos_streak', String(n));
-    localStorage.setItem('cos_last', today);
-    return n;
-  }
-  localStorage.setItem('cos_streak', '1');
-  localStorage.setItem('cos_last', today);
-  return 1;
-};
 
 // ── Nav icon helper
 const Ico = ({ d, d2 }: { d: string; d2?: string }) => (
@@ -78,11 +60,23 @@ const NAV_SECTIONS = [
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const user = useAuthStore((s) => s.user);
   const { error } = useApplications();
+  const { settings, updateSettings } = useUserSettings();
   const navigate = useNavigate();
   const location = useLocation();
-  const streak = getStreak();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    const today = new Date().toDateString();
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    if (settings.lastActive !== today) {
+      const newStreak = settings.lastActive === yesterday ? settings.streak + 1 : 1;
+      updateSettings({ streak: newStreak, lastActive: today });
+    }
+  }, [user, settings.lastActive, settings.streak, updateSettings]);
+
+  const streak = settings.streak;
 
   const handleSignOut = async () => {
     await signOutUser();

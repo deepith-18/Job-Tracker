@@ -5,13 +5,9 @@ import { Link } from 'react-router-dom';
 import { AppShell } from '../components/layout/AppShell';
 import { Badge } from '../components/ui/Badge';
 import { useApplications } from '../hooks/useApplications';
+import { useUserSettings } from '../hooks/useUserSettings';
 import { useAuthStore } from '../store/authStore';
 import type { ApplicationStatus } from '../types';
-
-// Goal stored in localStorage
-const getGoal = () => parseInt(localStorage.getItem('cos_goal') || '100');
-const setGoal = (n: number) => localStorage.setItem('cos_goal', String(n));
-const getStreak = () => parseInt(localStorage.getItem('cos_streak') || '1');
 
 const STATUS_BAR: Record<ApplicationStatus, string> = {
   Wishlist: '#94a3b8', Applied: '#6366f1', 'OA/Assessment': '#8b5cf6',
@@ -33,10 +29,12 @@ const Stat: React.FC<StatProps> = ({ icon, label, value, sub, bg, delay }) => (
 export const MissionControlPage: React.FC = () => {
   const user = useAuthStore(s => s.user);
   const { applications, loading } = useApplications();
-  const [goal, setGoalState] = useState(getGoal);
+  const { settings, updateSettings } = useUserSettings();
   const [editGoal, setEditGoal] = useState(false);
-  const [goalInput, setGoalInput] = useState(String(getGoal()));
-  const streak = getStreak();
+  const [goalInput, setGoalInput] = useState(String(settings.goal));
+
+  const goal = settings.goal;
+  const streak = settings.streak;
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -76,8 +74,7 @@ export const MissionControlPage: React.FC = () => {
 
   const handleGoalSave = () => {
     const n = Math.max(1, parseInt(goalInput) || 100);
-    setGoalState(n);
-    setGoal(n);
+    updateSettings({ goal: n });
     setEditGoal(false);
   };
 
