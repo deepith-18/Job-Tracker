@@ -3,25 +3,26 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /applications/{appId} {
       allow list, get: if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && (resource.data.uid == request.auth.uid || resource.data.email == request.auth.token.email);
     }
     match /documents/{docId} {
       allow list, get: if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && (resource.data.uid == request.auth.uid || resource.data.email == request.auth.token.email);
     }
     match /referral_contacts/{contactId} {
       allow list, get: if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && (resource.data.uid == request.auth.uid || resource.data.email == request.auth.token.email);
     }
     match /user_settings/{userId} {
-      allow get, list, write: if request.auth != null && (request.auth.uid == userId || (resource != null && resource.data.uid == request.auth.uid));
+      allow get, list, write: if request.auth != null;
     }
     match /users/{userId} {
-      allow get, list, write: if request.auth != null && (request.auth.uid == userId || (resource != null && resource.data.uid == request.auth.uid));
+      allow get, list, write: if request.auth != null;
     }
   }
 }
+
 

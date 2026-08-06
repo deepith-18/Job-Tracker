@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { AppShell } from '../components/layout/AppShell';
 import { useAuthStore } from '../store/authStore';
 import { useToast } from '../components/ui/ToastContext';
@@ -29,9 +30,18 @@ export const SettingsPage: React.FC = () => {
 
       <div className="pb" style={{ maxWidth: 640 }}>
         <div className="card" style={{ padding: 24 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-            👤 Profile & Account
-          </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
+              👤 Profile & Account
+            </h3>
+            <Link
+              to="/diagnostics"
+              className="btn btn-primary btn-sm"
+              style={{ borderRadius: 10, fontSize: 12, padding: '6px 14px', textDecoration: 'none' }}
+            >
+              ⚡ Database Diagnostics →
+            </Link>
+          </div>
 
           {/* Account & Sync Diagnostic Panel */}
           <div
@@ -71,23 +81,25 @@ export const SettingsPage: React.FC = () => {
               <div style={{ fontSize: 12, color: 'var(--t2)', fontFamily: 'monospace' }}>
                 UID: <strong style={{ color: 'var(--t1)' }}>{user?.uid}</strong>
               </div>
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                style={{ fontSize: 11, padding: '4px 10px' }}
-                onClick={() => {
-                  if (user?.uid) {
-                    navigator.clipboard.writeText(user.uid);
-                    addToast('UID Copied! 📋', 'Compare this UID with your mobile device', 'success');
-                  }
-                }}
-              >
-                📋 Copy UID
-              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  style={{ fontSize: 11, padding: '4px 10px' }}
+                  onClick={() => {
+                    if (user?.uid) {
+                      navigator.clipboard.writeText(user.uid);
+                      addToast('UID Copied! 📋', 'Compare this UID with your mobile device', 'success');
+                    }
+                  }}
+                >
+                  📋 Copy UID
+                </button>
+              </div>
             </div>
 
             <div style={{ marginTop: 10, fontSize: 11.5, color: 'var(--t3)', lineHeight: 1.4 }}>
-              💡 <strong>Cross-Device Sync Tip:</strong> Make sure your Mobile device has the <strong>exact same UID</strong> shown above. If you signed in via Email/Password on Desktop and Google button on Mobile, Firebase creates two distinct UIDs. Log in using the exact same method on both devices to sync changes.
+              💡 <strong>Universal Email Sync Active:</strong> Applications and documents are automatically synced across devices for <strong>{user?.email}</strong> regardless of login provider (Email/Password or Google button).
             </div>
           </div>
 

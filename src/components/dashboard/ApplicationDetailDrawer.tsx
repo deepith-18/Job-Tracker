@@ -21,7 +21,6 @@ export const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = (
 }) => {
   const { addToast } = useToast();
   const [formData, setFormData] = useState<Partial<Application>>({});
-  const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -65,9 +64,13 @@ export const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = (
       return;
     }
 
-    setSaving(true);
+    const appId = application.id;
+    const compName = formData.company;
+    const roleName = formData.role;
+    onClose();
+
     try {
-      await updateApplication(application.id, {
+      await updateApplication(appId, {
         company: formData.company,
         role: formData.role,
         status: formData.status as ApplicationStatus,
@@ -81,13 +84,10 @@ export const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = (
         rejectionReasons: formData.rejectionReasons,
       });
 
-      addToast('Application Saved', `Updated ${formData.company} (${formData.role})`, 'success');
-      onClose();
+      addToast('Application Saved 💾', `Updated ${compName} (${roleName})`, 'success');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error updating';
       addToast('Failed to save', msg, 'error');
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -397,10 +397,9 @@ export const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = (
               <button
                 type="button"
                 onClick={() => handleSave()}
-                disabled={saving}
                 className="btn btn-primary"
               >
-                {saving ? 'Saving…' : 'Save Changes (Enter)'}
+                Save Changes (Enter)
               </button>
             </div>
           </div>

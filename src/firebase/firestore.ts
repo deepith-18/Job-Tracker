@@ -2,7 +2,7 @@ import {
   collection, doc, addDoc, updateDoc, deleteDoc,
   onSnapshot, query, where, serverTimestamp, Timestamp, type Unsubscribe,
 } from 'firebase/firestore';
-import { db } from './config';
+import { db, auth } from './config';
 import type { Application, ApplicationFormData } from '../types';
 
 const COL = 'applications';
@@ -32,16 +32,36 @@ export const subscribeToApplications = (
   callback: (apps: Application[]) => void,
   onError: (error: Error) => void
 ): Unsubscribe => {
-  const q = query(collection(db, COL), where('uid', '==', uid));
-  return onSnapshot(q,
-    (snap) => callback(snap.docs.map(d => docToApp(d.id, d.data() as Record<string, unknown>))),
-    onError
-  );
+  const userEmail = auth.currentUser?.email;
+  const storeMap = new Map<string, Application>();
+
+  const qUid = query(collection(db, COL), where('uid', '==', uid));
+  const unsubUid = onSnapshot(qUid, (snap) => {
+    snap.docs.forEach((d) => storeMap.set(d.id, docToApp(d.id, d.data() as Record<string, unknown>)));
+    callback(Array.from(storeMap.values()));
+  }, onError);
+
+  if (userEmail) {
+    const qEmail = query(collection(db, COL), where('email', '==', userEmail));
+    const unsubEmail = onSnapshot(qEmail, (snap) => {
+      snap.docs.forEach((d) => storeMap.set(d.id, docToApp(d.id, d.data() as Record<string, unknown>)));
+      callback(Array.from(storeMap.values()));
+    }, () => {});
+
+    return () => {
+      unsubUid();
+      unsubEmail();
+    };
+  }
+
+  return unsubUid;
 };
 
 export const addApplication = async (uid: string, data: ApplicationFormData) => {
+  const email = auth.currentUser?.email || '';
   const ref = await addDoc(collection(db, COL), {
     uid,
+    email,
     company: data.company,
     role: data.role,
     status: data.status,
@@ -122,8 +142,10 @@ export const subscribeToDocuments = (
 };
 
 export const addDocumentItem = async (uid: string, item: Omit<UserDocumentItem, 'id' | 'uid'>) => {
+  const email = auth.currentUser?.email || '';
   const ref = await addDoc(collection(db, DOC_COL), {
     uid,
+    email,
     name: item.name,
     type: item.type,
     date: item.date,
@@ -181,12 +203,14 @@ export const subscribeToContacts = (
 };
 
 export const addContactItem = async (uid: string, item: Omit<ReferralContactItem, 'id' | 'uid'>) => {
+  const email = auth.currentUser?.email || '';
   const ref = await addDoc(collection(db, CONTACT_COL), {
     uid,
+    email,
     name: item.name,
     company: item.company,
     role: item.role,
-    email: item.email,
+    contactEmail: item.email,
     linkedIn: item.linkedIn,
     status: item.status,
     notes: item.notes,
