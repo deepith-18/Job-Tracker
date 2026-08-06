@@ -114,22 +114,27 @@ export const ApplicationsPage: React.FC = () => {
       addToast('Please sign in to add applications', undefined, 'error');
       throw new Error('Please sign in to add applications');
     }
+    setModal({ type: 'closed' });
     try {
       await addApplication(user.uid, data);
-      addToast(`Added ${data.company}`, 'Application saved', 'success');
-      setModal({ type: 'closed' });
+      addToast(`Added ${data.company}`, 'Application saved to Firestore 🚀', 'success');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to save application';
       addToast('Error adding application', msg, 'error');
-      throw err;
     }
   };
 
   const handleEdit = async (data: ApplicationFormData) => {
     if (modal.type !== 'edit') return;
-    await updateApplication(modal.app.id, data);
-    addToast(`Updated ${data.company}`, 'Changes saved', 'success');
+    const appId = modal.app.id;
     setModal({ type: 'closed' });
+    try {
+      await updateApplication(appId, data);
+      addToast(`Updated ${data.company}`, 'Changes saved 💾', 'success');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to update application';
+      addToast('Error updating application', msg, 'error');
+    }
   };
 
   const handleDelete = async () => {

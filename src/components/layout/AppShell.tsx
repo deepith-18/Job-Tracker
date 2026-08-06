@@ -101,7 +101,12 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
             </svg>
           </div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: '#ffffff' }}>ApplyFlow</div>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#ffffff', lineHeight: 1.1 }}>ApplyFlow</div>
+            <div style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace', marginTop: 2 }}>
+              {user?.email ? `${user.email.split('@')[0]}` : 'Guest'} • {user?.uid ? user.uid.slice(0, 6) : ''}
+            </div>
+          </div>
         </div>
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -174,16 +179,16 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           <div
             className="s-user"
             onClick={handleSignOut}
-            title={collapsed ? `${user?.email} (${providerId}) — Sign out` : 'Sign out'}
+            title={collapsed ? `${user?.email} (UID: ${user?.uid}) — Click to sign out` : 'Click to sign out'}
           >
             <div className="s-avatar">{initial}</div>
             {!collapsed && (
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {user?.email}
+                <div style={{ fontSize: 12, color: '#ffffff', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {user?.email || 'Logged In'}
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--side-dim)', marginTop: 1 }}>
-                  {providerId} • Click to sign out
+                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2, fontFamily: 'monospace' }}>
+                  UID: {user?.uid ? `${user.uid.slice(0, 8)}…` : '—'} • {providerId}
                 </div>
               </div>
             )}
