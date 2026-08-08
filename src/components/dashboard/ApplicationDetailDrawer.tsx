@@ -184,9 +184,16 @@ export const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = (
                   isOpen={dropdownOpen}
                   onOpen={() => setDropdownOpen(true)}
                   onClose={() => setDropdownOpen(false)}
-                  onSelect={(status) => {
-                    setFormData({ ...formData, status });
+                  onSelect={async (status) => {
+                    setFormData((prev) => ({ ...prev, status }));
                     setDropdownOpen(false);
+                    try {
+                      await updateApplication(application.id, { status });
+                      addToast('Status Updated 🚀', `Moved to ${status}`, 'success');
+                    } catch (err: unknown) {
+                      const msg = err instanceof Error ? err.message : 'Error updating status';
+                      addToast('Failed to update status', msg, 'error');
+                    }
                   }}
                 />
               </div>
