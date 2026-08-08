@@ -1,5 +1,5 @@
 import {
-  collection, doc, addDoc, updateDoc, deleteDoc,
+  collection, doc, addDoc, updateDoc, deleteDoc, setDoc,
   onSnapshot, query, where, serverTimestamp, Timestamp, type Unsubscribe,
 } from 'firebase/firestore';
 import { db, auth } from './config';
@@ -27,6 +27,12 @@ const docToApp = (id: string, data: Record<string, unknown>): Application => ({
   updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : new Date(),
 });
 
+/**
+ * Subscribe to applications matching the user's UID or email.
+ * Uses a shared Map to deduplicate across both queries — essential for
+ * cross-device sync when a user logs in via Email/Password on one device
+ * and Google OAuth on another (different UIDs, same email).
+ */
 export const subscribeToApplications = (
   uid: string,
   callback: (apps: Application[]) => void,
@@ -35,26 +41,45 @@ export const subscribeToApplications = (
   const userEmail = auth.currentUser?.email;
   const storeMap = new Map<string, Application>();
 
+  const emitAll = () => {
+    callback(Array.from(storeMap.values()));
+  };
+
+  // Primary query: match by UID
   const qUid = query(collection(db, COL), where('uid', '==', uid));
   const unsubUid = onSnapshot(qUid, (snap) => {
-    snap.docs.forEach((d) => storeMap.set(d.id, docToApp(d.id, d.data() as Record<string, unknown>)));
-    callback(Array.from(storeMap.values()));
+    snap.docChanges().forEach((change) => {
+      if (change.type === 'removed') {
+        storeMap.delete(change.doc.id);
+      } else {
+        storeMap.set(change.doc.id, docToApp(change.doc.id, change.doc.data() as Record<string, unknown>));
+      }
+    });
+    emitAll();
   }, onError);
 
+  // Secondary query: match by email (cross-device sync fallback)
+  let unsubEmail: (() => void) | null = null;
   if (userEmail) {
     const qEmail = query(collection(db, COL), where('email', '==', userEmail));
-    const unsubEmail = onSnapshot(qEmail, (snap) => {
-      snap.docs.forEach((d) => storeMap.set(d.id, docToApp(d.id, d.data() as Record<string, unknown>)));
-      callback(Array.from(storeMap.values()));
-    }, () => {});
-
-    return () => {
-      unsubUid();
-      unsubEmail();
-    };
+    unsubEmail = onSnapshot(qEmail, (snap) => {
+      snap.docChanges().forEach((change) => {
+        if (change.type === 'removed') {
+          storeMap.delete(change.doc.id);
+        } else {
+          storeMap.set(change.doc.id, docToApp(change.doc.id, change.doc.data() as Record<string, unknown>));
+        }
+      });
+      emitAll();
+    }, (err) => {
+      console.warn('Email-based sync query error (non-fatal):', err.message);
+    });
   }
 
-  return unsubUid;
+  return () => {
+    unsubUid();
+    if (unsubEmail) unsubEmail();
+  };
 };
 
 export const addApplication = async (uid: string, data: ApplicationFormData) => {
@@ -233,6 +258,10 @@ export interface UserSettingsData {
   goal: number;
   streak: number;
   lastActive: string;
+  targetTitle?: string;
+  minSalary?: number;
+  remotePref?: string;
+  emailAlerts?: boolean;
 }
 
 export const subscribeToUserSettings = (
@@ -250,9 +279,21 @@ export const subscribeToUserSettings = (
           goal: typeof data.goal === 'number' ? data.goal : 100,
           streak: typeof data.streak === 'number' ? data.streak : 1,
           lastActive: typeof data.lastActive === 'string' ? data.lastActive : '',
+          targetTitle: typeof data.targetTitle === 'string' ? data.targetTitle : 'Senior Full-Stack Engineer',
+          minSalary: typeof data.minSalary === 'number' ? data.minSalary : 160000,
+          remotePref: typeof data.remotePref === 'string' ? data.remotePref : 'Remote / Hybrid',
+          emailAlerts: typeof data.emailAlerts === 'boolean' ? data.emailAlerts : true,
         });
       } else {
-        callback({ goal: 100, streak: 1, lastActive: '' });
+        callback({
+          goal: 100,
+          streak: 1,
+          lastActive: '',
+          targetTitle: 'Senior Full-Stack Engineer',
+          minSalary: 160000,
+          remotePref: 'Remote / Hybrid',
+          emailAlerts: true,
+        });
       }
     },
     onError
@@ -261,21 +302,26 @@ export const subscribeToUserSettings = (
 
 export const saveUserSettings = async (uid: string, settings: Partial<UserSettingsData>) => {
   const ref = doc(db, SETTINGS_COL, uid);
-  await updateDoc(ref, { ...settings, uid, updatedAt: serverTimestamp() }).catch(async () => {
-    const { setDoc } = await import('firebase/firestore');
-    await setDoc(ref, {
-      uid,
-      goal: settings.goal ?? 100,
-      streak: settings.streak ?? 1,
-      lastActive: settings.lastActive ?? new Date().toDateString(),
-      updatedAt: serverTimestamp(),
-    });
-  });
+  // Use setDoc with merge to create the document if it doesn't exist,
+  // or update only the specified fields if it does.
+  await setDoc(ref, {
+    ...settings,
+    uid,
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
 };
 
+/**
+ * Initialize user document and settings on first login.
+ * Uses setDoc with merge: true so it's safe to call repeatedly
+ * (won't overwrite existing data).
+ *
+ * NOTE: Errors are intentionally thrown here so the calling code
+ * can surface Firestore permission issues to the user.
+ */
 export const initializeUserCollections = async (uid: string, email?: string | null) => {
   try {
-    const { setDoc } = await import('firebase/firestore');
+    // Create/merge user profile document
     const userRef = doc(db, 'users', uid);
     await setDoc(userRef, {
       uid,
@@ -283,6 +329,7 @@ export const initializeUserCollections = async (uid: string, email?: string | nu
       lastLogin: serverTimestamp(),
     }, { merge: true });
 
+    // Create/merge user settings document
     const settingsRef = doc(db, SETTINGS_COL, uid);
     await setDoc(settingsRef, {
       uid,
@@ -291,9 +338,14 @@ export const initializeUserCollections = async (uid: string, email?: string | nu
       lastActive: new Date().toDateString(),
       updatedAt: serverTimestamp(),
     }, { merge: true });
+
+    console.log('✅ Firestore user collections initialized for', email || uid);
   } catch (err) {
-    console.error('Failed to initialize user collections in Firestore:', err);
+    console.error('❌ Failed to initialize Firestore collections:', err);
+    // Re-throw so callers can show a visible error to the user
+    throw err;
   }
 };
+
 
 

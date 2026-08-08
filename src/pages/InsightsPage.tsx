@@ -2,11 +2,12 @@ import React, { useState, useMemo } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 import { AnalyticsSection } from '../components/analytics/AnalyticsSection';
 import { useApplications } from '../hooks/useApplications';
+import { useUserSettings } from '../hooks/useUserSettings';
 import type { ApplicationStatus } from '../types';
 import {
   ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
 } from 'recharts';
-import { eachDayOfInterval, subDays, format } from 'date-fns';
+import { eachDayOfInterval, subDays, format, startOfDay } from 'date-fns';
 
 const TABS = [
   { id: 'overview', label: '📊 Overview' },
@@ -129,6 +130,8 @@ const SkillsTab: React.FC = () => {
 
 // ── Heatmap Tab
 const HeatmapTab: React.FC<{ applications: any[] }> = ({ applications }) => {
+  const { settings } = useUserSettings();
+
   const calendarData = useMemo(() => {
     const days = eachDayOfInterval({ start: subDays(new Date(), 363), end: new Date() });
     const dayCounts: Record<string, number> = {};
@@ -149,6 +152,32 @@ const HeatmapTab: React.FC<{ applications: any[] }> = ({ applications }) => {
     return weeks;
   }, [applications]);
 
+  // Calculate real active streak from application dates
+  const activeStreak = useMemo(() => {
+    if (applications.length === 0) return 0;
+    const activeDays = new Set<string>();
+    applications.forEach((app) => {
+      const d = new Date(app.appliedDate || app.createdAt);
+      activeDays.add(format(startOfDay(d), 'yyyy-MM-dd'));
+    });
+    // Count consecutive days backwards from today
+    let streak = 0;
+    let cursor = startOfDay(new Date());
+    while (activeDays.has(format(cursor, 'yyyy-MM-dd'))) {
+      streak++;
+      cursor = subDays(cursor, 1);
+    }
+    // If no activity today but yesterday had activity, start from yesterday
+    if (streak === 0) {
+      cursor = startOfDay(subDays(new Date(), 1));
+      while (activeDays.has(format(cursor, 'yyyy-MM-dd'))) {
+        streak++;
+        cursor = subDays(cursor, 1);
+      }
+    }
+    return Math.max(streak, settings.streak || 0);
+  }, [applications, settings.streak]);
+
   const COLORS = ['#eef2ff', '#c7d2fe', '#818cf8', '#4f46e5'];
   const total = applications.length;
   const thisWeek = applications.filter((a) => {
@@ -159,7 +188,7 @@ const HeatmapTab: React.FC<{ applications: any[] }> = ({ applications }) => {
   return (
     <div className="pb">
       <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-        {[['Total Applications', total, '#6366f1'], ['This Week', thisWeek, '#10b981'], ['Active Streak', '7 days', '#f59e0b']].map(([label, val, color]) => (
+        {[['Total Applications', total, '#6366f1'], ['This Week', thisWeek, '#10b981'], ['Active Streak', `${activeStreak} day${activeStreak !== 1 ? 's' : ''}`, '#f59e0b']].map(([label, val, color]) => (
           <div key={label as string} className="card" style={{ flex: 1, padding: 18, borderTop: `3px solid ${color}` }}>
             <div style={{ fontSize: 24, fontWeight: 800, color: color as string }}>{val}</div>
             <div style={{ fontSize: 12, color: 'var(--t2)', marginTop: 2 }}>{label}</div>

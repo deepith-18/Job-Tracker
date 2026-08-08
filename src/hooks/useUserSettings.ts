@@ -4,7 +4,15 @@ import { useAuthStore } from '../store/authStore';
 
 export const useUserSettings = () => {
   const user = useAuthStore((s) => s.user);
-  const [settings, setSettings] = useState<UserSettingsData>({ goal: 100, streak: 1, lastActive: '' });
+  const [settings, setSettings] = useState<UserSettingsData>({
+    goal: 100,
+    streak: 1,
+    lastActive: '',
+    targetTitle: 'Senior Full-Stack Engineer',
+    minSalary: 160000,
+    remotePref: 'Remote / Hybrid',
+    emailAlerts: true,
+  });
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {

@@ -1,21 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { AppShell } from '../components/layout/AppShell';
 import { useAuthStore } from '../store/authStore';
+import { useUserSettings } from '../hooks/useUserSettings';
 import { useToast } from '../components/ui/ToastContext';
 
 export const SettingsPage: React.FC = () => {
   const user = useAuthStore((s) => s.user);
+  const { settings, loading: settingsLoading, updateSettings } = useUserSettings();
   const { addToast } = useToast();
 
+  // Local form state — initialized from Firestore settings once loaded
   const [targetTitle, setTargetTitle] = useState('Senior Full-Stack Engineer');
   const [minSalary, setMinSalary] = useState(160000);
   const [remotePref, setRemotePref] = useState('Remote / Hybrid');
   const [emailAlerts, setEmailAlerts] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const handleSaveSettings = (e: React.FormEvent) => {
+  // Sync Firestore settings → local form state when data arrives
+  useEffect(() => {
+    if (!settingsLoading && settings) {
+      setTargetTitle(settings.targetTitle || 'Senior Full-Stack Engineer');
+      setMinSalary(settings.minSalary ?? 160000);
+      setRemotePref(settings.remotePref || 'Remote / Hybrid');
+      setEmailAlerts(settings.emailAlerts ?? true);
+    }
+  }, [settingsLoading, settings]);
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    addToast('Settings Saved ⚙️', 'Preferences updated successfully', 'success');
+    setSaving(true);
+    try {
+      await updateSettings({
+        targetTitle,
+        minSalary,
+        remotePref,
+        emailAlerts,
+      });
+      addToast('Settings Saved ⚙️', 'Preferences saved to cloud — synced across all devices', 'success');
+    } catch {
+      addToast('Save Failed ⚠️', 'Could not save settings to Firestore. Check your connection.', 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -149,8 +176,8 @@ export const SettingsPage: React.FC = () => {
             </div>
 
             <div style={{ marginTop: 10, paddingTop: 16, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
-              <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px', borderRadius: 12 }}>
-                💾 Save Preferences
+              <button type="submit" className="btn btn-primary" disabled={saving} style={{ padding: '10px 24px', borderRadius: 12 }}>
+                {saving ? '💾 Saving…' : '💾 Save Preferences'}
               </button>
             </div>
           </form>
@@ -159,3 +186,4 @@ export const SettingsPage: React.FC = () => {
     </AppShell>
   );
 };
+
