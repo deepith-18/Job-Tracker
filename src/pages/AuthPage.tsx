@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { signInWithEmail, signUpWithEmail, signInWithGoogle } from '../firebase/auth';
 import { Button } from '../components/ui/Button';
 import { useToast } from '../components/ui/ToastContext';
+import { useAuthStore } from '../store/authStore';
 
 const LOGIN_ERRORS: Record<string, string> = {
   'auth/user-not-found': 'No account found with this email.',
@@ -20,9 +21,18 @@ const SIGNUP_ERRORS: Record<string, string> = {
 };
 
 export const AuthPage: React.FC = () => {
+  const user = useAuthStore((s) => s.user);
+  const authLoading = useAuthStore((s) => s.loading);
   const location = useLocation();
   const navigate = useNavigate();
   const { addToast } = useToast();
+
+  // If user is already authenticated (e.g. returning from mobile Google redirect), auto-redirect to dashboard
+  useEffect(() => {
+    if (user && !authLoading) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, authLoading, navigate]);
 
   const [mode, setMode] = useState<'login' | 'signup'>(
     location.pathname === '/signup' ? 'signup' : 'login'
