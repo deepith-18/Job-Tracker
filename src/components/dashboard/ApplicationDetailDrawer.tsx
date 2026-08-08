@@ -65,26 +65,26 @@ export const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = (
     }
 
     const appId = application.id;
-    const compName = formData.company;
-    const roleName = formData.role;
-    onClose();
+    const compName = formData.company.trim();
+    const roleName = formData.role.trim();
 
     try {
       await updateApplication(appId, {
-        company: formData.company,
-        role: formData.role,
+        company: compName,
+        role: roleName,
         status: formData.status as ApplicationStatus,
-        appliedDate: formData.appliedDate ? new Date(formData.appliedDate) : null,
-        deadline: formData.deadline ? new Date(formData.deadline) : null,
-        jobLink: formData.jobLink,
-        notes: formData.notes,
-        interviewNotes: formData.interviewNotes,
-        source: formData.source,
-        rating: formData.rating,
-        rejectionReasons: formData.rejectionReasons,
+        appliedDate: formData.appliedDate,
+        deadline: formData.deadline,
+        jobLink: formData.jobLink || '',
+        notes: formData.notes || '',
+        interviewNotes: formData.interviewNotes || '',
+        source: formData.source || '',
+        rating: formData.rating || 0,
+        rejectionReasons: formData.rejectionReasons || [],
       });
 
       addToast('Application Saved 💾', `Updated ${compName} (${roleName})`, 'success');
+      onClose();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error updating';
       addToast('Failed to save', msg, 'error');

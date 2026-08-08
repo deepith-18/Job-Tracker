@@ -106,21 +106,36 @@ export const addApplication = async (uid: string, data: ApplicationFormData) => 
   return ref.id;
 };
 
+const safeTimestamp = (d: unknown): Timestamp | null => {
+  if (!d) return null;
+  if (d instanceof Timestamp) return d;
+  if (d instanceof Date) {
+    return isNaN(d.getTime()) ? null : Timestamp.fromDate(d);
+  }
+  if (typeof d === 'string' || typeof d === 'number') {
+    const parsed = new Date(d);
+    return isNaN(parsed.getTime()) ? null : Timestamp.fromDate(parsed);
+  }
+  return null;
+};
+
 export const updateApplication = async (appId: string, data: Partial<ApplicationFormData>) => {
   const ref = doc(db, COL, appId);
   const u: Record<string, unknown> = { updatedAt: serverTimestamp() };
   const fields = ['company','role','status','jobLink','notes','interviewNotes','source','rating','rejectionReasons','interviewDates'] as const;
   fields.forEach(k => { if (data[k] !== undefined) u[k] = data[k]; });
-  if (data.appliedDate !== undefined) u.appliedDate = data.appliedDate ? Timestamp.fromDate(data.appliedDate) : null;
-  if (data.deadline !== undefined) u.deadline = data.deadline ? Timestamp.fromDate(data.deadline) : null;
-  if (data.firstResponseDate !== undefined) u.firstResponseDate = data.firstResponseDate ? Timestamp.fromDate(data.firstResponseDate) : null;
   
+  if (data.appliedDate !== undefined) u.appliedDate = safeTimestamp(data.appliedDate);
+  if (data.deadline !== undefined) u.deadline = safeTimestamp(data.deadline);
+  if (data.firstResponseDate !== undefined) u.firstResponseDate = safeTimestamp(data.firstResponseDate);
+
   // Auto-set first response date when status transitions away from Wishlist / Applied to an active outcome
   if (data.status && ['OA/Assessment', 'Interview', 'Offer', 'Rejected'].includes(data.status)) {
-    u.firstResponseDate = data.firstResponseDate ? Timestamp.fromDate(data.firstResponseDate) : serverTimestamp();
+    u.firstResponseDate = safeTimestamp(data.firstResponseDate) || serverTimestamp();
   }
 
-  await updateDoc(ref, u);
+  // Use setDoc with merge: true so updates work seamlessly whether document exists or not
+  await setDoc(ref, u, { merge: true });
 };
 
 export const deleteApplication = async (appId: string) => deleteDoc(doc(db, COL, appId));
