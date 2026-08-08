@@ -13,18 +13,21 @@ export const useAuth = () => {
     // Step 1: Process mobile OAuth redirect result FIRST.
     // On mobile, signInWithRedirect causes a full page redirect to Google.
     // When the user returns, getRedirectResult() must resolve BEFORE we
-    // start the auth state listener. Otherwise onAuthStateChanged fires
-    // with user=null, ProtectedRoute sees loading=false + no user,
-    // and kicks the user back to /login.
+    // start the auth state listener.
     checkRedirectResult()
-      .then((result) => {
+      .then(async (result) => {
         if (result?.user) {
           setUser(result.user);
-          initializeUserCollections(result.user.uid, result.user.email);
+          // Wrap in try/catch — a Firestore permission error here must NOT
+          // prevent the auth flow from completing
+          try {
+            await initializeUserCollections(result.user.uid, result.user.email);
+          } catch (err) {
+            console.error('initializeUserCollections failed after redirect:', err);
+          }
         }
       })
       .catch((err) => {
-        // Only log non-trivial errors (ignore "no redirect" scenarios)
         if (err?.code !== 'auth/popup-closed-by-user') {
           console.warn('Redirect result check:', err?.message || err);
         }
@@ -33,12 +36,19 @@ export const useAuth = () => {
         redirectChecked.current = true;
 
         // Step 2: NOW register the auth state listener.
-        // This fires immediately with current auth state (cached or null).
-        authUnsubscribe = onAuthStateChange((firebaseUser) => {
+        authUnsubscribe = onAuthStateChange(async (firebaseUser) => {
           setUser(firebaseUser);
+          // Always set loading=false regardless of what happens next
           setLoading(false);
+
           if (firebaseUser) {
-            initializeUserCollections(firebaseUser.uid, firebaseUser.email);
+            // Wrap in try/catch — Firestore errors must NOT prevent login
+            try {
+              await initializeUserCollections(firebaseUser.uid, firebaseUser.email);
+            } catch (err) {
+              console.error('initializeUserCollections failed:', err);
+              // Don't block login — user can still use the app
+            }
           }
         });
       });
@@ -50,4 +60,3 @@ export const useAuth = () => {
 
   return { user, loading };
 };
-
