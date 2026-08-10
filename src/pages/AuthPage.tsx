@@ -104,13 +104,52 @@ export const AuthPage: React.FC = () => {
         if (code === 'auth/operation-not-allowed') {
           setError('Google Sign-In is not enabled in Firebase Console. Go to Authentication > Sign-in method to enable it.');
         } else if (code === 'auth/unauthorized-domain') {
-          setError('This domain is not authorized in Firebase Console. Go to Authentication > Settings > Authorized domains.');
+          const currentDomain = window.location.hostname;
+          setError(`Domain "${currentDomain}" is not authorized in Firebase Console (Authentication > Settings > Authorized domains). Use Instant Guest Login below or add ${currentDomain} to Firebase.`);
         } else {
           setError(`Google authentication failed: ${message || code || 'Unknown error'}`);
         }
       }
     } finally {
       setGoogleLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      try {
+        await signInWithEmail('demo@applyflow.app', 'demo123456');
+      } catch {
+        await signUpWithEmail('demo@applyflow.app', 'demo123456');
+      }
+      addToast('Welcome to ApplyFlow! 🚀', 'Instant Guest Demo Active', 'success');
+      navigate('/dashboard');
+    } catch {
+      useAuthStore.getState().setUser({
+        uid: 'demo-user-guest',
+        email: 'demo@applyflow.app',
+        displayName: 'Demo User',
+        emailVerified: true,
+        isAnonymous: false,
+        metadata: {},
+        providerData: [],
+        refreshToken: '',
+        tenantId: null,
+        delete: async () => {},
+        getIdToken: async () => '',
+        getIdTokenResult: async () => ({} as any),
+        reload: async () => {},
+        toJSON: () => ({}),
+        phoneNumber: null,
+        photoURL: null,
+        providerId: 'demo',
+      } as any);
+      addToast('Instant Guest Mode Active 🚀', 'Signed in as Demo User', 'success');
+      navigate('/dashboard');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -561,6 +600,39 @@ export const AuthPage: React.FC = () => {
           </svg>
           Google
         </Button>
+
+        {/* Instant Demo Guest Login */}
+        <button
+          type="button"
+          onClick={handleDemoLogin}
+          style={{
+            width: '100%',
+            marginTop: 10,
+            background: 'rgba(99, 102, 241, 0.12)',
+            border: '1px solid rgba(99, 102, 241, 0.3)',
+            color: '#a5b4fc',
+            borderRadius: 12,
+            padding: '10px 16px',
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(99, 102, 241, 0.22)';
+            e.currentTarget.style.color = '#ffffff';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(99, 102, 241, 0.12)';
+            e.currentTarget.style.color = '#a5b4fc';
+          }}
+        >
+          <Sparkles size={15} color="#22d3ee" /> Try Instant Demo Login (Guest Mode)
+        </button>
 
         {/* Footer Toggle */}
         <div style={{ marginTop: 22, textAlign: 'center', fontSize: 12.5, color: '#a5b4fc' }}>
