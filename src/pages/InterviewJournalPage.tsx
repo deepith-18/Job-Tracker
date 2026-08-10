@@ -112,7 +112,7 @@ export const InterviewJournalPage: React.FC = () => {
       });
 
       addToast(
-        isEdit ? <>Interview Log Updated <Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></> : <>Interview Logged <Mic className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></>,
+        isEdit ? 'Interview Log Updated' : 'Interview Logged',
         `Saved entry for ${app.company}`,
         'success'
       );

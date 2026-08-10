@@ -1,4 +1,3 @@
-import { CheckCircle } from 'lucide-react';
 import {
   collection, doc, addDoc, updateDoc, deleteDoc, setDoc,
   onSnapshot, query, where, serverTimestamp, Timestamp, type Unsubscribe,

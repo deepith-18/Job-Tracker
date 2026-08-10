@@ -1,4 +1,4 @@
-import { Flame, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { format, differenceInDays, isToday, isPast } from 'date-fns';

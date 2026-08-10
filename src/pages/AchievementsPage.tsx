@@ -6,7 +6,7 @@ import { useApplications } from '../hooks/useApplications';
 
 interface Badge {
   id: string;
-  title: string;
+  title: React.ReactNode;
   desc: string;
   icon: React.ReactNode;
   unlocked: boolean;

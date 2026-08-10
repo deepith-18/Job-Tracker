@@ -1,4 +1,4 @@
-import { Flame, Rocket, Save, Clipboard, Pencil, Trash2 } from 'lucide-react';
+import { Flame, Clipboard, Pencil, Trash2 } from 'lucide-react';
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInDays, isToday, isPast } from 'date-fns';
@@ -118,7 +118,7 @@ export const ApplicationsPage: React.FC = () => {
     setModal({ type: 'closed' });
     try {
       await addApplication(user.uid, data);
-      addToast(`Added ${data.company}`, <>Application saved to Firestore <Rocket className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></>, 'success');
+      addToast(`Added ${data.company}`, 'Application saved successfully', 'success');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to save application';
       addToast('Error adding application', msg, 'error');
@@ -131,7 +131,7 @@ export const ApplicationsPage: React.FC = () => {
     setModal({ type: 'closed' });
     try {
       await updateApplication(appId, data);
-      addToast(`Updated ${data.company}`, <>Changes saved <Save className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></>, 'success');
+      addToast(`Updated ${data.company}`, 'Changes saved successfully', 'success');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to update application';
       addToast('Error updating application', msg, 'error');
