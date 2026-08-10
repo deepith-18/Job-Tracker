@@ -1,3 +1,4 @@
+import { Rocket, Clipboard } from 'lucide-react';
 import React, { useState } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 import { useToast } from '../components/ui/ToastContext';
@@ -26,7 +27,7 @@ export const AutoApplyCopilotPage: React.FC = () => {
   const handleCopyProfile = () => {
     navigator.clipboard.writeText(jsonString);
     setCopied(true);
-    addToast('Autofill Payload Copied 🚀', 'Ready for Greenhouse / Lever / Workday', 'success');
+    addToast('Autofill Payload Copied', 'Ready for Greenhouse / Lever / Workday', 'success');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -34,7 +35,7 @@ export const AutoApplyCopilotPage: React.FC = () => {
     <AppShell>
       {/* Header */}
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title">🚀 Auto-Apply Copilot & Portal Autofill Bridge</h1>
+        <h1 className="page-title"><Rocket className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Auto-Apply Copilot & Portal Autofill Bridge</h1>
         <p className="page-sub">
           One-click candidate profile payload for instant autofill across Workday, Greenhouse, Lever, and Ashby
         </p>
@@ -48,7 +49,7 @@ export const AutoApplyCopilotPage: React.FC = () => {
               ⚡ Unified Candidate Autofill Payload
             </h3>
             <button onClick={handleCopyProfile} className="btn btn-primary btn-sm" style={{ borderRadius: 10 }}>
-              {copied ? '✓ Copied JSON' : '📋 Copy Profile Payload'}
+              {copied ? '✓ Copied JSON' : <><Clipboard className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Copy Profile Payload</>}
             </button>
           </div>
 

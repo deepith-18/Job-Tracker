@@ -1,3 +1,4 @@
+import { DollarSign, Settings, Sparkles, FileText, Clipboard } from 'lucide-react';
 import React, { useState } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 import { useToast } from '../components/ui/ToastContext';
@@ -37,13 +38,13 @@ Best regards,
 Candidate`;
 
     setEmailDraft(draft);
-    addToast('Negotiation Script Generated 💰', `Target: $${targetBase.toLocaleString()}`, 'success');
+    addToast('Negotiation Script Generated', `Target: $${targetBase.toLocaleString()}`, 'success');
   };
 
   const handleCopyEmail = () => {
     navigator.clipboard.writeText(emailDraft);
     setCopied(true);
-    addToast('Copied to Clipboard 📋', 'Ready to send to recruiter', 'info');
+    addToast('Copied to Clipboard', 'Ready to send to recruiter', 'info');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -51,7 +52,7 @@ Candidate`;
     <AppShell>
       {/* Header */}
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title">💰 Salary Negotiation & Counter-Offer Copilot</h1>
+        <h1 className="page-title"><DollarSign className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Salary Negotiation & Counter-Offer Copilot</h1>
         <p className="page-sub">
           Calculate equity vesting schedules, counter-offer targets, and generate proven salary negotiation scripts
         </p>
@@ -61,7 +62,7 @@ Candidate`;
         {/* Form Controls */}
         <div className="card" style={{ padding: 22 }}>
           <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-            ⚙️ Offer Package Inputs
+            <Settings className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Offer Package Inputs
           </h3>
 
           <form onSubmit={handleGenerateNegotiation} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -118,7 +119,7 @@ Candidate`;
             </div>
 
             <button type="submit" className="btn btn-primary" style={{ borderRadius: 12, marginTop: 4 }}>
-              ✨ Generate Counter-Offer Script
+              <Sparkles className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Generate Counter-Offer Script
             </button>
           </form>
         </div>
@@ -127,11 +128,11 @@ Candidate`;
         <div className="card" style={{ padding: 22, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-              📝 Counter-Offer Email Script
+              <FileText className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Counter-Offer Email Script
             </h3>
             {emailDraft && (
               <button onClick={handleCopyEmail} className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>
-                {copied ? '✓ Copied' : '📋 Copy Email Text'}
+                {copied ? '✓ Copied' : <><Clipboard className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Copy Email Text</>}
               </button>
             )}
           </div>

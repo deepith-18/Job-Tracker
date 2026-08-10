@@ -1,3 +1,4 @@
+import { File, Folder, Pencil, Trash2, Sparkles, Clipboard } from 'lucide-react';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppShell } from '../components/layout/AppShell';
@@ -30,6 +31,7 @@ export const DocumentStudioPage: React.FC = () => {
   const [copied, setCopied] = useState(false);
 
   // Document Modal (Add / Edit)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [docModal, setDocModal] = useState<{ open: boolean; editDoc?: ResumeDoc }>({ open: false });
   const [docTitleInput, setDocTitleInput] = useState('');
   const [docRoleInput, setDocRoleInput] = useState('');
@@ -52,7 +54,7 @@ export const DocumentStudioPage: React.FC = () => {
   const handleDeleteDoc = (id: string, title: string) => {
     if (!window.confirm(`Delete resume version "${title}"?`)) return;
     setDocs((prev) => prev.filter((d) => d.id !== id));
-    addToast('Resume Version Deleted 🗑️', title, 'info');
+    addToast('Resume Version Deleted', title, 'info');
   };
 
   const handleGenerateCoverLetter = (e: React.FormEvent) => {
@@ -78,7 +80,7 @@ Candidate`;
 
       setGeneratedLetter(letter);
       setGenerating(false);
-      addToast('Cover Letter Draft Generated 📝', `Tailored for ${company} (${role})`, 'success');
+      addToast('Cover Letter Draft Generated', `Tailored for ${company} (${role})`, 'success');
     }, 600);
   };
 
@@ -100,7 +102,7 @@ Candidate`;
             : d
         )
       );
-      addToast('Resume Version Updated ✏️', docTitleInput, 'success');
+      addToast('Resume Version Updated', docTitleInput, 'success');
     } else {
       const newDoc: ResumeDoc = {
         id: Math.random().toString(36).substring(2, 9),
@@ -110,7 +112,7 @@ Candidate`;
         link: docLinkInput.trim() || '#',
       };
       setDocs((prev) => [newDoc, ...prev]);
-      addToast('Resume Version Added 📁', docTitleInput, 'success');
+      addToast('Resume Version Added', docTitleInput, 'success');
     }
 
     setDocModal({ open: false });
@@ -122,7 +124,7 @@ Candidate`;
   const handleCopyLetter = () => {
     navigator.clipboard.writeText(generatedLetter);
     setCopied(true);
-    addToast('Copied to Clipboard 📋', 'Cover letter ready to paste', 'info');
+    addToast('Copied to Clipboard', 'Cover letter ready to paste', 'info');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -130,7 +132,7 @@ Candidate`;
     <AppShell>
       {/* Header */}
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title">📄 Resume & Cover Letter Studio</h1>
+        <h1 className="page-title"><File className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Resume & Cover Letter Studio</h1>
         <p className="page-sub">
           Manage, edit, and delete tailored resume versions and generate custom cover letters
         </p>
@@ -142,7 +144,7 @@ Candidate`;
           <div className="card" style={{ padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-                📁 Tailored Resumes & Portfolios
+                <Folder className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Tailored Resumes & Portfolios
               </h3>
               <button onClick={openAddDocModal} className="btn btn-primary btn-sm" style={{ fontSize: 12 }}>
                 + Add Resume Version
@@ -164,7 +166,7 @@ Candidate`;
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 20 }}>📄</span>
+                    <span style={{ fontSize: 20 }}><File className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></span>
                     <div>
                       <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--t1)' }}>{doc.title}</div>
                       <div style={{ fontSize: 11.5, color: 'var(--t2)', marginTop: 2 }}>
@@ -174,22 +176,20 @@ Candidate`;
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <a
-                      href={doc.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      onClick={(e) => { e.preventDefault(); setPreviewUrl(doc.link); }}
                       className="btn btn-ghost btn-sm"
                       style={{ fontSize: 11.5, padding: '4px 8px' }}
                     >
                       View 🔗
-                    </a>
+                    </button>
                     <button
                       onClick={() => openEditDocModal(doc)}
                       className="btn btn-ghost btn-sm"
                       style={{ fontSize: 12, padding: '4px 6px' }}
                       title="Edit Resume"
                     >
-                      ✏️
+                      <Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
                     </button>
                     <button
                       onClick={() => handleDeleteDoc(doc.id, doc.title)}
@@ -197,7 +197,7 @@ Candidate`;
                       style={{ fontSize: 12, padding: '4px 6px' }}
                       title="Delete Resume"
                     >
-                      🗑️
+                      <Trash2 className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
                     </button>
                   </div>
                 </div>
@@ -209,7 +209,7 @@ Candidate`;
         {/* Right Column: Cover Letter Generator */}
         <div className="card" style={{ padding: 22, display: 'flex', flexDirection: 'column' }}>
           <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-            ✨ Smart Cover Letter Generator
+            <Sparkles className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Smart Cover Letter Generator
           </h3>
 
           <form onSubmit={handleGenerateCoverLetter} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -240,7 +240,7 @@ Candidate`;
             </div>
 
             <button type="submit" disabled={generating} className="btn btn-primary" style={{ borderRadius: 12 }}>
-              {generating ? 'Generating Draft…' : '✨ Generate Tailored Cover Letter'}
+              {generating ? 'Generating Draft…' : <><Sparkles className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Generate Tailored Cover Letter</>}
             </button>
           </form>
 
@@ -252,7 +252,7 @@ Candidate`;
                   Generated Draft:
                 </span>
                 <button onClick={handleCopyLetter} className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>
-                  {copied ? '✓ Copied' : '📋 Copy Draft'}
+                  {copied ? '✓ Copied' : <><Clipboard className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Copy Draft</>}
                 </button>
               </div>
 
@@ -281,7 +281,7 @@ Candidate`;
               exit={{ scale: 0.95, opacity: 0 }}
             >
               <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-                {docModal.editDoc ? '✏️ Edit Resume Version' : '📄 Add Resume Version'}
+                {docModal.editDoc ? <><Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Edit Resume Version</> : <><File className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Add Resume Version</>}
               </h2>
 
               <form onSubmit={handleSaveDocument} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -326,6 +326,24 @@ Candidate`;
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+
+        {/* PDF / Document Preview Modal */}
+        {previewUrl && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ background: 'var(--card)', width: '100%', maxWidth: 1000, height: '85vh', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--border)', background: 'var(--card)' }}>
+                <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--t1)' }}>Document Preview</h3>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm" style={{ border: '1px solid var(--border)' }}>Open in New Tab ↗</a>
+                  <button onClick={() => setPreviewUrl(null)} className="btn btn-ghost btn-sm" style={{ padding: '4px 8px', background: '#fee2e2', color: '#b91c1c' }}>✕ Close</button>
+                </div>
+              </div>
+              <div style={{ flex: 1, background: '#d1d5db' }}>
+                <iframe src={previewUrl} style={{ width: '100%', height: '100%', border: 'none' }} title="PDF Preview" />
+              </div>
             </motion.div>
           </div>
         )}

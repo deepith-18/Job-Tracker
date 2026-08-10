@@ -1,8 +1,10 @@
+import { Target } from 'lucide-react';
 import React, { useState, useMemo } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 import { AnalyticsSection } from '../components/analytics/AnalyticsSection';
 import { useApplications } from '../hooks/useApplications';
 import { useUserSettings } from '../hooks/useUserSettings';
+import { useSkills } from '../hooks/useSkills';
 import type { ApplicationStatus } from '../types';
 import {
   ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
@@ -80,28 +82,13 @@ const OverviewTab: React.FC<{ applications: any[] }> = ({ applications }) => {
 };
 
 // ── Skills Radar Tab
-const DEFAULT_SKILLS = [
-  { skill: 'DSA', level: 75 },
-  { skill: 'System Design', level: 65 },
-  { skill: 'Frontend', level: 85 },
-  { skill: 'Backend', level: 70 },
-  { skill: 'Behavioral', level: 80 },
-  { skill: 'OOP', level: 60 },
-];
-
 const SkillsTab: React.FC = () => {
-  const [skills, setSkills] = useState(DEFAULT_SKILLS);
-
-  const updateSkill = (i: number, val: number) => {
-    const updated = [...skills];
-    updated[i] = { ...updated[i], level: val };
-    setSkills(updated);
-  };
+  const { skills, updateSkillLevel } = useSkills();
 
   return (
     <div className="pb" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
       <div className="card" style={{ padding: 20 }}>
-        <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 16 }}>🎯 Skill Proficiency Radar</div>
+        <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 16 }}><Target className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Skill Proficiency Radar</div>
         <ResponsiveContainer width="100%" height={280}>
           <RadarChart data={skills.map((s) => ({ subject: s.skill, level: s.level, fullMark: 100 }))}>
             <PolarGrid stroke="#e2e8f0" />
@@ -114,12 +101,12 @@ const SkillsTab: React.FC = () => {
       <div className="card" style={{ padding: 20 }}>
         <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 16 }}>📐 Adjust Skill Levels</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {skills.map((s, i) => (
-            <div key={s.skill}>
+          {skills.map((s) => (
+            <div key={s.id || s.skill}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, fontWeight: 600, color: 'var(--t2)', marginBottom: 4 }}>
                 <span>{s.skill}</span><span style={{ color: 'var(--accent)' }}>{s.level}%</span>
               </div>
-              <input type="range" min={0} max={100} value={s.level} onChange={(e) => updateSkill(i, Number(e.target.value))} style={{ width: '100%' }} />
+              <input type="range" min={0} max={100} value={s.level} onChange={(e) => updateSkillLevel(s.id, Number(e.target.value))} style={{ width: '100%' }} />
             </div>
           ))}
         </div>

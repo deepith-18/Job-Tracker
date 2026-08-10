@@ -1,3 +1,4 @@
+import { Handshake, Pencil, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppShell } from '../components/layout/AppShell';
@@ -80,7 +81,7 @@ export const ReferralCrmPage: React.FC = () => {
     if (!window.confirm(`Delete contact "${name}"?`)) return;
     try {
       await deleteContact(id);
-      addToast('Contact Deleted 🗑️', name, 'info');
+      addToast('Contact Deleted', name, 'info');
     } catch {
       addToast('Error', 'Failed to delete contact', 'error');
     }
@@ -101,7 +102,7 @@ export const ReferralCrmPage: React.FC = () => {
           status: statusInput,
           notes: notesInput.trim(),
         });
-        addToast('Contact Updated ✏️', nameInput, 'success');
+        addToast('Contact Updated', nameInput, 'success');
       } else {
         await addContact({
           name: nameInput.trim(),
@@ -112,7 +113,7 @@ export const ReferralCrmPage: React.FC = () => {
           status: statusInput,
           notes: notesInput.trim(),
         });
-        addToast('Contact Added 🤝', nameInput, 'success');
+        addToast('Contact Added', nameInput, 'success');
       }
       setModal({ open: false });
     } catch {
@@ -126,7 +127,7 @@ export const ReferralCrmPage: React.FC = () => {
       <div className="ph" style={{ paddingBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h1 className="page-title">🤝 Networking & Referral CRM</h1>
+            <h1 className="page-title"><Handshake className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Networking & Referral CRM</h1>
             <p className="page-sub">
               Manage internal referrals, alumni contacts, coffee chats, and recruiter outreach
             </p>
@@ -158,10 +159,10 @@ export const ReferralCrmPage: React.FC = () => {
 
                 <div style={{ display: 'flex', gap: 4 }}>
                   <button onClick={() => openEditModal(c)} className="btn btn-ghost btn-sm" style={{ fontSize: 12, padding: '4px 6px' }}>
-                    ✏️
+                    <Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
                   </button>
                   <button onClick={() => handleDeleteContact(c.id, c.name)} className="btn btn-ghost btn-sm" style={{ fontSize: 12, padding: '4px 6px' }}>
-                    🗑️
+                    <Trash2 className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
                   </button>
                 </div>
               </div>
@@ -217,7 +218,7 @@ export const ReferralCrmPage: React.FC = () => {
               exit={{ scale: 0.95, opacity: 0 }}
             >
               <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-                {modal.editContact ? '✏️ Edit Contact' : '🤝 Add Referral Contact'}
+                {modal.editContact ? <><Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Edit Contact</> : <><Handshake className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Add Referral Contact</>}
               </h2>
 
               <form onSubmit={handleSaveContact} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

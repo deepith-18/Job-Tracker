@@ -1,3 +1,4 @@
+import { Brain } from 'lucide-react';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppShell } from '../components/layout/AppShell';
@@ -74,7 +75,7 @@ export const InterviewPrepPage: React.FC = () => {
     <AppShell>
       {/* Header */}
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title">🧠 Technical Interview Flashcards & Quiz Prep</h1>
+        <h1 className="page-title"><Brain className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Technical Interview Flashcards & Quiz Prep</h1>
         <p className="page-sub">
           Sharpen core engineering concepts across DSA, System Design, React, SQL, and Behavioral questions
         </p>

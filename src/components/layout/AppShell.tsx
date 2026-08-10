@@ -74,6 +74,18 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       const newStreak = settings.lastActive === yesterday ? settings.streak + 1 : 1;
       updateSettings({ streak: newStreak, lastActive: today });
     }
+
+    try {
+      const todayISO = new Date().toISOString().split('T')[0];
+      const storageKey = `applyflow_activity_log_${user.uid}`;
+      const existing: Record<string, number> = JSON.parse(localStorage.getItem(storageKey) || '{}');
+      if (!existing[todayISO]) {
+        existing[todayISO] = 1;
+        localStorage.setItem(storageKey, JSON.stringify(existing));
+      }
+    } catch (e) {
+      console.error('Heatmap activity log error:', e);
+    }
   }, [user, settings.lastActive, settings.streak, updateSettings]);
 
   const streak = settings.streak;

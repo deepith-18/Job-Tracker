@@ -1,3 +1,4 @@
+import { FileText, File, Trash2, CheckCircle, Clipboard, Eye, Download } from 'lucide-react';
 import React, { useState } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 import { useApplications } from '../hooks/useApplications';
@@ -7,7 +8,7 @@ import { updateApplication } from '../firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const TABS = [
-  { id: 'notes', label: '📝 Interview Notes' },
+  { id: 'notes', label: <><FileText className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Interview Notes</> },
   { id: 'documents', label: '📁 Documents' },
   { id: 'flashcards', label: '🃏 Flashcard Prep' },
   { id: 'mock', label: '🎤 Mock Interview' },
@@ -119,7 +120,7 @@ const JournalNotesContent: React.FC = () => {
 
       {filtered.length === 0 ? (
         <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--t3)' }}>
-          <div style={{ fontSize: 36, marginBottom: 10 }}>📝</div>
+          <div style={{ fontSize: 36, marginBottom: 10 }}><FileText className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></div>
           <div style={{ fontWeight: 700 }}>No interview logs yet</div>
           <div style={{ fontSize: 13, marginTop: 4 }}>Add your first interview log to track questions and takeaways</div>
         </div>
@@ -159,7 +160,7 @@ const JournalNotesContent: React.FC = () => {
               onClick={(e) => e.stopPropagation()}
               style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto' }}
             >
-              <h3 style={{ fontWeight: 800, marginBottom: 20 }}>📝 Add Interview Log</h3>
+              <h3 style={{ fontWeight: 800, marginBottom: 20 }}><FileText className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Add Interview Log</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
                   <label className="lbl">Company</label>
@@ -267,7 +268,7 @@ const JournalDocumentsContent: React.FC = () => {
           size: sizeStr,
           url: dataUrl,
         });
-        addToast(`Document Uploaded 📄`, `Saved "${file.name}" to your journal`, 'success');
+        addToast(`Document Uploaded`, `Saved "${file.name}" to your journal`, 'success');
       } catch {
         addToast('Upload Error', 'Failed to save document to Firestore', 'error');
       }
@@ -288,13 +289,13 @@ const JournalDocumentsContent: React.FC = () => {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    addToast('Downloading File 💾', `Downloading "${doc.name}"`, 'success');
+    addToast('Downloading File', `Downloading "${doc.name}"`, 'success');
   };
 
   const handleDelete = async (id: string, name: string) => {
     try {
       await removeDocument(id);
-      addToast('Document Deleted 🗑️', `Removed "${name}"`, 'info');
+      addToast('Document Deleted', `Removed "${name}"`, 'info');
     } catch {
       addToast('Delete Error', 'Failed to delete document', 'error');
     }
@@ -344,7 +345,7 @@ const JournalDocumentsContent: React.FC = () => {
                   flexShrink: 0,
                 }}
               >
-                {doc.type === 'Resume' ? '📄' : doc.type === 'Cover Letter' ? '✉️' : doc.type === 'Portfolio' ? '🔗' : '📁'}
+                {doc.type === 'Resume' ? <File className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> : doc.type === 'Cover Letter' ? '✉️' : doc.type === 'Portfolio' ? '🔗' : '📁'}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--t1)' }}>{doc.name}</div>
@@ -353,8 +354,19 @@ const JournalDocumentsContent: React.FC = () => {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => {
+                    if (doc.url) {
+                      window.open(doc.url, '_blank');
+                    }
+                  }}
+                  className="btn btn-ghost btn-sm"
+                  title="View document"
+                >
+                  <Eye className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> View
+                </button>
                 <button onClick={() => handleDownload(doc)} className="btn btn-ghost btn-sm">
-                  ⬇ Download
+                  <Download className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Download
                 </button>
                 <button
                   onClick={() => handleDelete(doc.id, doc.name)}
@@ -362,7 +374,7 @@ const JournalDocumentsContent: React.FC = () => {
                   style={{ color: '#ef4444' }}
                   title="Delete document"
                 >
-                  🗑️
+                  <Trash2 className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
                 </button>
               </div>
             </div>
@@ -391,7 +403,7 @@ const JournalFlashcardsContent: React.FC = () => {
       >
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.6, marginBottom: 14 }}>
-            {flipped ? '✅ Answer' : '❓ Question'} — {idx + 1}/{CARDS.length}
+            {flipped ? <><CheckCircle className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Answer</> : '❓ Question'} — {idx + 1}/{CARDS.length}
           </div>
           <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.5 }}>
             {flipped ? CARDS[idx].a : CARDS[idx].q}
@@ -431,7 +443,7 @@ const JournalMockContent: React.FC = () => {
       <button className="btn btn-primary" onClick={() => setSubmitted(true)}>Submit Answer</button>
       {submitted && (
         <div className="card" style={{ padding: 20, marginTop: 14, background: 'var(--success-bg)', border: '1px solid #a7f3d0' }}>
-          <div style={{ fontWeight: 700, color: '#065f46' }}>✅ Good effort! Tips: Lead with impact first, quantify results where possible, keep under 2 minutes when speaking aloud.</div>
+          <div style={{ fontWeight: 700, color: '#065f46' }}><CheckCircle className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Good effort! Tips: Lead with impact first, quantify results where possible, keep under 2 minutes when speaking aloud.</div>
         </div>
       )}
     </div>
@@ -470,7 +482,7 @@ const JournalMindsetContent: React.FC = () => {
         <button onClick={() => setTimerActive(!timerActive)} className="btn btn-primary">{timerActive ? '⏸ Pause' : '▶ Start'}</button>
       </div>
       <div className="card" style={{ padding: 22 }}>
-        <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 14 }}>✅ Pre-Interview Checklist</div>
+        <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 14 }}><CheckCircle className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Pre-Interview Checklist</div>
         {['Test camera & mic', 'Review 3 STAR stories', 'Prepare 2 questions to ask', 'Open IDE / scratch pad', 'Take 3 deep breaths — you belong here!'].map((item, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'var(--t1)', marginBottom: 12 }}>
             <input type="checkbox" />
@@ -505,7 +517,7 @@ const JournalEmailContent: React.FC = () => {
       <div>
         <textarea className="inp" rows={14} value={body} onChange={(e) => setBody(e.target.value)} />
         <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-          <button className="btn btn-primary" onClick={() => navigator.clipboard.writeText(body)}>📋 Copy to Clipboard</button>
+          <button className="btn btn-primary" onClick={() => navigator.clipboard.writeText(body)}><Clipboard className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Copy to Clipboard</button>
           <button className="btn btn-ghost" onClick={() => setBody(selected.body)}>↺ Reset</button>
         </div>
       </div>

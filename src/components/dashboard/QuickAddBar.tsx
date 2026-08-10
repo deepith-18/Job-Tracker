@@ -163,7 +163,7 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({ applications, onAdded 
           <input
             type="text"
             className="quick-add-input"
-            placeholder='Quick Add: Type "Google — Software Engineer" or paste a job link… (Press Enter)'
+            placeholder='Type "Google — Software Engineer" or paste link…'
             value={input}
             onChange={(e) => {
               setInput(e.target.value);
@@ -173,10 +173,11 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({ applications, onAdded 
             disabled={loading}
             style={{
               flex: 1,
+              minWidth: 0,
               border: 'none',
               outline: 'none',
               background: 'transparent',
-              fontSize: 14,
+              fontSize: 13.5,
               fontWeight: 500,
               color: 'var(--t1)',
             }}
@@ -187,11 +188,12 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({ applications, onAdded 
             disabled={loading || !input.trim()}
             className="btn btn-primary"
             style={{
-              padding: '9px 18px',
+              padding: '8px 14px',
               borderRadius: 12,
-              fontSize: 13,
+              fontSize: 12.5,
               fontWeight: 700,
               flexShrink: 0,
+              whiteSpace: 'nowrap',
             }}
           >
             {loading ? (

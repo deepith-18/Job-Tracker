@@ -1,3 +1,4 @@
+import { Rocket, Flame, Clipboard } from 'lucide-react';
 import React, { useState } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 import { useToast } from '../components/ui/ToastContext';
@@ -31,7 +32,7 @@ export const DeploymentGuidePage: React.FC = () => {
   const handleCopy = () => {
     navigator.clipboard.writeText(currentConfig);
     setCopied(true);
-    addToast('Config Copied 📋', `${activePlatform.toUpperCase()} deployment file`, 'info');
+    addToast('Config Copied', `${activePlatform.toUpperCase()} deployment file`, 'info');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -39,7 +40,7 @@ export const DeploymentGuidePage: React.FC = () => {
     <AppShell>
       {/* Header */}
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title">🚀 Production Hosting & Deployment Guide</h1>
+        <h1 className="page-title"><Rocket className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Production Hosting & Deployment Guide</h1>
         <p className="page-sub">
           Deploy ApplyFlow to Vercel, Netlify, or Firebase Hosting with zero configuration hassle
         </p>
@@ -51,7 +52,7 @@ export const DeploymentGuidePage: React.FC = () => {
           {[
             { id: 'vercel', label: '⭐ Vercel (Recommended Best)' },
             { id: 'netlify', label: '🌐 Netlify' },
-            { id: 'firebase', label: '🔥 Firebase Hosting' },
+            { id: 'firebase', label: 'Firebase Hosting' },
           ].map((p) => (
             <button
               key={p.id}
@@ -118,7 +119,7 @@ export const DeploymentGuidePage: React.FC = () => {
           {activePlatform === 'firebase' && (
             <div>
               <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--t1)', marginBottom: 8 }}>
-                🔥 Deploying to Firebase Hosting
+                <Flame className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Deploying to Firebase Hosting
               </h2>
               <p style={{ fontSize: 13.5, color: 'var(--t2)', lineHeight: 1.6, marginBottom: 16 }}>
                 Since ApplyFlow uses Firebase Authentication and Firestore, Firebase Hosting allows seamless single-project management.
@@ -142,7 +143,7 @@ export const DeploymentGuidePage: React.FC = () => {
                 {activePlatform === 'vercel' ? 'vercel.json' : activePlatform === 'netlify' ? 'public/_redirects' : 'firebase.json'}
               </span>
               <button onClick={handleCopy} className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>
-                {copied ? '✓ Copied' : '📋 Copy Config'}
+                {copied ? '✓ Copied' : <><Clipboard className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Copy Config</>}
               </button>
             </div>
 

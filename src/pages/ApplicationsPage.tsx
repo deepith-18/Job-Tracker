@@ -1,3 +1,4 @@
+import { Flame, Rocket, Save, Clipboard, Pencil, Trash2 } from 'lucide-react';
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInDays, isToday, isPast } from 'date-fns';
@@ -52,7 +53,7 @@ const DeadlineCell: React.FC<{ deadline: Date | null }> = ({ deadline }) => {
       )}
       {today && (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10.5, fontWeight: 700, padding: '1px 6px', borderRadius: 20, background: '#fff7ed', color: '#9a3412', border: '1px solid #fed7aa' }}>
-          🔥 Today!
+          <Flame className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Today!
         </span>
       )}
       {!past && !today && near && (
@@ -117,7 +118,7 @@ export const ApplicationsPage: React.FC = () => {
     setModal({ type: 'closed' });
     try {
       await addApplication(user.uid, data);
-      addToast(`Added ${data.company}`, 'Application saved to Firestore 🚀', 'success');
+      addToast(`Added ${data.company}`, <>Application saved to Firestore <Rocket className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></>, 'success');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to save application';
       addToast('Error adding application', msg, 'error');
@@ -130,7 +131,7 @@ export const ApplicationsPage: React.FC = () => {
     setModal({ type: 'closed' });
     try {
       await updateApplication(appId, data);
-      addToast(`Updated ${data.company}`, 'Changes saved 💾', 'success');
+      addToast(`Updated ${data.company}`, <>Changes saved <Save className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></>, 'success');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to update application';
       addToast('Error updating application', msg, 'error');
@@ -194,7 +195,7 @@ export const ApplicationsPage: React.FC = () => {
                   whiteSpace: 'nowrap',
                 }}
               >
-                📋 Kanban
+                <Clipboard className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Kanban
               </button>
               <button
                 onClick={() => setViewMode('table')}
@@ -232,7 +233,7 @@ export const ApplicationsPage: React.FC = () => {
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              <span>+ Add Application</span>
+              <span>Add Application</span>
             </button>
           </div>
         </div>
@@ -408,7 +409,7 @@ export const ApplicationsPage: React.FC = () => {
                               style={{ padding: 6 }}
                               title="Edit Details"
                             >
-                              ✏️
+                              <Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
                             </button>
                             <button
                               onClick={() => setModal({ type: 'delete', app })}
@@ -416,7 +417,7 @@ export const ApplicationsPage: React.FC = () => {
                               style={{ padding: 6 }}
                               title="Delete"
                             >
-                              🗑️
+                              <Trash2 className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
                             </button>
                           </div>
                         </td>

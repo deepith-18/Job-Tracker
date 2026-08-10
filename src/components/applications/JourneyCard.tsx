@@ -1,3 +1,4 @@
+import { Flame, FileText } from 'lucide-react';
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { format, differenceInDays, isToday, isPast } from 'date-fns';
@@ -213,7 +214,7 @@ export const JourneyCard: React.FC<JourneyCardProps> = ({ app, index, onEdit, on
 
         {app.rejectionReasons.length > 0 && (
           <span style={{ fontSize: 11.5, color: '#be123c', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 6, padding: '2px 7px' }}>
-            📝 {app.rejectionReasons[0]}{app.rejectionReasons.length > 1 ? ` +${app.rejectionReasons.length - 1}` : ''}
+            <FileText className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> {app.rejectionReasons[0]}{app.rejectionReasons.length > 1 ? ` +${app.rejectionReasons.length - 1}` : ''}
           </span>
         )}
       </div>

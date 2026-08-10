@@ -1,3 +1,4 @@
+import { DollarSign, Pencil, Trash2, Handshake, Sparkles } from 'lucide-react';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppShell } from '../components/layout/AppShell';
@@ -83,7 +84,7 @@ export const OfferCalculatorPage: React.FC = () => {
   const handleDeleteOffer = (id: string, company: string) => {
     if (!window.confirm(`Delete offer package for ${company}?`)) return;
     setOffers((prev) => prev.filter((o) => o.id !== id));
-    addToast('Offer Package Deleted 🗑️', company, 'info');
+    addToast('Offer Package Deleted', company, 'info');
   };
 
   const handleSaveOffer = (e: React.FormEvent) => {
@@ -106,7 +107,7 @@ export const OfferCalculatorPage: React.FC = () => {
             : o
         )
       );
-      addToast('Offer Package Updated ✏️', companyInput, 'success');
+      addToast('Offer Package Updated', companyInput, 'success');
     } else {
       const newOff: OfferPackage = {
         id: Math.random().toString(36).substring(2, 9),
@@ -119,7 +120,7 @@ export const OfferCalculatorPage: React.FC = () => {
         location: 'Hybrid',
       };
       setOffers((prev) => [...prev, newOff]);
-      addToast('Offer Package Added 💰', companyInput, 'success');
+      addToast('Offer Package Added', companyInput, 'success');
     }
 
     setOfferModal({ open: false });
@@ -149,7 +150,7 @@ Best regards,
 Candidate`;
 
     setGeneratedScript(script);
-    addToast('Negotiation Script Drafted 💰', 'Tailored counter-offer script ready', 'success');
+    addToast('Negotiation Script Drafted', 'Tailored counter-offer script ready', 'success');
   };
 
   return (
@@ -158,7 +159,7 @@ Candidate`;
       <div className="ph" style={{ paddingBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h1 className="page-title">💰 Salary & Total Comp (TC) Offer Calculator</h1>
+            <h1 className="page-title"><DollarSign className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Salary & Total Comp (TC) Offer Calculator</h1>
             <p className="page-sub">
               Create, edit, delete, and compare multi-year total compensation packages
             </p>
@@ -199,7 +200,7 @@ Candidate`;
                       style={{ fontSize: 12, padding: '4px 6px' }}
                       title="Edit Offer"
                     >
-                      ✏️
+                      <Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
                     </button>
                     <button
                       onClick={() => handleDeleteOffer(off.id, off.company)}
@@ -207,7 +208,7 @@ Candidate`;
                       style={{ fontSize: 12, padding: '4px 6px' }}
                       title="Delete Offer"
                     >
-                      🗑️
+                      <Trash2 className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
                     </button>
                   </div>
                 </div>
@@ -251,10 +252,10 @@ Candidate`;
         <div className="card" style={{ padding: 24 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)' }}>
-              🤝 Counter-Offer Negotiation Script Generator
+              <Handshake className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Counter-Offer Negotiation Script Generator
             </h3>
             <button onClick={handleGenerateScript} className="btn btn-primary" style={{ borderRadius: 12 }}>
-              ✨ Draft Counter-Offer Email
+              <Sparkles className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Draft Counter-Offer Email
             </button>
           </div>
 
@@ -283,7 +284,7 @@ Candidate`;
               exit={{ scale: 0.95, opacity: 0 }}
             >
               <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-                {offerModal.editOffer ? '✏️ Edit Offer Package' : '💰 Add Offer Package'}
+                {offerModal.editOffer ? <><Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Edit Offer Package</> : <><DollarSign className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Add Offer Package</>}
               </h2>
 
               <form onSubmit={handleSaveOffer} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

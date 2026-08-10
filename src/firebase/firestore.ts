@@ -1,3 +1,4 @@
+import { CheckCircle } from 'lucide-react';
 import {
   collection, doc, addDoc, updateDoc, deleteDoc, setDoc,
   onSnapshot, query, where, serverTimestamp, Timestamp, type Unsubscribe,
@@ -354,7 +355,7 @@ export const initializeUserCollections = async (uid: string, email?: string | nu
       updatedAt: serverTimestamp(),
     }, { merge: true });
 
-    console.log('✅ Firestore user collections initialized for', email || uid);
+    console.log('Firestore user collections initialized for', email || uid);
   } catch (err) {
     console.error('❌ Failed to initialize Firestore collections:', err);
     // Re-throw so callers can show a visible error to the user

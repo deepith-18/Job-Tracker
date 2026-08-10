@@ -1,3 +1,4 @@
+import { BarChart, FileText, Clipboard } from 'lucide-react';
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { AppShell } from '../components/layout/AppShell';
@@ -49,7 +50,7 @@ Generated via ApplyFlow — Job Search OS
   const handleCopyReport = () => {
     navigator.clipboard.writeText(reportText);
     setCopied(true);
-    addToast('Report Copied 📋', 'Executive summary ready to share', 'info');
+    addToast('Report Copied', 'Executive summary ready to share', 'info');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -57,7 +58,7 @@ Generated via ApplyFlow — Job Search OS
     <AppShell>
       {/* Header */}
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title">📊 Executive Weekly Report & Career Summary</h1>
+        <h1 className="page-title"><BarChart className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Executive Weekly Report & Career Summary</h1>
         <p className="page-sub">
           Generate comprehensive executive reports summarizing pipeline conversion rates, interview progress, and action items
         </p>
@@ -91,10 +92,10 @@ Generated via ApplyFlow — Job Search OS
         <div className="card" style={{ padding: 24 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-              📝 Executive Progress Summary
+              <FileText className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Executive Progress Summary
             </h3>
             <button onClick={handleCopyReport} className="btn btn-primary btn-sm" style={{ borderRadius: 10 }}>
-              {copied ? '✓ Copied' : '📋 Copy Report Text'}
+              {copied ? '✓ Copied' : <><Clipboard className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Copy Report Text</>}
             </button>
           </div>
 

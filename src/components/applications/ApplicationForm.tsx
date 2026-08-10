@@ -1,3 +1,4 @@
+import { AlertTriangle, BarChart, FileText, Mic, Save, Sparkles } from 'lucide-react';
 import React, { useState } from 'react';
 import { APPLICATION_STATUSES, type Application, type ApplicationFormData, type ApplicationStatus } from '../../types';
 
@@ -104,24 +105,25 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {errors.form && (
         <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '10px 14px', borderRadius: 12, fontSize: 13, fontWeight: 600 }}>
-          ⚠️ {errors.form}
+          <AlertTriangle className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> {errors.form}
         </div>
       )}
-      {/* Spacious 2-Column Section Layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+
+      {/* Responsive 2-Column Section Layout */}
+      <div className="modal-form-grid">
         {/* Left Column: Company & Role */}
         <div
           style={{
-            background: '#f8fafc',
+            background: '#ffffff',
             border: '1px solid var(--border)',
-            borderRadius: 16,
-            padding: 18,
+            borderRadius: 14,
+            padding: 16,
             display: 'flex',
             flexDirection: 'column',
-            gap: 14,
+            gap: 12,
           }}
         >
           <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -166,17 +168,17 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
         {/* Right Column: Status & Timeline */}
         <div
           style={{
-            background: '#f8fafc',
+            background: '#ffffff',
             border: '1px solid var(--border)',
-            borderRadius: 16,
-            padding: 18,
+            borderRadius: 14,
+            padding: 16,
             display: 'flex',
             flexDirection: 'column',
-            gap: 14,
+            gap: 12,
           }}
         >
           <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            📊 Pipeline & Timeline
+            <BarChart className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Pipeline & Timeline
           </div>
 
           <div>
@@ -190,7 +192,7 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
             </select>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div className="modal-form-grid-compact">
             <div>
               <label className="lbl">Applied Date</label>
               <input type="date" className="inp" value={form.appliedDate} onChange={set('appliedDate')} />
@@ -202,7 +204,7 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div className="modal-form-grid-compact">
             <div>
               <label className="lbl">Job URL</label>
               <input type="url" className="inp" placeholder="https://..." value={form.jobLink} onChange={set('jobLink')} />
@@ -216,10 +218,10 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
         </div>
       </div>
 
-      {/* Spacious 2-Column Notes Section */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <div style={{ background: '#f8fafc', border: '1px solid var(--border)', borderRadius: 16, padding: 18 }}>
-          <label className="lbl">📝 Application Notes</label>
+      {/* Responsive Notes Section */}
+      <div className="modal-form-grid">
+        <div style={{ background: '#ffffff', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+          <label className="lbl"><FileText className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Application Notes</label>
           <textarea
             className="inp"
             rows={3}
@@ -230,8 +232,8 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
           />
         </div>
 
-        <div style={{ background: '#f8fafc', border: '1px solid var(--border)', borderRadius: 16, padding: 18 }}>
-          <label className="lbl">🎙️ Interview Notes</label>
+        <div style={{ background: '#ffffff', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+          <label className="lbl"><Mic className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Interview Notes</label>
           <textarea
             className="inp"
             rows={3}
@@ -247,17 +249,18 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
       <div
         style={{
           display: 'flex',
-          gap: 12,
+          gap: 10,
           justifyContent: 'flex-end',
-          paddingTop: 16,
+          paddingTop: 14,
           borderTop: '1px solid var(--border)',
+          marginTop: 4,
         }}
       >
-        <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={loading}>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={onCancel} disabled={loading} style={{ borderRadius: 10 }}>
           Cancel (Esc)
         </button>
-        <button type="submit" className="btn btn-primary" disabled={loading} style={{ padding: '10px 24px' }}>
-          {loading ? 'Saving…' : initial ? '💾 Save Changes' : '✨ Add Application'}
+        <button type="submit" className="btn btn-primary btn-sm" disabled={loading} style={{ padding: '8px 20px', borderRadius: 10 }}>
+          {loading ? 'Saving…' : initial ? <><Save className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Save Changes</> : <><Sparkles className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Add Application</>}
         </button>
       </div>
     </form>

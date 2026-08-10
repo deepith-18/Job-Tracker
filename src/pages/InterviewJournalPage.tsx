@@ -1,3 +1,4 @@
+import { Pencil, Mic, FileText, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
@@ -79,7 +80,7 @@ export const InterviewJournalPage: React.FC = () => {
 
     try {
       await updateApplication(log.appId, { interviewNotes: '' });
-      addToast('Log Deleted 🗑️', `Removed interview log for ${log.company}`, 'info');
+      addToast('Log Deleted', `Removed interview log for ${log.company}`, 'info');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error deleting log';
       addToast('Error', msg, 'error');
@@ -111,7 +112,7 @@ export const InterviewJournalPage: React.FC = () => {
       });
 
       addToast(
-        isEdit ? 'Interview Log Updated ✏️' : 'Interview Logged 🎙️',
+        isEdit ? <>Interview Log Updated <Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></> : <>Interview Logged <Mic className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></>,
         `Saved entry for ${app.company}`,
         'success'
       );
@@ -143,7 +144,7 @@ export const InterviewJournalPage: React.FC = () => {
       <div className="ph" style={{ paddingBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h1 className="page-title">🎙️ Interview Journal</h1>
+            <h1 className="page-title"><Mic className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Interview Journal</h1>
             <p className="page-sub">
               Log, edit, and manage technical interview questions and prep notes across your pipeline
             </p>
@@ -204,7 +205,7 @@ export const InterviewJournalPage: React.FC = () => {
               textAlign: 'center',
             }}
           >
-            <div style={{ fontSize: 36, marginBottom: 12 }}>📝</div>
+            <div style={{ fontSize: 36, marginBottom: 12 }}><FileText className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></div>
             <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--t1)' }}>No interview logs yet</h3>
             <p style={{ fontSize: 13.5, color: 'var(--t2)', maxWidth: 360, margin: '6px auto 20px' }}>
               Log interview questions and feedback as you progress through technical screenings.
@@ -261,7 +262,7 @@ export const InterviewJournalPage: React.FC = () => {
                         padding: '2px 4px',
                       }}
                     >
-                      ✏️
+                      <Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
                     </button>
                     <button
                       onClick={() => handleDeleteLog(log)}
@@ -274,7 +275,7 @@ export const InterviewJournalPage: React.FC = () => {
                         padding: '2px 4px',
                       }}
                     >
-                      🗑️
+                      <Trash2 className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
                     </button>
                   </div>
                 </div>
@@ -321,7 +322,7 @@ export const InterviewJournalPage: React.FC = () => {
               exit={{ scale: 0.95, opacity: 0 }}
             >
               <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-                {logModal.editLog ? '✏️ Edit Interview Log' : '🎙️ Log Interview Round'}
+                {logModal.editLog ? <><Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Edit Interview Log</> : <><Mic className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Log Interview Round</>}
               </h2>
 
               <form onSubmit={handleSaveInterviewLog} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

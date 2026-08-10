@@ -1,3 +1,4 @@
+import { Clipboard, Zap, Mic, Trophy, X, AlertTriangle, Clock, PartyPopper } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { format, differenceInDays, isToday, isPast, isFuture } from 'date-fns';
@@ -14,7 +15,7 @@ const STATUS_BAR: Record<ApplicationStatus, string> = {
   Interview: '#f59e0b', Offer: '#10b981', Rejected: '#ef4444', Withdrawn: '#94a3b8',
 };
 
-interface StatProps { icon: string; label: string; value: number | string; sub?: string; bg: string; delay: number; }
+interface StatProps { icon: React.ReactNode; label: string; value: number | string; sub?: string; bg: string; delay: number; }
 const Stat: React.FC<StatProps> = ({ icon, label, value, sub, bg, delay }) => (
   <motion.div className="stat" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay, duration: 0.3, ease: [0.16,1,0.3,1] }}>
     <div className="stat-icon" style={{ background: bg }}>
@@ -113,7 +114,7 @@ export const MissionControlPage: React.FC = () => {
             {stats.total === 0
               ? "Start your job hunt — log your first application!"
               : stats.offers > 0
-              ? `You have ${stats.offers} offer${stats.offers > 1 ? 's' : ''}! 🎉 Keep the momentum going.`
+              ? `You have ${stats.offers} offer${stats.offers > 1 ? 's' : ''}! <PartyPopper className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Keep the momentum going.`
               : stats.interviews > 0
               ? `${stats.interviews} interview${stats.interviews > 1 ? 's' : ''} in progress — you're doing great!`
               : `${stats.active} active application${stats.active !== 1 ? 's' : ''} — stay consistent!`}
@@ -154,7 +155,7 @@ export const MissionControlPage: React.FC = () => {
                   Only <strong style={{ color:'var(--accent)' }}>{remaining}</strong> more to reach your goal of {goal}!
                 </p>
               ) : (
-                <p style={{ fontSize:13, color:'var(--success)', fontWeight:700 }}>🎉 Goal reached! Set a new one?</p>
+                <p style={{ fontSize:13, color:'var(--success)', fontWeight:700 }}><PartyPopper className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Goal reached! Set a new one?</p>
               )}
             </div>
             {editGoal ? (
@@ -164,7 +165,7 @@ export const MissionControlPage: React.FC = () => {
                   value={goalInput} onChange={e => setGoalInput(e.target.value)} autoFocus
                 />
                 <button className="btn btn-primary btn-sm" onClick={handleGoalSave}>Set</button>
-                <button className="btn btn-ghost btn-sm" onClick={() => setEditGoal(false)}>✕</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => setEditGoal(false)}><X className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></button>
               </div>
             ) : (
               <button className="btn btn-ghost btn-sm" onClick={() => { setGoalInput(String(goal)); setEditGoal(true); }}>
@@ -190,11 +191,11 @@ export const MissionControlPage: React.FC = () => {
 
         {/* ── Stat Cards ── */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))', gap:14, marginBottom:24 }}>
-          <Stat delay={0.1} icon="📋" label="Total Applied" value={stats.total} bg="#eef2ff" />
-          <Stat delay={0.15} icon="⚡" label="Active" value={stats.active} sub="Applied + OA" bg="#f5f3ff" />
-          <Stat delay={0.2} icon="🎙" label="Interviews" value={stats.interviews} bg="#fffbeb" />
-          <Stat delay={0.25} icon="🏆" label="Offers" value={stats.offers} sub={stats.total > 0 ? `${Math.round((stats.offers/stats.total)*100)}% rate` : ''} bg="#f0fdf4" />
-          <Stat delay={0.3} icon="✕" label="Rejections" value={stats.rejected} bg="#fff1f2" />
+          <Stat delay={0.1} icon={<Clipboard className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />} label="Total Applied" value={stats.total} bg="#eef2ff" />
+          <Stat delay={0.15} icon={<Zap className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />} label="Active" value={stats.active} sub="Applied + OA" bg="#f5f3ff" />
+          <Stat delay={0.2} icon={<Mic className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />} label="Interviews" value={stats.interviews} bg="#fffbeb" />
+          <Stat delay={0.25} icon={<Trophy className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />} label="Offers" value={stats.offers} sub={stats.total > 0 ? `${Math.round((stats.offers/stats.total)*100)}% rate` : ''} bg="#f0fdf4" />
+          <Stat delay={0.3} icon={<X className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />} label="Rejections" value={stats.rejected} bg="#fff1f2" />
         </div>
 
         {/* ── Overdue alert ── */}
@@ -203,7 +204,7 @@ export const MissionControlPage: React.FC = () => {
             initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
             style={{ background:'#fff7ed', border:'1px solid #fed7aa', borderRadius:12, padding:'14px 18px', display:'flex', alignItems:'center', gap:12, marginBottom:24 }}
           >
-            <span style={{ fontSize:22 }}>⚠️</span>
+            <span style={{ fontSize:22 }}><AlertTriangle className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></span>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:14, fontWeight:700, color:'#9a3412' }}>{stats.overdue.length} overdue deadline{stats.overdue.length > 1 ? 's' : ''} need attention</div>
               <div style={{ fontSize:12.5, color:'#c2410c', marginTop:2 }}>{stats.overdue.map(a => a.company).join(' · ')}</div>
@@ -216,11 +217,11 @@ export const MissionControlPage: React.FC = () => {
           {/* ── Upcoming Deadlines ── */}
           <motion.div className="card" style={{ padding:'20px' }} initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.2, duration:0.35 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
-              <h3 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:14, fontWeight:800, color:'var(--t1)' }}>⏰ Upcoming Deadlines</h3>
+              <h3 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:14, fontWeight:800, color:'var(--t1)' }}><Clock className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Upcoming Deadlines</h3>
               <Link to="/applications" style={{ fontSize:12, color:'var(--accent)', fontWeight:600 }}>All →</Link>
             </div>
             {stats.upcoming.length === 0 ? (
-              <div style={{ textAlign:'center', padding:'20px 0', fontSize:13, color:'var(--t3)' }}>🎉 No upcoming deadlines</div>
+              <div style={{ textAlign:'center', padding:'20px 0', fontSize:13, color:'var(--t3)' }}><PartyPopper className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> No upcoming deadlines</div>
             ) : (
               <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                 {stats.upcoming.map(app => {

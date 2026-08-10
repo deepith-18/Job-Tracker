@@ -1,3 +1,4 @@
+import { Rocket, Mic, DollarSign, Flame } from 'lucide-react';
 import React from 'react';
 import { motion } from 'framer-motion';
 import { AppShell } from '../components/layout/AppShell';
@@ -7,7 +8,7 @@ interface Badge {
   id: string;
   title: string;
   desc: string;
-  icon: string;
+  icon: React.ReactNode;
   unlocked: boolean;
   progress: number; // 0 - 100
 }
@@ -22,9 +23,9 @@ export const AchievementsPage: React.FC = () => {
   const badges: Badge[] = [
     {
       id: '1',
-      title: '🚀 First Flight',
+      title: <><Rocket className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> First Flight</>,
       desc: 'Submit your first job application',
-      icon: '🚀',
+      icon: <Rocket className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />,
       unlocked: appCount >= 1,
       progress: Math.min(100, (appCount / 1) * 100),
     },
@@ -38,25 +39,25 @@ export const AchievementsPage: React.FC = () => {
     },
     {
       id: '3',
-      title: '🎙️ Interview Ace',
+      title: <><Mic className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Interview Ace</>,
       desc: 'Advance to 3 technical interview rounds',
-      icon: '🎙️',
+      icon: <Mic className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />,
       unlocked: interviewCount >= 3,
       progress: Math.min(100, (interviewCount / 3) * 100),
     },
     {
       id: '4',
-      title: '💰 Offer Winner',
+      title: <><DollarSign className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Offer Winner</>,
       desc: 'Secure a official job offer package',
-      icon: '💰',
+      icon: <DollarSign className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />,
       unlocked: offerCount >= 1,
       progress: Math.min(100, (offerCount / 1) * 100),
     },
     {
       id: '5',
-      title: '🔥 Streak Master',
+      title: <><Flame className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Streak Master</>,
       desc: 'Maintain a active submission streak for 7 days',
-      icon: '🔥',
+      icon: <Flame className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />,
       unlocked: appCount >= 5,
       progress: Math.min(100, (appCount / 5) * 100),
     },

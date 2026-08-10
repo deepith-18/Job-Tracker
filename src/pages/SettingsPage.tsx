@@ -1,3 +1,4 @@
+import { Settings, Clipboard, Lightbulb, Save } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { AppShell } from '../components/layout/AppShell';
@@ -37,9 +38,9 @@ export const SettingsPage: React.FC = () => {
         remotePref,
         emailAlerts,
       });
-      addToast('Settings Saved ⚙️', 'Preferences saved to cloud — synced across all devices', 'success');
+      addToast('Settings Saved', 'Preferences saved to cloud — synced across all devices', 'success');
     } catch {
-      addToast('Save Failed ⚠️', 'Could not save settings to Firestore. Check your connection.', 'error');
+      addToast('Save Failed', 'Could not save settings to Firestore. Check your connection.', 'error');
     } finally {
       setSaving(false);
     }
@@ -49,7 +50,7 @@ export const SettingsPage: React.FC = () => {
     <AppShell>
       {/* Header */}
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title">⚙️ ApplyFlow Settings & Preferences</h1>
+        <h1 className="page-title"><Settings className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> ApplyFlow Settings & Preferences</h1>
         <p className="page-sub">
           Manage career target preferences, notifications, and profile configurations
         </p>
@@ -116,17 +117,17 @@ export const SettingsPage: React.FC = () => {
                   onClick={() => {
                     if (user?.uid) {
                       navigator.clipboard.writeText(user.uid);
-                      addToast('UID Copied! 📋', 'Compare this UID with your mobile device', 'success');
+                      addToast('UID Copied!', 'Compare this UID with your mobile device', 'success');
                     }
                   }}
                 >
-                  📋 Copy UID
+                  <Clipboard className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Copy UID
                 </button>
               </div>
             </div>
 
             <div style={{ marginTop: 10, fontSize: 11.5, color: 'var(--t3)', lineHeight: 1.4 }}>
-              💡 <strong>Universal Email Sync Active:</strong> Applications and documents are automatically synced across devices for <strong>{user?.email}</strong> regardless of login provider (Email/Password or Google button).
+              <Lightbulb className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> <strong>Universal Email Sync Active:</strong> Applications and documents are automatically synced across devices for <strong>{user?.email}</strong> regardless of login provider (Email/Password or Google button).
             </div>
           </div>
 
@@ -177,7 +178,7 @@ export const SettingsPage: React.FC = () => {
 
             <div style={{ marginTop: 10, paddingTop: 16, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
               <button type="submit" className="btn btn-primary" disabled={saving} style={{ padding: '10px 24px', borderRadius: 12 }}>
-                {saving ? '💾 Saving…' : '💾 Save Preferences'}
+                {saving ? <><Save className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Saving…</> : <><Save className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Save Preferences</>}
               </button>
             </div>
           </form>

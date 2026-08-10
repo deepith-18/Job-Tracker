@@ -1,3 +1,4 @@
+import { Target, Rocket, Mic } from 'lucide-react';
 import React, { useState } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 import { useApplications } from '../hooks/useApplications';
@@ -44,7 +45,7 @@ export const GoalTrackerPage: React.FC = () => {
     <AppShell>
       {/* Header */}
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title">🎯 Career Goals & Data Backup Center</h1>
+        <h1 className="page-title"><Target className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Career Goals & Data Backup Center</h1>
         <p className="page-sub">
           Set weekly application velocity goals, track milestone targets, and export data backups
         </p>
@@ -57,7 +58,7 @@ export const GoalTrackerPage: React.FC = () => {
           <div className="card" style={{ padding: 22 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-                🚀 Weekly Submission Goal
+                <Rocket className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Weekly Submission Goal
               </h3>
               <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent)' }}>
                 {currentWeeklyCount} / {weeklyTarget} Apps
@@ -93,7 +94,7 @@ export const GoalTrackerPage: React.FC = () => {
           <div className="card" style={{ padding: 22 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-                🎙️ Monthly Interview Goal
+                <Mic className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Monthly Interview Goal
               </h3>
               <span style={{ fontSize: 13, fontWeight: 800, color: '#10b981' }}>
                 {currentInterviewsCount} / {monthlyInterviewTarget} Rounds

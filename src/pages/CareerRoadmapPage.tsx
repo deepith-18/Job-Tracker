@@ -1,3 +1,4 @@
+import { DollarSign, Rocket } from 'lucide-react';
 import React, { useState } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 
@@ -79,7 +80,7 @@ export const CareerRoadmapPage: React.FC = () => {
               {activeData.title}
             </h2>
             <span style={{ fontSize: 13, fontWeight: 800, color: '#10b981', background: '#ecfdf5', padding: '4px 12px', borderRadius: 10 }}>
-              💰 {activeData.comp}
+              <DollarSign className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> {activeData.comp}
             </span>
           </div>
 
@@ -99,7 +100,7 @@ export const CareerRoadmapPage: React.FC = () => {
             {/* 30-60-90 Day Onboarding Plan */}
             <div style={{ background: '#f8fafc', padding: 18, borderRadius: 14, border: '1px solid var(--border)' }}>
               <div style={{ fontSize: 12, fontWeight: 800, color: '#8b5cf6', textTransform: 'uppercase', marginBottom: 10 }}>
-                🚀 30-60-90 Day Onboarding Roadmap:
+                <Rocket className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> 30-60-90 Day Onboarding Roadmap:
               </div>
               <ul style={{ paddingLeft: 18, margin: 0, fontSize: 12.5, color: 'var(--t1)', lineHeight: 1.6 }}>
                 {activeData.onboarding.map((step, idx) => (

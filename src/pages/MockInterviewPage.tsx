@@ -1,3 +1,4 @@
+import { Sparkles, BarChart, Mic, Lightbulb } from 'lucide-react';
 import React, { useState } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 import { useToast } from '../components/ui/ToastContext';
@@ -32,7 +33,7 @@ export const MockInterviewPage: React.FC = () => {
     setActiveQuestion(nextQ);
     setUserAnswer('');
     setEvaluation(null);
-    addToast('New Question Generated 🎙️', topicFocus, 'info');
+    addToast('New Question Generated', topicFocus, 'info');
   };
 
   const handleEvaluateAnswer = (e: React.FormEvent) => {
@@ -70,7 +71,7 @@ export const MockInterviewPage: React.FC = () => {
       });
 
       setEvaluating(false);
-      addToast('Answer Evaluated 🎯', `Grade: ${score >= 75 ? 'A' : 'B'}`, 'success');
+      addToast('Answer Evaluated', `Grade: ${score >= 75 ? 'A' : 'B'}`, 'success');
     }, 600);
   };
 
@@ -127,7 +128,7 @@ export const MockInterviewPage: React.FC = () => {
             />
 
             <button type="submit" disabled={evaluating} className="btn btn-primary" style={{ borderRadius: 12 }}>
-              {evaluating ? 'Evaluating Response…' : '✨ Submit & Evaluate Answer'}
+              {evaluating ? 'Evaluating Response…' : <><Sparkles className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Submit & Evaluate Answer</>}
             </button>
           </form>
         </div>
@@ -135,12 +136,12 @@ export const MockInterviewPage: React.FC = () => {
         {/* Right Column: AI Feedback & STAR Analysis */}
         <div className="card" style={{ padding: 22, display: 'flex', flexDirection: 'column' }}>
           <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-            📊 Response Evaluation Report
+            <BarChart className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Response Evaluation Report
           </h3>
 
           {!evaluation ? (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--t3)' }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>🎙️</div>
+              <div style={{ fontSize: 32, marginBottom: 8 }}><Mic className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></div>
               <p style={{ fontSize: 13 }}>Type your response on the left and click Evaluate to see feedback.</p>
             </div>
           ) : (
@@ -181,7 +182,7 @@ export const MockInterviewPage: React.FC = () => {
               {/* Feedback Points */}
               <div>
                 <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--t2)', textTransform: 'uppercase', marginBottom: 8 }}>
-                  💡 Coaching Feedback:
+                  <Lightbulb className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Coaching Feedback:
                 </div>
                 <ul style={{ paddingLeft: 18, margin: 0, fontSize: 13, color: 'var(--t1)', lineHeight: 1.6 }}>
                   {evaluation.feedback.map((f, i) => (

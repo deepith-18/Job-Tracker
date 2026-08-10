@@ -1,3 +1,4 @@
+import { AlertTriangle, Rocket, Sparkles, CheckCircle2, Calendar, FileText, Target, TrendingUp, Compass, Eye, EyeOff, Activity, Layers } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,7 +28,6 @@ export const AuthPage: React.FC = () => {
   const navigate = useNavigate();
   const { addToast } = useToast();
 
-  // If user is already authenticated (e.g. returning from mobile Google redirect), auto-redirect to dashboard
   useEffect(() => {
     if (user && !authLoading) {
       navigate('/dashboard', { replace: true });
@@ -37,6 +37,10 @@ export const AuthPage: React.FC = () => {
   const [mode, setMode] = useState<'login' | 'signup'>(
     location.pathname === '/signup' ? 'signup' : 'login'
   );
+
+  useEffect(() => {
+    setMode(location.pathname === '/signup' ? 'signup' : 'login');
+  }, [location.pathname]);
 
   // Form states
   const [email, setEmail] = useState('');
@@ -74,7 +78,7 @@ export const AuthPage: React.FC = () => {
         addToast('Welcome back! 👋', 'Signed in successfully', 'success');
       } else {
         await signUpWithEmail(email, password);
-        addToast('Account created! 🚀', 'Welcome to CareerOS', 'success');
+        addToast('Account created!', 'Welcome to ApplyFlow', 'success');
       }
       navigate('/dashboard');
     } catch (err: unknown) {
@@ -110,57 +114,265 @@ export const AuthPage: React.FC = () => {
     }
   };
 
+  const switchMode = (newMode: 'login' | 'signup') => {
+    setMode(newMode);
+    setError('');
+    navigate(newMode === 'signup' ? '/signup' : '/login', { replace: true });
+  };
+
   return (
     <div className="aurora-auth-root">
-      {/* Dynamic Aurora Ambient Blobs */}
+      {/* Background Subtle Tech Grid */}
+      <div className="auth-grid-bg" />
+
+      {/* Ambient Lighting Glow Blobs */}
       <div className="aurora-blob blob-1" />
       <div className="aurora-blob blob-2" />
       <div className="aurora-blob blob-3" />
 
-      {/* Main Glass Center Card */}
+      {/* SVG Network Connection Lines with Tiny Traveling Cyan Particles */}
+      <svg className="auth-network-svg" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 5 }}>
+        {/* Curved connection paths between floating card positions */}
+        <path d="M 120 180 Q 300 240 460 320" stroke="rgba(99, 102, 241, 0.2)" strokeWidth="1.5" fill="none" strokeDasharray="4 6" />
+        <path d="M 1250 180 Q 1050 260 880 340" stroke="rgba(99, 102, 241, 0.2)" strokeWidth="1.5" fill="none" strokeDasharray="4 6" />
+        <path d="M 160 720 Q 360 620 460 520" stroke="rgba(99, 102, 241, 0.2)" strokeWidth="1.5" fill="none" strokeDasharray="4 6" />
+        <path d="M 1200 700 Q 1000 600 880 500" stroke="rgba(99, 102, 241, 0.2)" strokeWidth="1.5" fill="none" strokeDasharray="4 6" />
+
+        {/* Traveling Cyan Particles */}
+        <circle r="3" fill="#22D3EE">
+          <animateMotion path="M 120 180 Q 300 240 460 320" dur="12s" repeatCount="indefinite" />
+        </circle>
+        <circle r="2.5" fill="#6366F1">
+          <animateMotion path="M 1250 180 Q 1050 260 880 340" dur="14s" repeatCount="indefinite" />
+        </circle>
+        <circle r="3" fill="#22D3EE">
+          <animateMotion path="M 160 720 Q 360 620 460 520" dur="10s" repeatCount="indefinite" />
+        </circle>
+        <circle r="2.5" fill="#8B5CF6">
+          <animateMotion path="M 1200 700 Q 1000 600 880 500" dur="15s" repeatCount="indefinite" />
+        </circle>
+      </svg>
+
+      {/* Floating AI Career Network Cards */}
+      <AnimatePresence mode="wait">
+        {mode === 'login' ? (
+          <motion.div
+            key="login-network"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8 }}
+            style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+          >
+            {/* Card 1: AI Match (Top Left) */}
+            <motion.div
+              className="floating-card-item"
+              style={{ top: '16%', left: '8%' }}
+              animate={{ y: [0, -10, 0], x: [0, 6, 0] }}
+              transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(34, 211, 238, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#22D3EE', flexShrink: 0 }}>
+                <Sparkles size={18} />
+              </div>
+              <div>
+                <div className="floating-card-tag"><Sparkles size={10} /> AI MATCH</div>
+                <div className="floating-card-title">94% Strong Match</div>
+                <div className="floating-card-sub">Senior Frontend Engineer • Google</div>
+              </div>
+            </motion.div>
+
+            {/* Card 2: Application (Top Right) */}
+            <motion.div
+              className="floating-card-item"
+              style={{ top: '18%', right: '9%' }}
+              animate={{ y: [0, 12, 0], x: [0, -8, 0] }}
+              transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(99, 102, 241, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#818CF8', flexShrink: 0 }}>
+                <CheckCircle2 size={18} />
+              </div>
+              <div>
+                <div className="floating-card-tag" style={{ color: '#818CF8' }}>APPLICATION</div>
+                <div className="floating-card-title">Software Engineer</div>
+                <div className="floating-card-sub">Applied 2h ago • Stripe</div>
+              </div>
+            </motion.div>
+
+            {/* Card 3: Interview (Bottom Left) */}
+            <motion.div
+              className="floating-card-item floating-card-desktop-only"
+              style={{ bottom: '20%', left: '10%' }}
+              animate={{ y: [0, 8, 0], x: [0, -6, 0] }}
+              transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(245, 158, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F59E0B', flexShrink: 0 }}>
+                <Calendar size={18} />
+              </div>
+              <div>
+                <div className="floating-card-tag" style={{ color: '#F59E0B' }}>INTERVIEW</div>
+                <div className="floating-card-title">Technical Round</div>
+                <div className="floating-card-sub">Tomorrow 10:30 AM</div>
+              </div>
+            </motion.div>
+
+            {/* Card 4: Career Pipeline (Bottom Right) */}
+            <motion.div
+              className="floating-card-item floating-card-desktop-only"
+              style={{ bottom: '22%', right: '11%' }}
+              animate={{ y: [0, -10, 0], x: [0, 8, 0] }}
+              transition={{ duration: 13, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(139, 92, 246, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#A78BFA', flexShrink: 0 }}>
+                <Activity size={18} />
+              </div>
+              <div>
+                <div className="floating-card-tag" style={{ color: '#A78BFA' }}>CAREER PIPELINE</div>
+                <div className="floating-card-title">Applied → Screening → Interview → Offer</div>
+                <div className="floating-card-sub">12 Active Opportunities</div>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="signup-network"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8 }}
+            style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+          >
+            {/* Card 1: Resume OS (Top Left) */}
+            <motion.div
+              className="floating-card-item"
+              style={{ top: '16%', left: '8%' }}
+              animate={{ y: [0, -10, 0], x: [0, 6, 0] }}
+              transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(34, 211, 238, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#22D3EE', flexShrink: 0 }}>
+                <FileText size={18} />
+              </div>
+              <div>
+                <div className="floating-card-tag"><Sparkles size={10} /> RESUME OS</div>
+                <div className="floating-card-title">+ Resume Version</div>
+                <div className="floating-card-sub">ATS Tailored & Ready</div>
+              </div>
+            </motion.div>
+
+            {/* Card 2: Skills Matrix (Top Right) */}
+            <motion.div
+              className="floating-card-item"
+              style={{ top: '18%', right: '9%' }}
+              animate={{ y: [0, 12, 0], x: [0, -8, 0] }}
+              transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(99, 102, 241, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#818CF8', flexShrink: 0 }}>
+                <Target size={18} />
+              </div>
+              <div>
+                <div className="floating-card-tag" style={{ color: '#818CF8' }}>SKILLS MATRIX</div>
+                <div className="floating-card-title">+ Skills Analyzed</div>
+                <div className="floating-card-sub">React • Node • Systems</div>
+              </div>
+            </motion.div>
+
+            {/* Card 3: Pipeline Tracking (Bottom Left) */}
+            <motion.div
+              className="floating-card-item floating-card-desktop-only"
+              style={{ bottom: '20%', left: '10%' }}
+              animate={{ y: [0, 8, 0], x: [0, -6, 0] }}
+              transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10B981', flexShrink: 0 }}>
+                <TrendingUp size={18} />
+              </div>
+              <div>
+                <div className="floating-card-tag" style={{ color: '#10B981' }}>PIPELINE TRACKING</div>
+                <div className="floating-card-title">+ Applications Active</div>
+                <div className="floating-card-sub">Auto Status Tracking</div>
+              </div>
+            </motion.div>
+
+            {/* Card 4: Career Goals (Bottom Right) */}
+            <motion.div
+              className="floating-card-item floating-card-desktop-only"
+              style={{ bottom: '22%', right: '11%' }}
+              animate={{ y: [0, -10, 0], x: [0, 8, 0] }}
+              transition={{ duration: 13, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(139, 92, 246, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#A78BFA', flexShrink: 0 }}>
+                <Compass size={18} />
+              </div>
+              <div>
+                <div className="floating-card-tag" style={{ color: '#A78BFA' }}>CAREER GOALS</div>
+                <div className="floating-card-title">+ Career Goals Active</div>
+                <div className="floating-card-sub">Targeting Staff / Lead</div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Glassmorphism Authentication Card */}
       <motion.div
         className="auth-glass-card"
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        initial={{ opacity: 0, scale: 0.96, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       >
-        {/* Header Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+        {/* Logo & Product Header */}
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <div
+            className="auth-logo-pulse"
             style={{
-              width: 56,
-              height: 56,
+              width: 52,
+              height: 52,
               borderRadius: 16,
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899)',
-              boxShadow: '0 10px 30px rgba(99, 102, 241, 0.45)',
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              marginBottom: 12,
+              marginBottom: 10,
             }}
           >
-            <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#ffffff" strokeWidth={2.5}>
+            <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#ffffff" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
             </svg>
           </div>
 
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
+          <h1 style={{ fontSize: 25, fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.02em', margin: 0 }}>
             ApplyFlow
           </h1>
-          <p style={{ fontSize: 13.5, color: '#a5b4fc', marginTop: 4, margin: 0 }}>
+          <p style={{ fontSize: 13, color: '#a5b4fc', marginTop: 3, margin: 0, fontWeight: 500 }}>
             Smart Job Tracker & Career Pipeline OS
           </p>
+
+          {/* Headline Message Badge */}
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              background: 'rgba(99, 102, 241, 0.12)',
+              border: '1px solid rgba(99, 102, 241, 0.25)',
+              borderRadius: 20,
+              padding: '4px 12px',
+              fontSize: 11.5,
+              fontWeight: 600,
+              color: '#22d3ee',
+              marginTop: 12,
+            }}
+          >
+            <Layers size={12} />
+            {mode === 'login' ? 'Welcome back to your career pipeline.' : 'Build your personal career operating system.'}
+          </div>
         </div>
 
-        {/* Liquid Glass Mode Toggle Tabs */}
+        {/* Tab Switcher */}
         <div className="auth-tab-bar">
           <button
             type="button"
             className={`auth-tab ${mode === 'login' ? 'active' : ''}`}
-            onClick={() => {
-              setMode('login');
-              setError('');
-            }}
+            onClick={() => switchMode('login')}
           >
             Sign In
             {mode === 'login' && <motion.div className="tab-indicator" layoutId="authTab" />}
@@ -168,18 +380,15 @@ export const AuthPage: React.FC = () => {
           <button
             type="button"
             className={`auth-tab ${mode === 'signup' ? 'active' : ''}`}
-            onClick={() => {
-              setMode('signup');
-              setError('');
-            }}
+            onClick={() => switchMode('signup')}
           >
             Create Account
             {mode === 'signup' && <motion.div className="tab-indicator" layoutId="authTab" />}
           </button>
         </div>
 
-        {/* Form Container */}
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
             <label className="auth-label">Email Address</label>
             <input
@@ -208,6 +417,7 @@ export const AuthPage: React.FC = () => {
                 type="button"
                 onClick={() => setShowPw((v) => !v)}
                 tabIndex={-1}
+                aria-label={showPw ? "Hide password" : "Show password"}
                 style={{
                   position: 'absolute',
                   right: 12,
@@ -218,9 +428,11 @@ export const AuthPage: React.FC = () => {
                   color: '#94a3b8',
                   cursor: 'pointer',
                   fontSize: 14,
+                  display: 'flex',
+                  alignItems: 'center',
                 }}
               >
-                {showPw ? '🙈' : '👁️'}
+                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
 
@@ -266,7 +478,7 @@ export const AuthPage: React.FC = () => {
             </motion.div>
           )}
 
-          {/* Error alert */}
+          {/* Error Alert */}
           <AnimatePresence>
             {error && (
               <motion.div
@@ -286,37 +498,40 @@ export const AuthPage: React.FC = () => {
                   gap: 8,
                 }}
               >
-                <span>⚠️</span>
+                <span><AlertTriangle className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></span>
                 <span>{error}</span>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Submit Button */}
+          {/* Primary Action Button */}
           <Button
             type="submit"
             variant="primary"
             size="lg"
             loading={loading}
             style={{
-              marginTop: 6,
+              marginTop: 4,
               background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #8b5cf6 100%)',
-              boxShadow: '0 8px 24px rgba(99, 102, 241, 0.4)',
-              borderRadius: 14,
-              fontSize: 14.5,
+              boxShadow: '0 8px 24px rgba(99, 102, 241, 0.45)',
+              borderRadius: 12,
+              fontSize: 14,
               fontWeight: 800,
+              padding: '12px 20px',
             }}
           >
-            {mode === 'login' ? 'Sign In to Dashboard 🚀' : 'Create Free Account 🚀'}
+            {mode === 'login' ? <>Sign In to Dashboard <Rocket className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></> : <>Create Free Account <Rocket className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></>}
           </Button>
         </form>
 
+        {/* Divider */}
         <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0 16px', gap: 10 }}>
-          <div style={{ flex: 1, height: 1, backgroundColor: 'rgba(255, 255, 255, 0.12)' }} />
-          <span style={{ fontSize: 11, color: '#a5b4fc', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>or continue with</span>
-          <div style={{ flex: 1, height: 1, backgroundColor: 'rgba(255, 255, 255, 0.12)' }} />
+          <div style={{ flex: 1, height: 1, backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
+          <span style={{ fontSize: 10.5, color: '#a5b4fc', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>or continue with</span>
+          <div style={{ flex: 1, height: 1, backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
         </div>
 
+        {/* Google Authentication Button */}
         <Button
           type="button"
           onClick={handleGoogleSignIn}
@@ -325,10 +540,10 @@ export const AuthPage: React.FC = () => {
           loading={googleLoading}
           style={{
             width: '100%',
-            background: 'rgba(255, 255, 255, 0.06)',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(99, 102, 241, 0.25)',
             color: '#ffffff',
-            borderRadius: 14,
+            borderRadius: 12,
             fontSize: 14,
             fontWeight: 700,
             display: 'flex',
@@ -347,17 +562,14 @@ export const AuthPage: React.FC = () => {
           Google
         </Button>
 
-        {/* Footer info */}
-        <div style={{ marginTop: 24, textAlign: 'center', fontSize: 12.5, color: '#a5b4fc' }}>
+        {/* Footer Toggle */}
+        <div style={{ marginTop: 22, textAlign: 'center', fontSize: 12.5, color: '#a5b4fc' }}>
           {mode === 'login' ? (
             <span>
               Don't have an account?{' '}
               <button
                 type="button"
-                onClick={() => {
-                  setMode('signup');
-                  setError('');
-                }}
+                onClick={() => switchMode('signup')}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -375,10 +587,7 @@ export const AuthPage: React.FC = () => {
               Already have an account?{' '}
               <button
                 type="button"
-                onClick={() => {
-                  setMode('login');
-                  setError('');
-                }}
+                onClick={() => switchMode('login')}
                 style={{
                   background: 'none',
                   border: 'none',

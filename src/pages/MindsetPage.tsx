@@ -1,3 +1,4 @@
+import { CheckCircle } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 
@@ -80,7 +81,7 @@ export const MindsetPage: React.FC = () => {
         {/* Readiness Checklist */}
         <div className="card" style={{ padding: 22 }}>
           <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', marginBottom: 14 }}>
-            ✅ Pre-Interview 10-Minute Readiness Checklist
+            <CheckCircle className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Pre-Interview 10-Minute Readiness Checklist
           </h3>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

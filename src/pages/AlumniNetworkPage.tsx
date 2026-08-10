@@ -1,3 +1,4 @@
+import { Handshake, Sparkles, Clipboard } from 'lucide-react';
 import React, { useState } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 import { useToast } from '../components/ui/ToastContext';
@@ -34,7 +35,7 @@ Candidate`;
   const handleCopyMessage = () => {
     navigator.clipboard.writeText(generatedMessage);
     setCopied(true);
-    addToast('Message Copied 📋', 'Ready for LinkedIn InMail', 'info');
+    addToast('Message Copied', 'Ready for LinkedIn InMail', 'info');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -52,7 +53,7 @@ Candidate`;
         {/* Outreach Form */}
         <div className="card" style={{ padding: 22 }}>
           <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-            🤝 Alumni Connection Details
+            <Handshake className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Alumni Connection Details
           </h3>
 
           <form onSubmit={handleGenerateOutreach} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -96,7 +97,7 @@ Candidate`;
             </div>
 
             <button type="submit" className="btn btn-primary" style={{ borderRadius: 12, marginTop: 4 }}>
-              ✨ Draft Warm Alumni Message
+              <Sparkles className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Draft Warm Alumni Message
             </button>
           </form>
         </div>
@@ -109,7 +110,7 @@ Candidate`;
             </h3>
             {generatedMessage && (
               <button onClick={handleCopyMessage} className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>
-                {copied ? '✓ Copied' : '📋 Copy Message'}
+                {copied ? '✓ Copied' : <><Clipboard className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Copy Message</>}
               </button>
             )}
           </div>

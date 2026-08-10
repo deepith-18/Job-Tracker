@@ -24,6 +24,7 @@ import {
 } from 'date-fns';
 import type { Application, ApplicationStatus, DateRangeOption } from '../../types';
 import { COMMON_SOURCES } from '../../types';
+import { useAuthStore } from '../../store/authStore';
 
 interface AnalyticsSectionProps {
   applications: Application[];
@@ -46,6 +47,7 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
   selectedStatusFilter,
   onStatusSelect,
 }) => {
+  const user = useAuthStore((s) => s.user);
   // Global dashboard filter states
   const [dateRange, setDateRange] = useState<DateRangeOption>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
@@ -242,7 +244,7 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
     });
   }, [filteredApps]);
 
-  // 6. GitHub-style Activity Heatmap (Last 16 weeks)
+  // 6. GitHub-style Activity Heatmap (Last 16 weeks) with Per-User Persistence
   const heatmapWeeks = useMemo(() => {
     const days = eachDayOfInterval({
       start: subDays(new Date(), 111), // 16 weeks * 7 days - 1
@@ -250,10 +252,25 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
     });
 
     const dayMap: Record<string, number> = {};
+
+    // 1. From Applications
     filteredApps.forEach((app) => {
       const key = format(new Date(app.appliedDate || app.createdAt), 'yyyy-MM-dd');
       dayMap[key] = (dayMap[key] || 0) + 1;
     });
+
+    // 2. From Persistent User Activity Log (per user)
+    if (user?.uid) {
+      try {
+        const storageKey = `applyflow_activity_log_${user.uid}`;
+        const storedLog: Record<string, number> = JSON.parse(localStorage.getItem(storageKey) || '{}');
+        Object.entries(storedLog).forEach(([dateStr, count]) => {
+          dayMap[dateStr] = Math.max(dayMap[dateStr] || 0, count);
+        });
+      } catch (e) {
+        console.error('Error reading heatmap log:', e);
+      }
+    }
 
     const grid: { date: Date; count: number; level: number }[][] = [];
     let currentWeek: { date: Date; count: number; level: number }[] = [];
@@ -272,7 +289,7 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
 
     if (currentWeek.length > 0) grid.push(currentWeek);
     return grid;
-  }, [filteredApps]);
+  }, [filteredApps, user]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 32 }}>

@@ -1,3 +1,4 @@
+import { Flame, Calendar, Rocket } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { eachDayOfInterval, subDays, format } from 'date-fns';
 import { AppShell } from '../components/layout/AppShell';
@@ -83,7 +84,7 @@ export const ActivityHeatmapPage: React.FC = () => {
         {/* Streak & Velocity Banner */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
           <div className="card" style={{ padding: 20 }}>
-            <div style={{ fontSize: 28, marginBottom: 4 }}>🔥</div>
+            <div style={{ fontSize: 28, marginBottom: 4 }}><Flame className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></div>
             <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--accent)' }}>
               {streakStats.currentStreak} Days
             </div>
@@ -91,7 +92,7 @@ export const ActivityHeatmapPage: React.FC = () => {
           </div>
 
           <div className="card" style={{ padding: 20 }}>
-            <div style={{ fontSize: 28, marginBottom: 4 }}>📅</div>
+            <div style={{ fontSize: 28, marginBottom: 4 }}><Calendar className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></div>
             <div style={{ fontSize: 26, fontWeight: 800, color: '#10b981' }}>
               {streakStats.activeDays} Days
             </div>
@@ -99,7 +100,7 @@ export const ActivityHeatmapPage: React.FC = () => {
           </div>
 
           <div className="card" style={{ padding: 20 }}>
-            <div style={{ fontSize: 28, marginBottom: 4 }}>🚀</div>
+            <div style={{ fontSize: 28, marginBottom: 4 }}><Rocket className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></div>
             <div style={{ fontSize: 26, fontWeight: 800, color: '#8b5cf6' }}>
               {calendarData.totalSent} Apps
             </div>

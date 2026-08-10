@@ -62,7 +62,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
       : APPLICATION_STATUSES;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0, width: '100%' }}>
       {/* Active Filter Indicator */}
       {selectedStatusFilter && selectedStatusFilter !== 'All' && (
         <div
@@ -98,12 +98,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
       <DragDropContext onDragEnd={handleDragEnd}>
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${visibleStatuses.length}, minmax(260px, 1fr))`,
+            display: 'flex',
             gap: 16,
             overflowX: 'auto',
             paddingBottom: 16,
             alignItems: 'start',
+            width: '100%',
+            minWidth: 0,
           }}
           className="kanban-grid"
         >
@@ -115,6 +116,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               <div
                 key={status}
                 style={{
+                  minWidth: 280,
+                  width: 280,
+                  flexShrink: 0,
                   background: '#f8fafc',
                   border: '1px solid var(--border)',
                   borderRadius: 16,

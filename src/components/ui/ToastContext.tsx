@@ -1,3 +1,4 @@
+import { CheckCircle, AlertTriangle } from 'lucide-react';
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -66,7 +67,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               ? 'linear-gradient(135deg, #7f1d1d, #b91c1c)'
               : 'linear-gradient(135deg, #1e1b4b, #4338ca)';
 
-            const icon = isSuccess ? '✅' : isWarning ? '⚠️' : isError ? '❌' : 'ℹ️';
+            const icon = isSuccess ? <CheckCircle className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> : isWarning ? <AlertTriangle className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> : isError ? '❌' : 'ℹ️';
 
             return (
               <motion.div

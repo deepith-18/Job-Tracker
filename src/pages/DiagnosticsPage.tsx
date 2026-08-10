@@ -1,3 +1,4 @@
+import { Flame } from 'lucide-react';
 import React, { useState } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 import { useAuthStore } from '../store/authStore';
@@ -30,7 +31,7 @@ export const DiagnosticsPage: React.FC = () => {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Write failed';
       console.error('Firestore ping failed:', err);
-      addToast('Cloud Firestore Permission Denied ⚠️', `Cloud Firestore server rejected the write to project "${projectId}". Ensure Rules tab in Firebase Console is published! Details: ${msg}`, 'error');
+      addToast('Cloud Firestore Permission Denied', `Cloud Firestore server rejected the write to project "${projectId}". Ensure Rules tab in Firebase Console is published! Details: ${msg}`, 'error');
     } finally {
       setTestingDb(false);
     }
@@ -63,7 +64,7 @@ export const DiagnosticsPage: React.FC = () => {
 
           <div className="card" style={{ padding: 20 }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 4 }}>
-              🔥 Firebase Project ID
+              <Flame className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Firebase Project ID
             </div>
             <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', fontFamily: 'monospace' }}>{projectId || 'Not Set'}</div>
             <div style={{ fontSize: 12, color: 'var(--t2)', marginTop: 4 }}>Auth: {providerId} • Synced: {applications.length} apps</div>

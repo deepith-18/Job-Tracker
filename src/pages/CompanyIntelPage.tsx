@@ -1,3 +1,4 @@
+import { Pencil, Trash2, Flame, DollarSign } from 'lucide-react';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppShell } from '../components/layout/AppShell';
@@ -104,7 +105,7 @@ export const CompanyIntelPage: React.FC = () => {
     if (!window.confirm(`Delete company profile for ${name}?`)) return;
     setProfiles((prev) => prev.filter((p) => p.id !== id));
     if (selectedProfile?.id === id) setSelectedProfile(null);
-    addToast('Intel Profile Deleted 🗑️', name, 'info');
+    addToast('Intel Profile Deleted', name, 'info');
   };
 
   const handleSaveIntel = (e: React.FormEvent) => {
@@ -126,7 +127,7 @@ export const CompanyIntelPage: React.FC = () => {
             : p
         )
       );
-      addToast('Company Intel Updated ✏️', nameInput, 'success');
+      addToast('Company Intel Updated', nameInput, 'success');
     } else {
       const newProf: CompanyProfile = {
         id: Math.random().toString(36).substring(2, 9),
@@ -227,7 +228,7 @@ export const CompanyIntelPage: React.FC = () => {
                       style={{ fontSize: 12, padding: '4px 6px' }}
                       title="Edit Intel"
                     >
-                      ✏️
+                      <Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
                     </button>
                     <button
                       onClick={() => handleDeleteProfile(company.id, company.name)}
@@ -235,7 +236,7 @@ export const CompanyIntelPage: React.FC = () => {
                       style={{ fontSize: 12, padding: '4px 6px' }}
                       title="Delete Intel"
                     >
-                      🗑️
+                      <Trash2 className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
                     </button>
                   </div>
                 </div>
@@ -245,7 +246,7 @@ export const CompanyIntelPage: React.FC = () => {
                     ★ {company.cultureScore} Culture
                   </span>
                   <span style={{ color: '#d97706', background: '#fffbeb', padding: '3px 8px', borderRadius: 8 }}>
-                    🔥 {company.interviewDifficulty}/5 Difficulty
+                    <Flame className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> {company.interviewDifficulty}/5 Difficulty
                   </span>
                   <span style={{ color: '#6366f1', background: '#e0e7ff', padding: '3px 8px', borderRadius: 8 }}>
                     {company.workPolicy}
@@ -253,7 +254,7 @@ export const CompanyIntelPage: React.FC = () => {
                 </div>
 
                 <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1e293b', marginBottom: 10 }}>
-                  💰 {company.medianComp}
+                  <DollarSign className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> {company.medianComp}
                 </div>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -347,7 +348,7 @@ export const CompanyIntelPage: React.FC = () => {
               exit={{ scale: 0.95, opacity: 0 }}
             >
               <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-                {intelModal.editProf ? '✏️ Edit Company Intel' : '🏢 Log Company Intelligence'}
+                {intelModal.editProf ? <><Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Edit Company Intel</> : '🏢 Log Company Intelligence'}
               </h2>
 
               <form onSubmit={handleSaveIntel} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

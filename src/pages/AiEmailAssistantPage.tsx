@@ -1,3 +1,4 @@
+import { Settings, Sparkles, FileText, Clipboard } from 'lucide-react';
 import React, { useState } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 import { useApplications } from '../hooks/useApplications';
@@ -106,7 +107,7 @@ Candidate`;
   const handleCopyDraft = () => {
     navigator.clipboard.writeText(generatedDraft);
     setCopied(true);
-    addToast('Copied to Clipboard 📋', 'Ready to paste into your email client', 'info');
+    addToast('Copied to Clipboard', 'Ready to paste into your email client', 'info');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -124,7 +125,7 @@ Candidate`;
         {/* Generator Controls */}
         <div className="card" style={{ padding: 22 }}>
           <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-            ⚙️ Email Configuration
+            <Settings className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Email Configuration
           </h3>
 
           <form onSubmit={handleGenerateDraft} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -181,7 +182,7 @@ Candidate`;
             </div>
 
             <button type="submit" disabled={generating} className="btn btn-primary" style={{ borderRadius: 12, marginTop: 4 }}>
-              {generating ? 'Drafting Email…' : '✨ Generate AI Email Draft'}
+              {generating ? 'Drafting Email…' : <><Sparkles className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Generate AI Email Draft</>}
             </button>
           </form>
         </div>
@@ -190,11 +191,11 @@ Candidate`;
         <div className="card" style={{ padding: 22, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-              📝 Email Preview & Draft
+              <FileText className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Email Preview & Draft
             </h3>
             {generatedDraft && (
               <button onClick={handleCopyDraft} className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>
-                {copied ? '✓ Copied' : '📋 Copy Draft'}
+                {copied ? '✓ Copied' : <><Clipboard className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Copy Draft</>}
               </button>
             )}
           </div>

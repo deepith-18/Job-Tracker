@@ -1,3 +1,4 @@
+import { Calendar, Pencil, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, addDays, startOfWeek, eachDayOfInterval } from 'date-fns';
@@ -63,7 +64,7 @@ export const InterviewCalendarPage: React.FC = () => {
   const handleDeleteEvent = (id: string, company: string) => {
     if (!window.confirm(`Delete calendar event for ${company}?`)) return;
     setCustomEvents((prev) => prev.filter((e) => e.id !== id));
-    addToast('Event Deleted 🗑️', company, 'info');
+    addToast('Event Deleted', company, 'info');
   };
 
   const handleSaveEvent = (e: React.FormEvent) => {
@@ -84,7 +85,7 @@ export const InterviewCalendarPage: React.FC = () => {
             : ev
         )
       );
-      addToast('Calendar Event Updated ✏️', companyInput, 'success');
+      addToast('Calendar Event Updated', companyInput, 'success');
     } else {
       const newEv: ScheduledEvent = {
         id: Math.random().toString(36).substring(2, 9),
@@ -94,7 +95,7 @@ export const InterviewCalendarPage: React.FC = () => {
         date: new Date(dateInput),
       };
       setCustomEvents((prev) => [...prev, newEv]);
-      addToast('Event Scheduled 📅', companyInput, 'success');
+      addToast('Event Scheduled', companyInput, 'success');
     }
 
     setEventModal({ open: false });
@@ -121,7 +122,7 @@ END:VCALENDAR`;
     link.click();
     document.body.removeChild(link);
 
-    addToast('Calendar Exported 📅', `Saved .ics file for ${event.company}`, 'success');
+    addToast('Calendar Exported', `Saved .ics file for ${event.company}`, 'success');
   };
 
   return (
@@ -130,7 +131,7 @@ END:VCALENDAR`;
       <div className="ph" style={{ paddingBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h1 className="page-title">📅 Interview Calendar & Reminders</h1>
+            <h1 className="page-title"><Calendar className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Interview Calendar & Reminders</h1>
             <p className="page-sub">
               Schedule, edit, delete, and export interview rounds and assessment deadlines to Google Calendar
             </p>
@@ -205,14 +206,14 @@ END:VCALENDAR`;
                               style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10 }}
                               title="Edit Event"
                             >
-                              ✏️
+                              <Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
                             </button>
                             <button
                               onClick={() => handleDeleteEvent(ev.id, ev.company)}
                               style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10 }}
                               title="Delete Event"
                             >
-                              🗑️
+                              <Trash2 className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
                             </button>
                           </div>
                         </div>
@@ -241,7 +242,7 @@ END:VCALENDAR`;
               exit={{ scale: 0.95, opacity: 0 }}
             >
               <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-                {eventModal.editEvent ? '✏️ Edit Scheduled Event' : '📅 Schedule Calendar Event'}
+                {eventModal.editEvent ? <><Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Edit Scheduled Event</> : <><Calendar className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Schedule Calendar Event</>}
               </h2>
 
               <form onSubmit={handleSaveEvent} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

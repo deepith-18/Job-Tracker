@@ -1,3 +1,4 @@
+import { AlertTriangle, Clipboard, Calendar, TrendingUp, Rocket, Briefcase, FileText, BarChart } from 'lucide-react';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -25,7 +26,8 @@ export const DashboardPage: React.FC = () => {
   const user = useAuthStore((s) => s.user);
   const { applications, loading } = useApplications();
 
-  const firstName = user?.email?.split('@')[0] ?? 'there';
+  const rawName = user?.displayName || user?.email?.split('@')[0] || 'there';
+  const firstName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
@@ -94,7 +96,7 @@ export const DashboardPage: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {overdue.map((a) => (
                 <div key={a.id} className="card" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, borderLeft: '3px solid #ef4444' }}>
-                  <span style={{ fontSize: 16 }}>⚠️</span>
+                  <span style={{ fontSize: 16 }}><AlertTriangle className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <span style={{ fontWeight: 700, fontSize: 13 }}>{a.company}</span>
                     <span style={{ fontSize: 12, color: 'var(--t3)', marginLeft: 8 }}>deadline passed</span>
@@ -132,10 +134,10 @@ export const DashboardPage: React.FC = () => {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
             {[
-              { label: 'Total Applications', value: total, icon: '📋', color: '#6366f1' },
-              { label: 'This Week', value: thisWeekApps, icon: '📅', color: '#8b5cf6' },
+              { label: 'Total Applications', value: total, icon: <Clipboard className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />, color: '#6366f1' },
+              { label: 'This Week', value: thisWeekApps, icon: <Calendar className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />, color: '#8b5cf6' },
               { label: 'Interviews', value: interviews.length, icon: '🎤', color: '#f59e0b' },
-              { label: 'Response Rate', value: `${responseRate}%`, icon: '📈', color: '#10b981' },
+              { label: 'Response Rate', value: `${responseRate}%`, icon: <TrendingUp className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />, color: '#10b981' },
             ].map((stat) => (
               <div key={stat.label} className="card" style={{ padding: '16px 18px', borderTop: `3px solid ${stat.color}` }}>
                 <div style={{ fontSize: 20, marginBottom: 6 }}>{stat.icon}</div>
@@ -156,7 +158,7 @@ export const DashboardPage: React.FC = () => {
             </div>
             {recent.length === 0 ? (
               <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--t3)' }}>
-                <div style={{ fontSize: 36, marginBottom: 8 }}>🚀</div>
+                <div style={{ fontSize: 36, marginBottom: 8 }}><Rocket className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></div>
                 <div style={{ fontWeight: 700 }}>No applications yet</div>
                 <div style={{ fontSize: 13, marginTop: 4 }}>Add your first application above</div>
               </div>
@@ -181,9 +183,9 @@ export const DashboardPage: React.FC = () => {
             <h2 style={{ fontSize: 15, fontWeight: 800, color: 'var(--t1)', marginBottom: 12 }}>🔗 Quick Access</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
-                { to: '/applications', icon: '💼', label: 'Kanban Board', sub: 'Drag & drop applications' },
-                { to: '/journal', icon: '📝', label: 'Interview Journal', sub: 'Log notes & questions' },
-                { to: '/insights', icon: '📊', label: 'Analytics', sub: 'Track your progress' },
+                { to: '/applications', icon: <Briefcase className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />, label: 'Kanban Board', sub: 'Drag & drop applications' },
+                { to: '/journal', icon: <FileText className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />, label: 'Interview Journal', sub: 'Log notes & questions' },
+                { to: '/insights', icon: <BarChart className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />, label: 'Analytics', sub: 'Track your progress' },
                 { to: '/journal?tab=mock', icon: '🎤', label: 'Mock Interview', sub: 'Practice your answers' },
                 { to: '/journal?tab=mindset', icon: '🧘', label: 'Mindset Studio', sub: 'Calm pre-interview nerves' },
               ].map((link) => (

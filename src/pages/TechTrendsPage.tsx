@@ -1,3 +1,4 @@
+import { BarChart, Flame } from 'lucide-react';
 import React from 'react';
 import { AppShell } from '../components/layout/AppShell';
 
@@ -24,7 +25,7 @@ export const TechTrendsPage: React.FC = () => {
     <AppShell>
       {/* Header */}
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title">📊 Job Market Demand Radar & Tech Stack Trends</h1>
+        <h1 className="page-title"><BarChart className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Job Market Demand Radar & Tech Stack Trends</h1>
         <p className="page-sub">
           Track hiring demand, salary premiums, and emerging technical skills across top engineering teams
         </p>
@@ -36,7 +37,7 @@ export const TechTrendsPage: React.FC = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
             <div>
               <div style={{ fontSize: 12, fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase' }}>
-                🔥 Highest Growth Domain
+                <Flame className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Highest Growth Domain
               </div>
               <div style={{ fontSize: 22, fontWeight: 800, marginTop: 4 }}>
                 AI Infrastructure, RAG & Vector Databases (+140% YoY Demand)

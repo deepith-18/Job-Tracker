@@ -1,3 +1,4 @@
+import { Rocket, Lightbulb } from 'lucide-react';
 import React from 'react';
 import { motion } from 'framer-motion';
 
@@ -38,7 +39,7 @@ export const EmptyState: React.FC<EmptyStateProps> = () => {
           boxShadow: '0 8px 24px rgba(99,102,241,0.25)',
         }}
       >
-        🚀
+        <Rocket className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
       </div>
 
       <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--t1)', marginBottom: 8 }}>
@@ -63,7 +64,7 @@ export const EmptyState: React.FC<EmptyStateProps> = () => {
           border: '1px solid #c7d2fe',
         }}
       >
-        <span>💡 Pro-tip: Press Enter after typing to create a card in Wishlist status</span>
+        <span><Lightbulb className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Pro-tip: Press Enter after typing to create a card in Wishlist status</span>
       </div>
     </motion.div>
   );

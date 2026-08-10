@@ -1,3 +1,4 @@
+import { Lightbulb } from 'lucide-react';
 import React, { useState } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 
@@ -44,7 +45,7 @@ export const InterviewBattlecardsPage: React.FC = () => {
     <AppShell>
       {/* Header */}
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title">💡 Technical Interview Battle Cards & Cheat Sheets</h1>
+        <h1 className="page-title"><Lightbulb className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Technical Interview Battle Cards & Cheat Sheets</h1>
         <p className="page-sub">
           High-yield company interview tactics, system design mantras, and core DSA patterns
         </p>

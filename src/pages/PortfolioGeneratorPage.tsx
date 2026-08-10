@@ -1,3 +1,4 @@
+import { Settings, Sparkles, FileText, Clipboard } from 'lucide-react';
 import React, { useState } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 import { useToast } from '../components/ui/ToastContext';
@@ -26,13 +27,13 @@ PORTFOLIO BIO SUMMARY:
 • Portfolio: https://candidate.dev`;
 
     setPitch(text);
-    addToast('Elevator Pitch Generated 🚀', devTitle, 'success');
+    addToast('Elevator Pitch Generated', devTitle, 'success');
   };
 
   const handleCopyPitch = () => {
     navigator.clipboard.writeText(pitch);
     setCopied(true);
-    addToast('Copied to Clipboard 📋', 'Ready for interview intro', 'info');
+    addToast('Copied to Clipboard', 'Ready for interview intro', 'info');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -50,7 +51,7 @@ PORTFOLIO BIO SUMMARY:
         {/* Form Controls */}
         <div className="card" style={{ padding: 22 }}>
           <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-            ⚙️ Engineer Profile Inputs
+            <Settings className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Engineer Profile Inputs
           </h3>
 
           <form onSubmit={handleGeneratePitch} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -83,7 +84,7 @@ PORTFOLIO BIO SUMMARY:
             </div>
 
             <button type="submit" className="btn btn-primary" style={{ borderRadius: 12, marginTop: 4 }}>
-              ✨ Generate Pitch & Portfolio Bio
+              <Sparkles className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Generate Pitch & Portfolio Bio
             </button>
           </form>
         </div>
@@ -92,11 +93,11 @@ PORTFOLIO BIO SUMMARY:
         <div className="card" style={{ padding: 22, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-              📝 Elevator Pitch Script
+              <FileText className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Elevator Pitch Script
             </h3>
             {pitch && (
               <button onClick={handleCopyPitch} className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>
-                {copied ? '✓ Copied' : '📋 Copy Pitch Text'}
+                {copied ? '✓ Copied' : <><Clipboard className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Copy Pitch Text</>}
               </button>
             )}
           </div>
