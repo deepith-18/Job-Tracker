@@ -7,25 +7,43 @@ export const useAuth = () => {
   const { user, loading, setUser, setLoading } = useAuthStore();
 
   useEffect(() => {
-    // 1. Immediately register auth state listener.
-    // This resolves authenticated user instantly from IndexedDB cache / Firebase Auth state.
-    const unsubscribe = onAuthStateChange(async (firebaseUser) => {
-      setUser(firebaseUser);
-      setLoading(false);
+    // Check if guest user session exists in local storage
+    const getGuestUser = () => {
+      try {
+        const saved = localStorage.getItem('applyflow_guest_user');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse guest user:', e);
+      }
+      return null;
+    };
 
+    // 1. Register auth state listener.
+    const unsubscribe = onAuthStateChange(async (firebaseUser) => {
       if (firebaseUser) {
+        setUser(firebaseUser);
+        setLoading(false);
         try {
           await initializeUserCollections(firebaseUser.uid, firebaseUser.email);
         } catch (err) {
           console.error('initializeUserCollections failed:', err);
         }
+      } else {
+        const guest = getGuestUser();
+        if (guest) {
+          setUser(guest);
+        } else {
+          setUser(null);
+        }
+        setLoading(false);
       }
     });
 
-    // 2. Process OAuth redirect result in parallel (if returning from redirect login)
+    // 2. Process OAuth redirect result in parallel
     checkRedirectResult()
       .then(async (result) => {
         if (result?.user) {
+          localStorage.removeItem('applyflow_guest_user');
           setUser(result.user);
           setLoading(false);
           try {

@@ -40,7 +40,14 @@ export const signInWithGoogle = async () => {
 
 export const checkRedirectResult = () => getRedirectResult(auth);
 
-export const signOutUser = () => signOut(auth);
+export const signOutUser = async () => {
+  try {
+    localStorage.removeItem('applyflow_guest_user');
+  } catch (e) {
+    console.error('Failed to clear guest user:', e);
+  }
+  return signOut(auth);
+};
 
 export const onAuthStateChange = (callback: (user: User | null) => void) =>
   onAuthStateChanged(auth, callback);

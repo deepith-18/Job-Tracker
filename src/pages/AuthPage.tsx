@@ -115,42 +115,35 @@ export const AuthPage: React.FC = () => {
     }
   };
 
-  const handleDemoLogin = async () => {
+  const handleDemoLogin = () => {
     setError('');
-    setLoading(true);
+    const guestUser = {
+      uid: 'demo-user-guest',
+      email: 'demo@applyflow.app',
+      displayName: 'Demo User',
+      emailVerified: true,
+      isAnonymous: false,
+      metadata: {},
+      providerData: [],
+      refreshToken: '',
+      tenantId: null,
+      delete: async () => {},
+      getIdToken: async () => '',
+      getIdTokenResult: async () => ({} as any),
+      reload: async () => {},
+      toJSON: () => ({}),
+      phoneNumber: null,
+      photoURL: null,
+      providerId: 'demo',
+    };
     try {
-      try {
-        await signInWithEmail('demo@applyflow.app', 'demo123456');
-      } catch {
-        await signUpWithEmail('demo@applyflow.app', 'demo123456');
-      }
-      addToast('Welcome to ApplyFlow! 🚀', 'Instant Guest Demo Active', 'success');
-      navigate('/dashboard');
-    } catch {
-      useAuthStore.getState().setUser({
-        uid: 'demo-user-guest',
-        email: 'demo@applyflow.app',
-        displayName: 'Demo User',
-        emailVerified: true,
-        isAnonymous: false,
-        metadata: {},
-        providerData: [],
-        refreshToken: '',
-        tenantId: null,
-        delete: async () => {},
-        getIdToken: async () => '',
-        getIdTokenResult: async () => ({} as any),
-        reload: async () => {},
-        toJSON: () => ({}),
-        phoneNumber: null,
-        photoURL: null,
-        providerId: 'demo',
-      } as any);
-      addToast('Instant Guest Mode Active 🚀', 'Signed in as Demo User', 'success');
-      navigate('/dashboard');
-    } finally {
-      setLoading(false);
+      localStorage.setItem('applyflow_guest_user', JSON.stringify(guestUser));
+    } catch (e) {
+      console.error('Failed to save guest user:', e);
     }
+    useAuthStore.getState().setUser(guestUser as any);
+    addToast('Instant Guest Mode Active 🚀', 'Signed in as Demo User', 'success');
+    navigate('/dashboard');
   };
 
   const switchMode = (newMode: 'login' | 'signup') => {
