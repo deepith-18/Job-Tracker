@@ -104,8 +104,7 @@ export const AuthPage: React.FC = () => {
         if (code === 'auth/operation-not-allowed') {
           setError('Google Sign-In is not enabled in Firebase Console. Go to Authentication > Sign-in method to enable it.');
         } else if (code === 'auth/unauthorized-domain') {
-          const currentDomain = window.location.hostname;
-          setError(`Domain "${currentDomain}" is not authorized in Firebase Console (Authentication > Settings > Authorized domains). Use Instant Guest Login below or add ${currentDomain} to Firebase.`);
+          setError('This domain is not authorized in Firebase Console (Authentication > Settings > Authorized domains).');
         } else {
           setError(`Google authentication failed: ${message || code || 'Unknown error'}`);
         }
@@ -113,37 +112,6 @@ export const AuthPage: React.FC = () => {
     } finally {
       setGoogleLoading(false);
     }
-  };
-
-  const handleDemoLogin = () => {
-    setError('');
-    const guestUser = {
-      uid: 'demo-user-guest',
-      email: 'demo@applyflow.app',
-      displayName: 'Demo User',
-      emailVerified: true,
-      isAnonymous: false,
-      metadata: {},
-      providerData: [],
-      refreshToken: '',
-      tenantId: null,
-      delete: async () => {},
-      getIdToken: async () => '',
-      getIdTokenResult: async () => ({} as any),
-      reload: async () => {},
-      toJSON: () => ({}),
-      phoneNumber: null,
-      photoURL: null,
-      providerId: 'demo',
-    };
-    try {
-      localStorage.setItem('applyflow_guest_user', JSON.stringify(guestUser));
-    } catch (e) {
-      console.error('Failed to save guest user:', e);
-    }
-    useAuthStore.getState().setUser(guestUser as any);
-    addToast('Instant Guest Mode Active 🚀', 'Signed in as Demo User', 'success');
-    navigate('/dashboard');
   };
 
   const switchMode = (newMode: 'login' | 'signup') => {
@@ -594,38 +562,7 @@ export const AuthPage: React.FC = () => {
           Google
         </Button>
 
-        {/* Instant Demo Guest Login */}
-        <button
-          type="button"
-          onClick={handleDemoLogin}
-          style={{
-            width: '100%',
-            marginTop: 10,
-            background: 'rgba(99, 102, 241, 0.12)',
-            border: '1px solid rgba(99, 102, 241, 0.3)',
-            color: '#a5b4fc',
-            borderRadius: 12,
-            padding: '10px 16px',
-            fontSize: 13,
-            fontWeight: 700,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(99, 102, 241, 0.22)';
-            e.currentTarget.style.color = '#ffffff';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(99, 102, 241, 0.12)';
-            e.currentTarget.style.color = '#a5b4fc';
-          }}
-        >
-          <Sparkles size={15} color="#22d3ee" /> Try Instant Demo Login (Guest Mode)
-        </button>
+
 
         {/* Footer Toggle */}
         <div style={{ marginTop: 22, textAlign: 'center', fontSize: 12.5, color: '#a5b4fc' }}>
