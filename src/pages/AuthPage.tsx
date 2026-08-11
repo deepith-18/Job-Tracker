@@ -53,7 +53,7 @@ export const AuthPage: React.FC = () => {
 
   // Password strength
   const strength = password.length === 0 ? 0 : password.length < 6 ? 1 : password.length < 10 ? 2 : 3;
-  const strengthColors = ['', '#f87171', '#fbbf24', '#34d399'];
+  const strengthColors = ['', '#f87172', '#fbbf24', '#34d399'];
   const strengthLabels = ['', 'Weak', 'Fair', 'Strong'];
 
   const handleSubmit = async (e: React.FormEvent) => {
