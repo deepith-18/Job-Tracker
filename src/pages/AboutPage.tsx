@@ -571,7 +571,7 @@ export const AboutPage: React.FC = () => {
           </div>
 
           {/* Symmetrical 2x2 Grid on desktop, 1 col on small mobile */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 16 }}>
             {PRODUCT_PILLARS.map((pillar) => {
               const Icon = pillar.icon;
               return (

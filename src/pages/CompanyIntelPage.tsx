@@ -197,7 +197,7 @@ export const CompanyIntelPage: React.FC = () => {
         </div>
 
         {/* Company Profiles Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 18 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: 18 }}>
           {filteredProfiles.map((company) => {
             const hasApp = applications.some((a) => a.company.toLowerCase() === company.name.toLowerCase());
 

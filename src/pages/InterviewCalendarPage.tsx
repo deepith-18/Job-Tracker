@@ -152,7 +152,7 @@ END:VCALENDAR`;
             </h3>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 12 }}>
+          <div className="calendar-week-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 12 }}>
             {weekDays.map((day) => {
               const dayEvents = customEvents.filter(
                 (e) => format(e.date, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')

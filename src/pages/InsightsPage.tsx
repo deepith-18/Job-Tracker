@@ -221,7 +221,7 @@ const SkillsTab: React.FC = () => {
       </div>
 
       {/* Grid Layout: Radar Chart + Adjuster List */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 20 }}>
         {/* Left: Radar Chart */}
         <div className="card" style={{ padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <div style={{ fontWeight: 800, fontSize: 15, width: '100%', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>

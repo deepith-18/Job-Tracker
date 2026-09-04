@@ -286,7 +286,7 @@ const JournalNotesContent: React.FC<{ onOpenCodeVault?: (company?: string) => vo
                       }}
                     >
                       <Code2 style={{ width: 13, height: 13, color: 'var(--accent)' }} />
-                      <span>View & Store Code Questions for {app.company}</span>
+                      <span>Code Questions ({app.company})</span>
                     </button>
                   </div>
                 </div>
@@ -1778,7 +1778,7 @@ const JournalBattlecardsContent: React.FC = () => {
           <div style={{ fontSize: 13, marginTop: 4 }}>Adjust your search query or add a new technical cheatsheet.</div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: 16 }}>
           {filteredCards.map((card) => (
             <div
               key={card.id}
@@ -2301,7 +2301,7 @@ const JournalMindsetContent: React.FC = () => {
   const completedCount = checklist.filter((c) => c.done).length;
 
   return (
-    <div className="pb" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 380px) 1fr', gap: 20 }}>
+    <div className="pb" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 20 }}>
       {/* Left: Breathing Focus Tool */}
       <div
         className="card"

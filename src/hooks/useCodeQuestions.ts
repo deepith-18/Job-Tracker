@@ -27,11 +27,15 @@ export const useCodeQuestions = () => {
 
     setLoading(true);
 
+    const hasSeededKey = `joborbit_seeded_vault_${user.uid}`;
+
     const unsubscribe = subscribeToCodeQuestions(
       user.uid,
       async (remoteQuestions) => {
-        // If user has zero questions in Firestore, check if we should auto-seed or migrate local questions
-        if (remoteQuestions.length === 0 && !isSeedingRef.current) {
+        const alreadySeeded = localStorage.getItem(hasSeededKey) === 'true';
+
+        // Only auto-seed on the very first time for a new account, not when user deliberately deletes questions
+        if (remoteQuestions.length === 0 && !isSeedingRef.current && !alreadySeeded) {
           isSeedingRef.current = true;
           try {
             // Check if user has non-seed custom questions in localStorage
@@ -56,6 +60,7 @@ export const useCodeQuestions = () => {
                 applicationId: q.applicationId || '',
               });
             }
+            localStorage.setItem(hasSeededKey, 'true');
           } catch (err) {
             console.warn('Auto-seed / migration of code questions encountered an error:', err);
           } finally {
@@ -63,6 +68,9 @@ export const useCodeQuestions = () => {
             setLoading(false);
           }
         } else {
+          if (remoteQuestions.length > 0) {
+            localStorage.setItem(hasSeededKey, 'true');
+          }
           setQuestions(remoteQuestions);
           setLoading(false);
         }

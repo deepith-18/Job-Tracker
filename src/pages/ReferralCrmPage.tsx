@@ -140,7 +140,7 @@ export const ReferralCrmPage: React.FC = () => {
       </div>
 
       <div className="pb">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: 16 }}>
           {contacts.map((c) => (
             <motion.div
               key={c.id}

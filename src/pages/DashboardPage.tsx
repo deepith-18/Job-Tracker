@@ -397,7 +397,7 @@ export const DashboardPage: React.FC = () => {
         )}
 
         {/* ── Two Columns: Recent Applications + Command Shortcuts ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20 }}>
+        <div className="dashboard-grid-main" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20 }}>
           {/* Left: Recent Activity Applications */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>

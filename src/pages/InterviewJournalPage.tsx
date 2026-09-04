@@ -215,7 +215,7 @@ export const InterviewJournalPage: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: 16 }}>
             {filteredLogs.map((log) => (
               <motion.div
                 key={log.id}

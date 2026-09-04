@@ -1,5 +1,7 @@
 import { Flame } from 'lucide-react';
 import React, { useState } from 'react';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import { AppShell } from '../components/layout/AppShell';
 import { useAuthStore } from '../store/authStore';
 import { useApplications } from '../hooks/useApplications';
@@ -23,8 +25,6 @@ export const DiagnosticsPage: React.FC = () => {
     }
     setTestingDb(true);
     try {
-      const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
-      const { db } = await import('../firebase/config');
       const pingRef = doc(db, 'users', user.uid);
       await setDoc(pingRef, { ping: true, lastPing: serverTimestamp() }, { merge: true });
       addToast('Cloud Firestore Server Connected! ⚡', `Write verified to project "${projectId}" for ${user.email}`, 'success');
