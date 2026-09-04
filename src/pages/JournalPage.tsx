@@ -163,10 +163,10 @@ const JournalNotesContent: React.FC<{ onOpenCodeVault?: (company?: string) => vo
 
   return (
     <div className="pb">
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' }}>
         <select
           className="inp"
-          style={{ width: 'auto', minWidth: 180 }}
+          style={{ width: 'auto', flex: '1 1 140px', minWidth: 120 }}
           value={selectedCompany}
           onChange={(e) => setSelectedCompany(e.target.value)}
         >
@@ -177,7 +177,7 @@ const JournalNotesContent: React.FC<{ onOpenCodeVault?: (company?: string) => vo
         </select>
         <select
           className="inp"
-          style={{ width: 'auto', minWidth: 150 }}
+          style={{ width: 'auto', flex: '1 1 130px', minWidth: 110 }}
           value={roundFilter}
           onChange={(e) => setRoundFilter(e.target.value)}
         >
@@ -186,28 +186,30 @@ const JournalNotesContent: React.FC<{ onOpenCodeVault?: (company?: string) => vo
             <option key={r} value={r}>{r}</option>
           ))}
         </select>
-        <button
-          className="btn btn-ghost"
-          style={{
-            marginLeft: 'auto',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            border: '1px solid var(--border)',
-          }}
-          onClick={() => onOpenCodeVault?.(selectedCompany !== 'All' ? selectedCompany : undefined)}
-        >
-          <Code2 style={{ width: 15, height: 15, color: 'var(--accent)' }} />
-          <span>Code & Questions Vault</span>
-        </button>
-        <button
-          className="btn btn-primary"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-          onClick={() => setLogModal(true)}
-        >
-          <Plus style={{ width: 15, height: 15 }} />
-          <span>Add Interview Log</span>
-        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginLeft: 'auto' }}>
+          <button
+            className="btn btn-ghost"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              border: '1px solid var(--border)',
+              whiteSpace: 'nowrap',
+            }}
+            onClick={() => onOpenCodeVault?.(selectedCompany !== 'All' ? selectedCompany : undefined)}
+          >
+            <Code2 style={{ width: 15, height: 15, color: 'var(--accent)' }} />
+            <span>Code Vault</span>
+          </button>
+          <button
+            className="btn btn-primary"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}
+            onClick={() => setLogModal(true)}
+          >
+            <Plus style={{ width: 15, height: 15 }} />
+            <span>Add Log</span>
+          </button>
+        </div>
       </div>
 
       {filtered.length === 0 ? (
@@ -310,7 +312,7 @@ const JournalNotesContent: React.FC<{ onOpenCodeVault?: (company?: string) => vo
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: 20,
+              padding: '12px',
             }}
             onClick={() => setLogModal(false)}
           >
@@ -322,11 +324,11 @@ const JournalNotesContent: React.FC<{ onOpenCodeVault?: (company?: string) => vo
               style={{
                 background: 'var(--card)',
                 border: '1px solid var(--border)',
-                borderRadius: 20,
-                padding: 28,
+                borderRadius: 18,
+                padding: '20px 18px',
                 width: '100%',
                 maxWidth: 520,
-                maxHeight: '90vh',
+                maxHeight: '92vh',
                 overflowY: 'auto',
                 boxShadow: 'var(--shadow-lg)',
               }}

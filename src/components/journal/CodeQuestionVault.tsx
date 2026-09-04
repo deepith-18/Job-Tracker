@@ -255,6 +255,7 @@ export const CodeQuestionVault: React.FC<CodeQuestionVaultProps> = ({
     <div className="pb" style={{ maxWidth: 1140, margin: '0 auto' }}>
       {/* ── Summary & Metrics Bar ── */}
       <div
+        className="vault-metrics-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -399,131 +400,136 @@ export const CodeQuestionVault: React.FC<CodeQuestionVaultProps> = ({
           gap: 12,
         }}
       >
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          {/* Search Box */}
-          <div style={{ position: 'relative', flex: '1 1 240px' }}>
-            <Search
-              style={{
-                position: 'absolute',
-                left: 12,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: 15,
-                height: 15,
-                color: 'var(--t3)',
-              }}
-            />
-            <input
-              type="text"
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {/* Top Row: Search & Add button */}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ position: 'relative', flex: '1 1 240px', minWidth: 200 }}>
+              <Search
+                style={{
+                  position: 'absolute',
+                  left: 12,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: 15,
+                  height: 15,
+                  color: 'var(--t3)',
+                }}
+              />
+              <input
+                type="text"
+                className="inp"
+                placeholder="Search question title, company, code, or topic..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ paddingLeft: 36, width: '100%' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginLeft: 'auto' }}>
+              {/* Cloud Sync Status */}
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  padding: '6px 12px',
+                  borderRadius: 10,
+                  background: 'var(--accent-bg)',
+                  color: 'var(--accent)',
+                  border: '1px solid var(--border)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Cloud style={{ width: 14, height: 14 }} />
+                <span>{loading ? 'Syncing...' : 'Cloud Synced'}</span>
+              </div>
+
+              {/* Add Question Button */}
+              <button
+                onClick={() => openAddModal()}
+                className="btn btn-primary"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Plus style={{ width: 15, height: 15 }} />
+                <span>Store Code Question</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Bottom Filter Selects & Star Toggle */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <select
               className="inp"
-              placeholder="Search question title, company, code, or topic..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ paddingLeft: 36 }}
-            />
-          </div>
+              style={{ width: 'auto', flex: '1 1 140px', minWidth: 120 }}
+              value={companyFilter}
+              onChange={(e) => setCompanyFilter(e.target.value)}
+            >
+              <option value="All">All Companies ({uniqueCompanies.length})</option>
+              {uniqueCompanies.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
 
-          {/* Company Filter */}
-          <select
-            className="inp"
-            style={{ width: 'auto', minWidth: 160 }}
-            value={companyFilter}
-            onChange={(e) => setCompanyFilter(e.target.value)}
-          >
-            <option value="All">All Companies ({uniqueCompanies.length})</option>
-            {uniqueCompanies.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+            <select
+              className="inp"
+              style={{ width: 'auto', flex: '1 1 120px', minWidth: 110 }}
+              value={difficultyFilter}
+              onChange={(e) => setDifficultyFilter(e.target.value)}
+            >
+              <option value="All">All Difficulties</option>
+              <option value="Easy">Easy</option>
+              <option value="Medium">Medium</option>
+              <option value="Hard">Hard</option>
+            </select>
 
-          {/* Difficulty Filter */}
-          <select
-            className="inp"
-            style={{ width: 'auto', minWidth: 130 }}
-            value={difficultyFilter}
-            onChange={(e) => setDifficultyFilter(e.target.value)}
-          >
-            <option value="All">All Difficulties</option>
-            <option value="Easy">Easy</option>
-            <option value="Medium">Medium</option>
-            <option value="Hard">Hard</option>
-          </select>
+            <select
+              className="inp"
+              style={{ width: 'auto', flex: '1 1 120px', minWidth: 110 }}
+              value={languageFilter}
+              onChange={(e) => setLanguageFilter(e.target.value)}
+            >
+              <option value="All">All Languages</option>
+              {Object.entries(LANGUAGE_LABELS).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
 
-          {/* Language Filter */}
-          <select
-            className="inp"
-            style={{ width: 'auto', minWidth: 140 }}
-            value={languageFilter}
-            onChange={(e) => setLanguageFilter(e.target.value)}
-          >
-            <option value="All">All Languages</option>
-            {Object.entries(LANGUAGE_LABELS).map(([key, label]) => (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            ))}
-          </select>
-
-          {/* Starred Only Toggle Button */}
-          <button
-            onClick={() => setStarredOnly(!starredOnly)}
-            className="btn"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 13,
-              background: starredOnly ? 'rgba(245, 158, 11, 0.15)' : 'var(--card)',
-              color: starredOnly ? '#f59e0b' : 'var(--t2)',
-              border: starredOnly ? '1px solid #f59e0b' : '1px solid var(--border)',
-            }}
-          >
-            <Star
+            <button
+              onClick={() => setStarredOnly(!starredOnly)}
+              className="btn"
               style={{
-                width: 15,
-                height: 15,
-                fill: starredOnly ? '#f59e0b' : 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 13,
+                padding: '6px 12px',
+                background: starredOnly ? 'rgba(245, 158, 11, 0.15)' : 'var(--card)',
+                color: starredOnly ? '#f59e0b' : 'var(--t2)',
+                border: starredOnly ? '1px solid #f59e0b' : '1px solid var(--border)',
+                whiteSpace: 'nowrap',
               }}
-            />
-            <span>Important Only</span>
-          </button>
-
-          {/* Cloud Sync Status */}
-          <div
-            style={{
-              marginLeft: 'auto',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 12,
-              fontWeight: 600,
-              padding: '6px 12px',
-              borderRadius: 10,
-              background: 'var(--accent-bg)',
-              color: 'var(--accent)',
-              border: '1px solid var(--border)',
-            }}
-          >
-            <Cloud style={{ width: 14, height: 14 }} />
-            <span>{loading ? 'Syncing...' : 'Firestore Cloud Synced'}</span>
+            >
+              <Star
+                style={{
+                  width: 15,
+                  height: 15,
+                  fill: starredOnly ? '#f59e0b' : 'none',
+                }}
+              />
+              <span>Important Only</span>
+            </button>
           </div>
-
-          {/* Add Question Button */}
-          <button
-            onClick={() => openAddModal()}
-            className="btn btn-primary"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <Plus style={{ width: 15, height: 15 }} />
-            <span>Store Code Question</span>
-          </button>
         </div>
 
         {/* Topic Pills */}
@@ -625,6 +631,7 @@ export const CodeQuestionVault: React.FC<CodeQuestionVaultProps> = ({
               >
                 {/* ── Card Header ── */}
                 <div
+                  className="vault-card-header-responsive"
                   style={{
                     padding: '16px 20px',
                     display: 'flex',
@@ -724,7 +731,10 @@ export const CodeQuestionVault: React.FC<CodeQuestionVaultProps> = ({
                   </div>
 
                   {/* Top Right Action Icons */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                  <div
+                    className="vault-card-actions-responsive"
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}
+                  >
                     {/* Star / Bookmark Button */}
                     <button
                       onClick={() => toggleStar(q.id)}
@@ -1056,7 +1066,7 @@ export const CodeQuestionVault: React.FC<CodeQuestionVaultProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: 20,
+              padding: '12px',
             }}
             onClick={() => setModalOpen(false)}
           >
@@ -1068,11 +1078,11 @@ export const CodeQuestionVault: React.FC<CodeQuestionVaultProps> = ({
               style={{
                 background: 'var(--card)',
                 border: '1px solid var(--border)',
-                borderRadius: 20,
-                padding: 26,
+                borderRadius: 18,
+                padding: '20px 18px',
                 width: '100%',
                 maxWidth: 680,
-                maxHeight: '90vh',
+                maxHeight: '92vh',
                 overflowY: 'auto',
                 boxShadow: 'var(--shadow-lg)',
               }}
@@ -1123,7 +1133,7 @@ export const CodeQuestionVault: React.FC<CodeQuestionVaultProps> = ({
                 </div>
 
                 {/* Company & Round */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="modal-form-grid" style={{ gap: 12 }}>
                   <div>
                     <label className="lbl">Company Asked At</label>
                     <input
@@ -1153,7 +1163,7 @@ export const CodeQuestionVault: React.FC<CodeQuestionVaultProps> = ({
                 </div>
 
                 {/* Difficulty, Topic & Language */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                <div className="modal-form-grid" style={{ gap: 12 }}>
                   <div>
                     <label className="lbl">Difficulty</label>
                     <select
@@ -1210,7 +1220,7 @@ export const CodeQuestionVault: React.FC<CodeQuestionVaultProps> = ({
                 </div>
 
                 {/* Time & Space Complexity */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="modal-form-grid" style={{ gap: 12 }}>
                   <div>
                     <label className="lbl">Time Complexity</label>
                     <input
