@@ -198,7 +198,7 @@ export const InterviewJournalPage: React.FC = () => {
         {filteredLogs.length === 0 ? (
           <div
             style={{
-              background: '#ffffff',
+              background: 'var(--card)',
               border: '1px dashed var(--border)',
               borderRadius: 20,
               padding: '64px 24px',
@@ -222,7 +222,7 @@ export const InterviewJournalPage: React.FC = () => {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 style={{
-                  background: 'linear-gradient(145deg, #ffffff, #fafbff)',
+                  background: 'linear-gradient(145deg, var(--card), var(--card-hover))',
                   border: '1px solid var(--border)',
                   borderRadius: 18,
                   padding: 20,

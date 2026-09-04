@@ -1,70 +1,99 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { signOutUser } from '../../firebase/auth';
+import {
+  LayoutDashboard,
+  Briefcase,
+  BookOpen,
+  TrendingUp,
+  User,
+  Flame,
+  AlertTriangle,
+  Menu,
+  X,
+  ExternalLink,
+  Plus,
+  LogOut,
+  Search,
+  Info,
+  Keyboard,
+  Sun,
+  Moon,
+} from 'lucide-react';
+import { CommandPalette } from './CommandPalette';
+import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
+import { BrandLogo } from '../common/BrandLogo';
 import { useAuthStore } from '../../store/authStore';
-import { MobileCommandHub } from './MobileCommandHub';
+import { signOutUser } from '../../firebase/auth';
 import { useApplications } from '../../hooks/useApplications';
 import { useUserSettings } from '../../hooks/useUserSettings';
+import { useThemeStore } from '../../store/themeStore';
 
 interface AppShellProps {
   children: React.ReactNode;
 }
-
-// ── Nav icon helper
-const Ico = ({ d, d2 }: { d: string; d2?: string }) => (
-  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} width={18} height={18}>
-    <path strokeLinecap="round" strokeLinejoin="round" d={d} />
-    {d2 && <path strokeLinecap="round" strokeLinejoin="round" d={d2} />}
-  </svg>
-);
 
 const NAV_SECTIONS = [
   {
     id: 'dashboard',
     to: '/dashboard',
     label: 'Dashboard',
-    icon: <Ico d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />,
+    icon: LayoutDashboard,
     match: ['/dashboard', '/mission'],
   },
   {
     id: 'applications',
     to: '/applications',
     label: 'Applications',
-    icon: <Ico d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />,
+    icon: Briefcase,
     match: ['/applications', '/calendar', '/offer-matrix', '/offer-calculator', '/company-intel'],
-    badge: null,
   },
   {
     id: 'journal',
     to: '/journal',
     label: 'Journal',
-    icon: <Ico d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />,
+    icon: BookOpen,
     match: ['/journal', '/interviews', '/documents', '/interview-prep', '/mock-interview', '/mindset', '/ai-email-assistant', '/interview-battlecards'],
   },
   {
     id: 'insights',
     to: '/insights',
     label: 'Insights',
-    icon: <Ico d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />,
+    icon: TrendingUp,
     match: ['/insights', '/skills', '/heatmap', '/goals', '/reports', '/tech-trends', '/achievements', '/career-roadmap'],
-  },
-  {
-    id: 'settings',
-    to: '/settings',
-    label: 'Settings',
-    icon: <Ico d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" d2="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />,
-    match: ['/settings', '/diagnostics', '/deployment-guide'],
   },
 ];
 
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const user = useAuthStore((s) => s.user);
-  const { error } = useApplications();
+  const { applications, error } = useApplications();
   const { settings, updateSettings } = useUserSettings();
-  const navigate = useNavigate();
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const toggleTheme = useThemeStore((s) => s.toggleTheme);
+  const resolvedTheme = useThemeStore((s) => s.resolvedTheme);
+
+  // Global Cmd+K / Ctrl+K & '?' keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName);
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteOpen((prev) => !prev);
+      } else if (e.key === '?' && !isInput && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        setShortcutsOpen((prev) => !prev);
+      } else if (e.key === 'Escape') {
+        setShortcutsOpen(false);
+        setPaletteOpen(false);
+        setMobileOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -88,134 +117,411 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     }
   }, [user, settings.lastActive, settings.streak, updateSettings]);
 
-  const streak = settings.streak;
+  const streak = settings.streak || 1;
+  const initial = (settings?.displayName || user?.email || 'U').charAt(0).toUpperCase();
+  const displayName = settings?.displayName || (user?.email ? user.email.split('@')[0] : 'Candidate');
+  const activeCount = applications.filter((a) => ['Applied', 'OA/Assessment', 'Interview'].includes(a.status)).length;
+  const interviewCount = applications.filter((a) => a.status === 'Interview').length;
+
+  const isActive = (match: string[]) =>
+    match.some((m) => location.pathname === m || location.pathname.startsWith(m + '/'));
 
   const handleSignOut = async () => {
     await signOutUser();
     navigate('/login');
   };
 
-  const initial = user?.email?.charAt(0).toUpperCase() ?? '?';
-  const providerId = user?.providerData?.[0]?.providerId === 'google.com' ? 'Google OAuth' : 'Email/Password';
-  const closeMobile = () => setMobileOpen(false);
-
-  const isActive = (match: string[]) =>
-    match.some((m) => location.pathname === m || location.pathname.startsWith(m + '/'));
-
   return (
-    <div className={`shell ${collapsed ? 'sidebar-collapsed' : ''}`}>
+    <div className="shell">
+      {/* ── Floating Top Glass Island Navigation ── */}
+      <header className="floating-nav-wrapper">
+        <nav className="floating-island-nav">
+          {/* Left Brand & Streak */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+            <NavLink to="/dashboard" className="nav-brand">
+              <BrandLogo size={36} showGlow />
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span className="nav-brand-title">Job Orbit</span>
+                <span className="nav-brand-badge">Career OS</span>
+              </div>
+            </NavLink>
 
-      {/* ── Mobile Top Bar ── */}
-      <div className="mobile-top-bar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div className="s-logo-icon" style={{ width: 32, height: 32 }}>
-            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
-          </div>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#ffffff', lineHeight: 1.1 }}>ApplyFlow</div>
-            <div style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace', marginTop: 2 }}>
-              {user?.email ? `${user.email.split('@')[0]}` : 'Guest'} • {user?.uid ? user.uid.slice(0, 6) : ''}
-            </div>
-          </div>
-        </div>
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="mobile-hamburger-btn"
-          aria-label="Toggle Navigation Menu"
-        >
-          {mobileOpen ? '✕' : '☰'}
-        </button>
-      </div>
-
-      {/* ── Mobile Overlay ── */}
-      {mobileOpen && <div className="mobile-backdrop" onClick={closeMobile} />}
-
-      {/* ── Sidebar ── */}
-      <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''} ${collapsed ? 'sidebar-collapsed' : ''}`}>
-
-        {/* Logo + Collapse Toggle */}
-        <div className="s-logo">
-          <div className="s-logo-icon">
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
-          </div>
-          {!collapsed && (
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="s-logo-name">ApplyFlow</div>
-              <div className="s-logo-tag">Job Search OS</div>
-            </div>
-          )}
-          {/* Collapse toggle — desktop only */}
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="s-collapse-btn"
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} width={14} height={14}>
-              <path strokeLinecap="round" strokeLinejoin="round"
-                d={collapsed
-                  ? 'M9 5l7 7-7 7'
-                  : 'M15 19l-7-7 7-7'}
-              />
-            </svg>
-          </button>
-        </div>
-
-        {/* ── 5 Primary Nav Items ── */}
-        <nav className="s-nav">
-          {NAV_SECTIONS.map((item) => {
-            const active = isActive(item.match);
-            return (
-              <NavLink
-                key={item.id}
-                to={item.to}
-                onClick={closeMobile}
-                title={collapsed ? item.label : undefined}
-                className={`s-item s-item-main${active ? ' active' : ''}`}
-              >
-                <span className="s-icon">{item.icon}</span>
-                {!collapsed && <span style={{ flex: 1 }}>{item.label}</span>}
-                {!collapsed && item.id === 'dashboard' && streak >= 2 && (
-                  <span className="streak-pill">🔥{streak}</span>
-                )}
-              </NavLink>
-            );
-          })}
-        </nav>
-
-        {/* ── User Footer ── */}
-        <div className="s-bottom">
-          <div
-            className="s-user"
-            onClick={handleSignOut}
-            title={collapsed ? `${user?.email} (UID: ${user?.uid}) — Click to sign out` : 'Click to sign out'}
-          >
-            <div className="s-avatar">{initial}</div>
-            {!collapsed && (
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, color: '#ffffff', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {user?.email || 'Logged In'}
-                </div>
-                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2, fontFamily: 'monospace' }}>
-                  UID: {user?.uid ? `${user.uid.slice(0, 8)}…` : '—'} • {providerId}
-                </div>
+            {streak >= 1 && (
+              <div className="nav-streak-pill" title={`${streak} day active streak`}>
+                <Flame style={{ width: 13, height: 13, color: 'var(--streak)' }} />
+                <span>{streak}d streak</span>
               </div>
             )}
           </div>
-        </div>
-      </aside>
 
-      <div className="main">
-        {/* Sync Error Banner if Firestore failed */}
+          {/* Center Navigation Pills (Desktop Only) */}
+          <div className="nav-pills">
+            {NAV_SECTIONS.map((item) => {
+              const active = isActive(item.match);
+              const Icon = item.icon;
+              return (
+                <NavLink
+                  key={item.id}
+                  to={item.to}
+                  className={`nav-pill-item${active ? ' active' : ''}`}
+                >
+                  <Icon style={{ width: 15, height: 15 }} />
+                  <span>{item.label}</span>
+                </NavLink>
+              );
+            })}
+          </div>
+
+          {/* Right Search, Profile Capsule & Mobile Toggle */}
+          <div className="nav-right-actions">
+            {/* Quick Spotlight Search Trigger */}
+            <button
+              type="button"
+              onClick={() => setPaletteOpen(true)}
+              className="nav-search-btn"
+              title="Quick Search & Actions (Ctrl+K / ⌘K)"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 7,
+                padding: '6px 12px',
+                borderRadius: 12,
+                background: 'var(--page)',
+                border: '1px solid var(--border)',
+                color: 'var(--t2)',
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Search style={{ width: 14, height: 14, color: 'var(--accent)' }} />
+              <span className="nav-search-label" style={{ color: 'var(--t3)' }}>Search…</span>
+              <kbd
+                style={{
+                  fontSize: 10,
+                  padding: '1px 5px',
+                  borderRadius: 4,
+                  background: 'var(--card)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--t3)',
+                  fontWeight: 700,
+                }}
+              >
+                ⌘K
+              </kbd>
+            </button>
+
+            {/* Shortcuts Guide Button */}
+            <button
+              type="button"
+              onClick={() => setShortcutsOpen(true)}
+              className="nav-shortcuts-btn"
+              title="Keyboard Shortcuts Cheatsheet (?)"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 34,
+                height: 34,
+                borderRadius: 12,
+                background: 'var(--page)',
+                border: '1px solid var(--border)',
+                color: 'var(--t2)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Keyboard style={{ width: 15, height: 15 }} />
+            </button>
+
+            {/* Theme Toggle Button (Light/Dark Mode) */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="nav-theme-btn"
+              title={`Switch to ${resolvedTheme === 'dark' ? 'Light' : 'Dark'} mode`}
+              aria-label={`Current theme is ${resolvedTheme}. Switch to ${resolvedTheme === 'dark' ? 'Light' : 'Dark'} mode.`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 34,
+                height: 34,
+                borderRadius: 12,
+                background: 'var(--page)',
+                border: '1px solid var(--border)',
+                color: resolvedTheme === 'dark' ? '#fbbf24' : 'var(--t2)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {resolvedTheme === 'dark' ? (
+                <Sun style={{ width: 15, height: 15 }} />
+              ) : (
+                <Moon style={{ width: 15, height: 15 }} />
+              )}
+            </button>
+
+            <NavLink
+              to="/profile"
+              className="nav-profile-pill"
+              title="View Profile & Settings"
+            >
+              <div className="nav-profile-avatar">{initial}</div>
+              <span className="nav-profile-name" style={{ fontSize: 13, fontWeight: 700, color: 'var(--t1)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {displayName}
+              </span>
+            </NavLink>
+
+            <NavLink
+              to="/about"
+              className="nav-about-btn"
+              title="About Job Orbit & Creator Credits (Deepith)"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '6px 12px',
+                borderRadius: 12,
+                background: location.pathname === '/about' ? '#ffffff' : 'var(--page)',
+                border: '1px solid var(--border)',
+                color: location.pathname === '/about' ? 'var(--accent)' : 'var(--t2)',
+                boxShadow: location.pathname === '/about' ? '0 1px 3px rgba(28, 25, 23, 0.05)' : 'none',
+                fontSize: 13,
+                fontWeight: 600,
+                textDecoration: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Info style={{ width: 14, height: 14, color: location.pathname === '/about' ? 'var(--accent)' : 'var(--t2)' }} />
+              <span className="nav-about-label">About</span>
+            </NavLink>
+
+            {/* Mobile Menu Hamburger Button */}
+            <button
+              type="button"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="mobile-nav-toggle"
+              aria-label="Toggle navigation menu"
+            >
+              {mobileOpen ? <X style={{ width: 18, height: 18 }} /> : <Menu style={{ width: 18, height: 18 }} />}
+            </button>
+          </div>
+        </nav>
+      </header>
+
+      {/* Mobile Drawer Sheet if Open */}
+      {mobileOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(28, 25, 23, 0.55)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            zIndex: 9999,
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '16px 16px 24px',
+          }}
+          onClick={() => setMobileOpen(false)}
+        >
+          <div
+            style={{
+              background: 'var(--card)',
+              borderRadius: 22,
+              padding: '20px 18px',
+              marginTop: 58,
+              boxShadow: 'var(--shadow-lg)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+              border: '1px solid var(--border)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Mobile Profile Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 14, borderBottom: '1px solid var(--border)' }}>
+              <div className="nav-profile-avatar" style={{ width: 40, height: 40, fontSize: 14 }}>
+                {initial}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--t1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {displayName}
+                </div>
+                <div style={{ fontSize: 11.5, color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {user?.email || 'Logged In Candidate'}
+                </div>
+              </div>
+              {streak >= 1 && (
+                <div className="nav-streak-pill" style={{ display: 'inline-flex' }}>
+                  <Flame style={{ width: 13, height: 13, color: 'var(--streak)' }} />
+                  <span>{streak}d</span>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Executive Summary Strip */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: 10,
+                background: 'var(--page)',
+                padding: 10,
+                borderRadius: 14,
+                border: '1px solid var(--border)',
+              }}
+            >
+              <div style={{ padding: '8px 10px', background: 'var(--card)', borderRadius: 10, border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: 11, color: 'var(--t3)', fontWeight: 600 }}>Active Leads</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent)', marginTop: 2 }}>{activeCount}</div>
+              </div>
+              <div style={{ padding: '8px 10px', background: 'var(--card)', borderRadius: 10, border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: 11, color: 'var(--t3)', fontWeight: 600 }}>Interviews</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: '#d97706', marginTop: 2 }}>{interviewCount}</div>
+              </div>
+            </div>
+
+            {/* Navigation Links */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {NAV_SECTIONS.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.match);
+                return (
+                  <NavLink
+                    key={item.id}
+                    to={item.to}
+                    onClick={() => setMobileOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '11px 14px',
+                      borderRadius: 12,
+                      fontSize: 13.5,
+                      fontWeight: 700,
+                      textDecoration: 'none',
+                      background: active ? 'var(--accent-bg)' : 'transparent',
+                      color: active ? 'var(--accent)' : 'var(--t1)',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <Icon style={{ width: 17, height: 17 }} />
+                    <span style={{ flex: 1 }}>{item.label}</span>
+                  </NavLink>
+                );
+              })}
+
+              <NavLink
+                to="/profile"
+                onClick={() => setMobileOpen(false)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '11px 14px',
+                  borderRadius: 12,
+                  fontSize: 13.5,
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  background: location.pathname === '/profile' || location.pathname === '/settings' ? 'var(--accent-bg)' : 'transparent',
+                  color: location.pathname === '/profile' || location.pathname === '/settings' ? 'var(--accent)' : 'var(--t1)',
+                }}
+              >
+                <User style={{ width: 17, height: 17 }} />
+                <span>Profile & Settings</span>
+              </NavLink>
+
+              <NavLink
+                to="/about"
+                onClick={() => setMobileOpen(false)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '11px 14px',
+                  borderRadius: 12,
+                  fontSize: 13.5,
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  background: location.pathname === '/about' ? 'var(--accent-bg)' : 'transparent',
+                  color: location.pathname === '/about' ? 'var(--accent)' : 'var(--t1)',
+                }}
+              >
+                <Info style={{ width: 17, height: 17 }} />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span>About & Credits</span>
+                  <span style={{ fontSize: 10.5, color: 'var(--accent)', fontWeight: 600 }}>Crafted by Deepith</span>
+                </div>
+              </NavLink>
+            </div>
+
+            {/* Mobile Theme Toggle Button */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '11px 14px',
+                borderRadius: 12,
+                fontSize: 13.5,
+                fontWeight: 700,
+                color: 'var(--t1)',
+                background: 'var(--page)',
+                border: '1px solid var(--border)',
+                cursor: 'pointer',
+                width: '100%',
+              }}
+            >
+              {resolvedTheme === 'dark' ? <Sun style={{ width: 17, height: 17, color: '#fbbf24' }} /> : <Moon style={{ width: 17, height: 17, color: 'var(--t2)' }} />}
+              <span style={{ flex: 1, textAlign: 'left' }}>Theme</span>
+              <span style={{ fontSize: 12, color: 'var(--accent)', textTransform: 'capitalize', fontWeight: 600 }}>{resolvedTheme} Mode</span>
+            </button>
+
+            {/* Sign Out Action */}
+            <button
+              type="button"
+              onClick={handleSignOut}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '12px 14px',
+                borderRadius: 12,
+                fontSize: 13,
+                fontWeight: 600,
+                color: '#dc2626',
+                background: '#fef2f2',
+                border: '1px solid #fee2e2',
+                cursor: 'pointer',
+                marginTop: 4,
+                width: '100%',
+                justifyContent: 'center',
+              }}
+            >
+              <LogOut style={{ width: 15, height: 15 }} />
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Main Workspace Content ── */}
+      <main className="main">
+        {/* Sync Error Alert Banner if Firestore connection is interrupted */}
         {error && (
           <div
             style={{
               background: '#fef2f2',
-              borderBottom: '1px solid #fecaca',
-              padding: '10px 20px',
+              border: '1px solid #fecaca',
+              borderRadius: 14,
+              padding: '12px 20px',
+              marginBottom: 16,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -225,9 +531,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span>⚠️</span>
+              <AlertTriangle style={{ width: 16, height: 16, color: '#ef4444' }} />
               <div>
-                <strong>Database Sync Alert:</strong> {error}
+                <strong>Database Sync Notice:</strong> {error}
               </div>
             </div>
             <NavLink
@@ -235,17 +541,73 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               style={{
                 color: '#7f1d1d',
                 fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
                 textDecoration: 'underline',
                 fontSize: 12,
               }}
             >
-              Run Diagnostics →
+              <span>Run Diagnostics</span>
+              <ExternalLink style={{ width: 12, height: 12 }} />
             </NavLink>
           </div>
         )}
+
         {children}
-      </div>
-      <MobileCommandHub />
+
+        {/* ── Real-World Workspace Footer & Credits (Only on Dashboard & pinned to bottom) ── */}
+        {location.pathname === '/dashboard' && (
+          <footer
+            style={{
+              marginTop: 'auto',
+              paddingTop: 36,
+              paddingBottom: 24,
+              borderTop: '1px solid var(--border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 12,
+              fontSize: 12,
+              color: 'var(--t3)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <BrandLogo size={18} />
+              <span style={{ fontWeight: 700, color: 'var(--t1)' }}>Job Orbit</span>
+              <span>•</span>
+              <span>Crafted with passion by <strong style={{ color: 'var(--accent)' }}>Deepith</strong></span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <NavLink to="/about" style={{ color: 'var(--t2)', textDecoration: 'none', fontWeight: 600 }}>
+                About & Credits
+              </NavLink>
+              <NavLink to="/diagnostics" style={{ color: 'var(--t2)', textDecoration: 'none', fontWeight: 600 }}>
+                System Status
+              </NavLink>
+              <span>v2.5.0</span>
+            </div>
+          </footer>
+        )}
+      </main>
+
+      {/* ── Creative Mobile Quick-Capture FAB Button ── */}
+      <NavLink
+        to="/applications?action=new"
+        className="mobile-fab"
+        title="Add Application"
+      >
+        <Plus style={{ width: 18, height: 18 }} />
+        <span>Add Lead</span>
+      </NavLink>
+
+      {/* ── Global Command+K Spotlight Palette ── */}
+      <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} />
+
+      {/* ── Global Keyboard Shortcuts Cheatsheet Modal ── */}
+      <KeyboardShortcutsModal isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
     </div>
   );
 };

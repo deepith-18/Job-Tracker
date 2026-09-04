@@ -122,13 +122,13 @@ export const AtsOptimizerPage: React.FC = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
               {/* Found Keywords */}
-              <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', padding: 16, borderRadius: 14 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: '#047857', textTransform: 'uppercase', marginBottom: 10 }}>
+              <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: 16, borderRadius: 14 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#10b981', textTransform: 'uppercase', marginBottom: 10 }}>
                   ✓ Matched Keywords ({analysis.foundKeywords.length})
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {analysis.foundKeywords.map((kw) => (
-                    <span key={kw} style={{ background: '#ffffff', color: '#047857', fontSize: 11.5, fontWeight: 700, padding: '3px 8px', borderRadius: 6, border: '1px solid #6ee7b7' }}>
+                    <span key={kw} style={{ background: 'var(--card)', color: '#10b981', fontSize: 11.5, fontWeight: 700, padding: '3px 8px', borderRadius: 6, border: '1px solid rgba(16, 185, 129, 0.3)' }}>
                       {kw}
                     </span>
                   ))}
@@ -136,13 +136,13 @@ export const AtsOptimizerPage: React.FC = () => {
               </div>
 
               {/* Missing Keywords */}
-              <div style={{ background: '#fff1f2', border: '1px solid #fecdd3', padding: 16, borderRadius: 14 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: '#be123c', textTransform: 'uppercase', marginBottom: 10 }}>
+              <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', padding: 16, borderRadius: 14 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', marginBottom: 10 }}>
                   <AlertTriangle className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Missing Recommended Keywords ({analysis.missingKeywords.length})
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {analysis.missingKeywords.map((kw) => (
-                    <span key={kw} style={{ background: '#ffffff', color: '#be123c', fontSize: 11.5, fontWeight: 700, padding: '3px 8px', borderRadius: 6, border: '1px solid #fda4af' }}>
+                    <span key={kw} style={{ background: 'var(--card)', color: '#ef4444', fontSize: 11.5, fontWeight: 700, padding: '3px 8px', borderRadius: 6, border: '1px solid rgba(239, 68, 68, 0.3)' }}>
                       + {kw}
                     </span>
                   ))}

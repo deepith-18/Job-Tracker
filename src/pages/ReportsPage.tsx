@@ -20,7 +20,7 @@ export const ReportsPage: React.FC = () => {
   const responseRate = totalApps > 0 ? Math.round(((interviewCount + offerCount) / totalApps) * 100) : 0;
 
   const reportText = `================================================
-ApplyFlow Executive Weekly Job Search Report
+Job Orbit Executive Weekly Job Search Report
 Date: ${format(new Date(), 'MMMM d, yyyy')}
 ================================================
 
@@ -44,7 +44,7 @@ STRATEGIC FOCUS FOR NEXT WEEK:
 3. Network with 3 internal company advocates via LinkedIn InMail.
 
 ================================================
-Generated via ApplyFlow — Job Search OS
+Generated via Job Orbit — Career OS (Crafted by Deepith)
 ================================================`;
 
   const handleCopyReport = () => {

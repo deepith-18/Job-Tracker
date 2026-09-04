@@ -1,6 +1,7 @@
 import React from 'react';
 import { differenceInDays, formatDistanceToNow } from 'date-fns';
 import { Draggable } from '@hello-pangea/dnd';
+import { Clock, AlertTriangle, AlertCircle } from 'lucide-react';
 import type { Application } from '../../types';
 
 interface KanbanCardProps {
@@ -15,16 +16,16 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ application, index, onCl
   const daysDiff = differenceInDays(new Date(), new Date(referenceDate));
   
   let agingClass = 'aging-normal';
-  let agingIcon = '⏱️';
+  let agingIcon = <Clock style={{ width: 12, height: 12 }} />;
   let agingLabel = formatDistanceToNow(new Date(referenceDate), { addSuffix: true });
 
   if (daysDiff >= 30) {
     agingClass = 'aging-red';
-    agingIcon = '🚨';
-    agingLabel = `${daysDiff}d ago · STALE`;
+    agingIcon = <AlertCircle style={{ width: 12, height: 12 }} />;
+    agingLabel = `${daysDiff}d ago · Stale`;
   } else if (daysDiff >= 14) {
     agingClass = 'aging-amber';
-    agingIcon = '⚠️';
+    agingIcon = <AlertTriangle style={{ width: 12, height: 12 }} />;
     agingLabel = `${daysDiff}d ago`;
   }
 
@@ -44,12 +45,12 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ application, index, onCl
             marginBottom: '10px',
             borderRadius: '14px',
             background: snapshot.isDragging
-              ? '#ffffff'
-              : 'linear-gradient(145deg, #ffffff 0%, #fafbff 100%)',
+              ? 'var(--card-hover)'
+              : 'linear-gradient(145deg, var(--card) 0%, var(--card-hover) 100%)',
             border: `1.5px solid ${snapshot.isDragging ? 'var(--accent)' : 'var(--border)'}`,
             boxShadow: snapshot.isDragging
               ? '0 16px 40px rgba(99,102,241,0.25), 0 4px 12px rgba(0,0,0,0.1)'
-              : '0 2px 8px rgba(15,23,42,0.04)',
+              : '0 2px 8px rgba(0,0,0,0.04)',
             cursor: 'grab',
             transition: 'all 0.18s ease',
             transform: snapshot.isDragging ? 'scale(1.02)' : 'none',
@@ -140,7 +141,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ application, index, onCl
                     fontSize: 10.5,
                     fontWeight: 600,
                     color: 'var(--t3)',
-                    background: '#f1f5f9',
+                    background: 'var(--border-light)',
                     padding: '2px 6px',
                     borderRadius: 6,
                   }}

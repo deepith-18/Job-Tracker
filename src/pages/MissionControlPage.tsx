@@ -12,7 +12,7 @@ import type { ApplicationStatus } from '../types';
 
 const STATUS_BAR: Record<ApplicationStatus, string> = {
   Wishlist: '#94a3b8', Applied: '#6366f1', 'OA/Assessment': '#8b5cf6',
-  Interview: '#f59e0b', Offer: '#10b981', Rejected: '#ef4444', Withdrawn: '#94a3b8',
+  Interview: '#f59e0b', Offer: '#10b981', Ghosted: '#64748b', Rejected: '#ef4444', Withdrawn: '#94a3b8',
 };
 
 interface StatProps { icon: React.ReactNode; label: string; value: number | string; sub?: string; bg: string; delay: number; }

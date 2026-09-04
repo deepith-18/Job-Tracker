@@ -6,6 +6,7 @@ import { ApplicationsPage } from './pages/ApplicationsPage';
 import { JournalPage } from './pages/JournalPage';
 import { InsightsPage } from './pages/InsightsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { AboutPage } from './pages/AboutPage';
 
 // Legacy pages still accessible via direct URL
 import { MissionControlPage } from './pages/MissionControlPage';
@@ -42,6 +43,7 @@ function App() {
         <Route path="/journal" element={<ProtectedRoute><JournalPage /></ProtectedRoute>} />
         <Route path="/insights" element={<ProtectedRoute><InsightsPage /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
         {/* ── Legacy Routes (direct URL access preserved) ── */}
         <Route path="/mission" element={<ProtectedRoute><MissionControlPage /></ProtectedRoute>} />
@@ -71,6 +73,8 @@ function App() {
         <Route path="/mindset" element={<ProtectedRoute><JournalPage /></ProtectedRoute>} />
         <Route path="/diagnostics" element={<ProtectedRoute><DiagnosticsPage /></ProtectedRoute>} />
         <Route path="/deployment-guide" element={<ProtectedRoute><DeploymentGuidePage /></ProtectedRoute>} />
+        <Route path="/about" element={<ProtectedRoute><AboutPage /></ProtectedRoute>} />
+        <Route path="/credits" element={<ProtectedRoute><AboutPage /></ProtectedRoute>} />
 
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

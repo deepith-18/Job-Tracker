@@ -1,4 +1,4 @@
-import { AlertTriangle, BarChart, FileText, Mic, Save, Sparkles } from 'lucide-react';
+import { AlertTriangle, BarChart, FileText, Mic, Save, Briefcase, Plus } from 'lucide-react';
 import React, { useState } from 'react';
 import { APPLICATION_STATUSES, type Application, type ApplicationFormData, type ApplicationStatus } from '../../types';
 
@@ -36,7 +36,7 @@ const StarInput: React.FC<{ value: number; onChange: (v: number) => void }> = ({
       ))}
       {value > 0 && (
         <span style={{ fontSize: 12, color: 'var(--t2)', fontWeight: 600, marginLeft: 6 }}>
-          {['', 'Interesting', 'Worth trying', 'Good fit', 'Great match', '⭐ Dream Company'][value]}
+          {['', 'Interesting', 'Worth trying', 'Good fit', 'Great match', 'Top Tier Target'][value]}
         </span>
       )}
     </div>
@@ -117,7 +117,7 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
         {/* Left Column: Company & Role */}
         <div
           style={{
-            background: '#ffffff',
+            background: 'var(--card)',
             border: '1px solid var(--border)',
             borderRadius: 14,
             padding: 16,
@@ -127,7 +127,7 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
           }}
         >
           <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            🏢 Company & Role
+            <Briefcase className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Company & Role
           </div>
 
           <div>
@@ -168,7 +168,7 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
         {/* Right Column: Status & Timeline */}
         <div
           style={{
-            background: '#ffffff',
+            background: 'var(--card)',
             border: '1px solid var(--border)',
             borderRadius: 14,
             padding: 16,
@@ -220,7 +220,7 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
 
       {/* Responsive Notes Section */}
       <div className="modal-form-grid">
-        <div style={{ background: '#ffffff', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
           <label className="lbl"><FileText className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Application Notes</label>
           <textarea
             className="inp"
@@ -232,7 +232,7 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
           />
         </div>
 
-        <div style={{ background: '#ffffff', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
           <label className="lbl"><Mic className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Interview Notes</label>
           <textarea
             className="inp"
@@ -249,18 +249,48 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
       <div
         style={{
           display: 'flex',
-          gap: 10,
+          gap: 12,
           justifyContent: 'flex-end',
-          paddingTop: 14,
+          alignItems: 'center',
+          paddingTop: 18,
           borderTop: '1px solid var(--border)',
-          marginTop: 4,
+          marginTop: 10,
         }}
       >
-        <button type="button" className="btn btn-ghost btn-sm" onClick={onCancel} disabled={loading} style={{ borderRadius: 10 }}>
-          Cancel (Esc)
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={onCancel}
+          disabled={loading}
+          style={{ padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}
+        >
+          Cancel
         </button>
-        <button type="submit" className="btn btn-primary btn-sm" disabled={loading} style={{ padding: '8px 20px', borderRadius: 10 }}>
-          {loading ? 'Saving…' : initial ? <><Save className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Save Changes</> : <><Sparkles className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Add Application</>}
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={loading}
+          style={{
+            padding: '10px 24px',
+            borderRadius: 10,
+            fontSize: 13,
+            fontWeight: 700,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          {loading ? 'Saving…' : initial ? (
+            <>
+              <Save style={{ width: 14, height: 14 }} />
+              <span>Save Changes</span>
+            </>
+          ) : (
+            <>
+              <Plus style={{ width: 15, height: 15 }} />
+              <span>Add Application</span>
+            </>
+          )}
         </button>
       </div>
     </form>

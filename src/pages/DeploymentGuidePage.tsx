@@ -42,7 +42,7 @@ export const DeploymentGuidePage: React.FC = () => {
       <div className="ph" style={{ paddingBottom: 16 }}>
         <h1 className="page-title"><Rocket className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Production Hosting & Deployment Guide</h1>
         <p className="page-sub">
-          Deploy ApplyFlow to Vercel, Netlify, or Firebase Hosting with zero configuration hassle
+          Deploy Job Orbit to Vercel, Netlify, or Firebase Hosting with zero configuration hassle
         </p>
       </div>
 
@@ -122,7 +122,7 @@ export const DeploymentGuidePage: React.FC = () => {
                 <Flame className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Deploying to Firebase Hosting
               </h2>
               <p style={{ fontSize: 13.5, color: 'var(--t2)', lineHeight: 1.6, marginBottom: 16 }}>
-                Since ApplyFlow uses Firebase Authentication and Firestore, Firebase Hosting allows seamless single-project management.
+                Since Job Orbit uses Firebase Authentication and Firestore, Firebase Hosting allows seamless single-project management.
               </p>
 
               <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--t1)', marginBottom: 8 }}>

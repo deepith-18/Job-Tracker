@@ -1,7 +1,22 @@
-import { Flame, Clipboard, Pencil, Trash2 } from 'lucide-react';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInDays, isToday, isPast } from 'date-fns';
+import {
+  Columns,
+  List,
+  LayoutGrid,
+  Pencil,
+  Trash2,
+  Clock,
+  AlertTriangle,
+  AlertCircle,
+  Plus,
+  Search,
+  X,
+  Briefcase,
+  Calendar,
+} from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { QuickAddBar } from '../components/dashboard/QuickAddBar';
 import { KanbanBoard } from '../components/dashboard/KanbanBoard';
@@ -9,11 +24,13 @@ import { ApplicationDetailDrawer } from '../components/dashboard/ApplicationDeta
 import { EmptyState } from '../components/dashboard/EmptyState';
 import { StatusDropdown } from '../components/applications/StatusDropdown';
 import { ApplicationForm } from '../components/applications/ApplicationForm';
+import { JourneyCard } from '../components/applications/JourneyCard';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useApplications } from '../hooks/useApplications';
 import { useApplicationStore } from '../store/applicationStore';
 import { useAuthStore } from '../store/authStore';
+import { useUserSettings } from '../hooks/useUserSettings';
 import { useToast } from '../components/ui/ToastContext';
 import { addApplication, deleteApplication, updateApplication } from '../firebase/firestore';
 import type { Application, ApplicationFormData, SortKey, ApplicationStatus, ViewMode } from '../types';
@@ -31,9 +48,9 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'company', label: 'Company A–Z' },
 ];
 
-const STATUS_ORDER = ['Interview', 'Offer', 'OA/Assessment', 'Applied', 'Wishlist', 'Rejected', 'Withdrawn'];
+const STATUS_ORDER = ['Interview', 'Offer', 'OA/Assessment', 'Applied', 'Wishlist', 'Ghosted', 'Rejected', 'Withdrawn'];
 
-const ALL_STATUSES = ['All', 'Wishlist', 'Applied', 'OA/Assessment', 'Interview', 'Offer', 'Rejected', 'Withdrawn'];
+const ALL_STATUSES = ['All', 'Wishlist', 'Applied', 'OA/Assessment', 'Interview', 'Offer', 'Ghosted', 'Rejected', 'Withdrawn'];
 
 const DeadlineCell: React.FC<{ deadline: Date | null }> = ({ deadline }) => {
   if (!deadline) return <span style={{ color: 'var(--text-muted)' }}>—</span>;
@@ -47,18 +64,63 @@ const DeadlineCell: React.FC<{ deadline: Date | null }> = ({ deadline }) => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <span style={{ fontSize: 13, fontWeight: 500 }}>{format(deadline, 'MMM d, yyyy')}</span>
       {past && (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10.5, fontWeight: 700, padding: '1px 6px', borderRadius: 20, background: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca' }}>
-          ⚠ Overdue
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            fontSize: 10.5,
+            fontWeight: 700,
+            padding: '2px 7px',
+            borderRadius: 20,
+            background: '#fee2e2',
+            color: '#991b1b',
+            border: '1px solid #fecaca',
+            width: 'fit-content',
+          }}
+        >
+          <AlertTriangle style={{ width: 11, height: 11 }} />
+          <span>Overdue</span>
         </span>
       )}
       {today && (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10.5, fontWeight: 700, padding: '1px 6px', borderRadius: 20, background: '#fff7ed', color: '#9a3412', border: '1px solid #fed7aa' }}>
-          <Flame className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Today!
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            fontSize: 10.5,
+            fontWeight: 700,
+            padding: '2px 7px',
+            borderRadius: 20,
+            background: '#fff7ed',
+            color: '#9a3412',
+            border: '1px solid #fed7aa',
+            width: 'fit-content',
+          }}
+        >
+          <Clock style={{ width: 11, height: 11 }} />
+          <span>Today</span>
         </span>
       )}
       {!past && !today && near && (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10.5, fontWeight: 700, padding: '1px 6px', borderRadius: 20, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' }}>
-          ⏰ {daysLeft}d left
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            fontSize: 10.5,
+            fontWeight: 700,
+            padding: '2px 7px',
+            borderRadius: 20,
+            background: '#fef3c7',
+            color: '#92400e',
+            border: '1px solid #fde68a',
+            width: 'fit-content',
+          }}
+        >
+          <Clock style={{ width: 11, height: 11 }} />
+          <span>{daysLeft}d left</span>
         </span>
       )}
     </div>
@@ -69,6 +131,18 @@ export const ApplicationsPage: React.FC = () => {
   const user = useAuthStore((s) => s.user);
   const { sortKey, setSortKey } = useApplicationStore();
   const { applications, loading, error } = useApplications();
+  const { settings } = useUserSettings();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Mobile Quick-Capture FAB action trigger
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('action') === 'new') {
+      setModal({ type: 'add' });
+      navigate('/applications', { replace: true });
+    }
+  }, [location.search, navigate]);
   const { addToast } = useToast();
 
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
@@ -79,6 +153,32 @@ export const ApplicationsPage: React.FC = () => {
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
 
+  // Sync default view mode from user settings once loaded
+  useEffect(() => {
+    if (settings?.defaultView) {
+      setViewMode(settings.defaultView);
+    }
+  }, [settings?.defaultView]);
+
+  // Calculate dynamic status counts
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = { All: applications.length };
+    ALL_STATUSES.forEach((s) => {
+      if (s !== 'All') {
+        counts[s] = applications.filter((a) => a.status === s).length;
+      }
+    });
+    return counts;
+  }, [applications]);
+
+  // Pipeline telemetry metrics
+  const activeCount = useMemo(
+    () => applications.filter((a) => !['Rejected', 'Withdrawn', 'Ghosted'].includes(a.status)).length,
+    [applications]
+  );
+  const interviewCount = useMemo(() => applications.filter((a) => a.status === 'Interview').length, [applications]);
+  const ghostedCount = useMemo(() => applications.filter((a) => a.status === 'Ghosted').length, [applications]);
+
   const filtered = useMemo(() => {
     let list = [...applications];
     if (statusFilter !== 'All') list = list.filter((a) => a.status === statusFilter);
@@ -88,7 +188,8 @@ export const ApplicationsPage: React.FC = () => {
         (a) =>
           a.company.toLowerCase().includes(q) ||
           a.role.toLowerCase().includes(q) ||
-          a.source.toLowerCase().includes(q)
+          a.source.toLowerCase().includes(q) ||
+          (a.notes && a.notes.toLowerCase().includes(q))
       );
     }
     switch (sortKey) {
@@ -157,34 +258,37 @@ export const ApplicationsPage: React.FC = () => {
 
   return (
     <AppShell>
-      {/* Header */}
+      {/* ── Page Header ── */}
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 2 }}>
-              Applications Tracker
+              Applications Pipeline
             </h1>
             <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-              {applications.length} application{applications.length !== 1 ? 's' : ''} total
+              {applications.length} total applications • {activeCount} active opportunities in flight
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-            {/* Mode Switcher */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            {/* 3-Way Mode Switcher */}
             <div
               style={{
                 display: 'flex',
-                background: '#ffffff',
+                background: 'var(--card)',
                 border: '1px solid var(--border)',
                 borderRadius: 12,
                 padding: 3,
                 boxShadow: 'var(--shadow)',
+                maxWidth: '100%',
+                overflowX: 'auto',
               }}
             >
               <button
+                type="button"
                 onClick={() => setViewMode('kanban')}
                 style={{
-                  padding: '7px 14px',
+                  padding: '7px 13px',
                   borderRadius: 9,
                   fontSize: 12.5,
                   fontWeight: 700,
@@ -192,15 +296,21 @@ export const ApplicationsPage: React.FC = () => {
                   background: viewMode === 'kanban' ? 'var(--accent-bg)' : 'transparent',
                   color: viewMode === 'kanban' ? 'var(--accent)' : 'var(--t2)',
                   cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
                   whiteSpace: 'nowrap',
                 }}
               >
-                <Clipboard className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Kanban
+                <Columns style={{ width: 14, height: 14 }} />
+                <span>Kanban</span>
               </button>
+
               <button
+                type="button"
                 onClick={() => setViewMode('table')}
                 style={{
-                  padding: '7px 14px',
+                  padding: '7px 13px',
                   borderRadius: 9,
                   fontSize: 12.5,
                   fontWeight: 700,
@@ -208,14 +318,42 @@ export const ApplicationsPage: React.FC = () => {
                   background: viewMode === 'table' ? 'var(--accent-bg)' : 'transparent',
                   color: viewMode === 'table' ? 'var(--accent)' : 'var(--t2)',
                   cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
                   whiteSpace: 'nowrap',
                 }}
               >
-                ☰ Table
+                <List style={{ width: 14, height: 14 }} />
+                <span>Table</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setViewMode('cards')}
+                style={{
+                  padding: '7px 13px',
+                  borderRadius: 9,
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  border: 'none',
+                  background: viewMode === 'cards' ? 'var(--accent-bg)' : 'transparent',
+                  color: viewMode === 'cards' ? 'var(--accent)' : 'var(--t2)',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <LayoutGrid style={{ width: 14, height: 14 }} />
+                <span>Cards</span>
               </button>
             </div>
 
+            {/* Add Application Button */}
             <button
+              type="button"
               onClick={() => setModal({ type: 'add' })}
               className="btn btn-primary"
               style={{
@@ -230,11 +368,37 @@ export const ApplicationsPage: React.FC = () => {
                 flexShrink: 0,
               }}
             >
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
+              <Plus style={{ width: 16, height: 16 }} />
               <span>Add Application</span>
             </button>
+          </div>
+        </div>
+
+        {/* Compact Telemetry Counters */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 16,
+            marginTop: 14,
+            paddingTop: 12,
+            borderTop: '1px solid var(--border)',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--t2)' }}>
+            <Briefcase style={{ width: 13, height: 13, color: 'var(--accent)' }} />
+            <span>Active:</span>
+            <strong style={{ color: 'var(--t1)' }}>{activeCount}</strong>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--t2)' }}>
+            <Calendar style={{ width: 13, height: 13, color: '#f59e0b' }} />
+            <span>Interviews:</span>
+            <strong style={{ color: '#f59e0b' }}>{interviewCount}</strong>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--t2)' }}>
+            <AlertTriangle style={{ width: 13, height: 13, color: '#64748b' }} />
+            <span>Ghosted / Stale:</span>
+            <strong style={{ color: '#64748b' }}>{ghostedCount}</strong>
           </div>
         </div>
       </div>
@@ -243,38 +407,65 @@ export const ApplicationsPage: React.FC = () => {
         {/* Quick Add Bar */}
         <QuickAddBar applications={applications} />
 
-        {/* Filters Bar */}
+        {/* ── Filters & Search Bar ── */}
         <div style={{ display: 'flex', gap: 12, marginTop: 24, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ position: 'relative', flex: '1 1 200px', maxWidth: 280 }}>
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
+          {/* Search Box */}
+          <div style={{ position: 'relative', flex: '1 1 220px', maxWidth: 300 }}>
+            <Search
               style={{
                 position: 'absolute',
                 left: 11,
                 top: '50%',
                 transform: 'translateY(-50%)',
                 color: 'var(--text-muted)',
+                width: 14,
+                height: 14,
               }}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+            />
             <input
               className="inp"
-              style={{ paddingLeft: 34, paddingTop: 7, paddingBottom: 7, fontSize: 13 }}
-              placeholder="Search company, role…"
+              style={{ paddingLeft: 34, paddingRight: search ? 30 : 12, paddingTop: 7, paddingBottom: 7, fontSize: 13 }}
+              placeholder="Search company, role, notes…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                style={{
+                  position: 'absolute',
+                  right: 8,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--t3)',
+                  cursor: 'pointer',
+                  padding: 2,
+                }}
+              >
+                <X style={{ width: 13, height: 13 }} />
+              </button>
+            )}
           </div>
 
-          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none', maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
+          {/* Status Filter Tabs with Counts */}
+          <div
+            style={{
+              display: 'flex',
+              gap: 6,
+              overflowX: 'auto',
+              paddingBottom: 4,
+              scrollbarWidth: 'none',
+              maxWidth: '100%',
+              WebkitOverflowScrolling: 'touch',
+            }}
+          >
             {ALL_STATUSES.map((s) => (
               <button
                 key={s}
+                type="button"
                 onClick={() => setStatusFilter(s)}
                 style={{
                   padding: '5px 12px',
@@ -284,16 +475,32 @@ export const ApplicationsPage: React.FC = () => {
                   whiteSpace: 'nowrap',
                   flexShrink: 0,
                   border: `1px solid ${statusFilter === s ? 'var(--accent)' : 'var(--border)'}`,
-                  background: statusFilter === s ? 'var(--accent-bg)' : '#fff',
-                  color: statusFilter === s ? 'var(--accent)' : 'var(--text-secondary)',
+                  background: statusFilter === s ? 'var(--accent-bg)' : 'var(--card)',
+                  color: statusFilter === s ? 'var(--accent)' : 'var(--t2)',
                   cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
                 }}
               >
-                {s}
+                <span>{s}</span>
+                <span
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    padding: '1px 6px',
+                    borderRadius: 10,
+                    background: statusFilter === s ? 'var(--accent)' : 'var(--border-light)',
+                    color: statusFilter === s ? '#ffffff' : 'var(--t3)',
+                  }}
+                >
+                  {statusCounts[s] || 0}
+                </span>
               </button>
             ))}
           </div>
 
+          {/* Sort Selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
             <span style={{ fontSize: 11.5, color: 'var(--text-muted)', fontWeight: 600 }}>Sort:</span>
             <select
@@ -311,7 +518,7 @@ export const ApplicationsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* View Mode Content */}
+        {/* ── View Content ── */}
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
             <svg width={36} height={36} viewBox="0 0 24 24" fill="none" className="animate-spin-os">
@@ -320,18 +527,57 @@ export const ApplicationsPage: React.FC = () => {
             </svg>
           </div>
         ) : error ? (
-          <div style={{ background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 12, padding: '20px 24px', color: '#be123c', fontSize: 13 }}>
-            ⚠ Failed to load applications: {error}
+          <div
+            style={{
+              background: '#fff1f2',
+              border: '1px solid #fecdd3',
+              borderRadius: 12,
+              padding: '20px 24px',
+              color: '#be123c',
+              fontSize: 13,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <AlertCircle style={{ width: 16, height: 16 }} />
+            <span>Failed to load applications: {error}</span>
           </div>
         ) : applications.length === 0 ? (
           <EmptyState />
         ) : viewMode === 'kanban' ? (
+          /* 1. KANBAN BOARD VIEW */
           <KanbanBoard
             applications={filtered}
             selectedStatusFilter={statusFilter as ApplicationStatus | 'All'}
             onCardClick={(app) => setSelectedAppDrawer(app)}
           />
+        ) : viewMode === 'cards' ? (
+          /* 2. CARDS GRID VIEW */
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gap: 16,
+            }}
+          >
+            {filtered.map((app, index) => (
+              <div
+                key={app.id}
+                onClick={() => setSelectedAppDrawer(app)}
+                style={{ cursor: 'pointer' }}
+              >
+                <JourneyCard
+                  app={app}
+                  index={index}
+                  onEdit={(app) => setModal({ type: 'edit', app })}
+                  onDelete={(app) => setModal({ type: 'delete', app })}
+                />
+              </div>
+            ))}
+          </div>
         ) : (
+          /* 3. TABLE VIEW */
           <div className="tbl-wrap">
             <div style={{ overflowX: 'auto' }}>
               <table className="tbl">
@@ -357,7 +603,7 @@ export const ApplicationsPage: React.FC = () => {
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, x: -20 }}
-                        transition={{ delay: index * 0.03, duration: 0.2 }}
+                        transition={{ delay: index * 0.02, duration: 0.2 }}
                       >
                         <td style={{ color: 'var(--t3)', fontSize: 12.5, fontWeight: 600 }}>{index + 1}</td>
                         <td>
@@ -404,20 +650,22 @@ export const ApplicationsPage: React.FC = () => {
                         <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
                           <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                             <button
+                              type="button"
                               onClick={() => setSelectedAppDrawer(app)}
                               className="btn btn-ghost btn-sm"
                               style={{ padding: 6 }}
                               title="Edit Details"
                             >
-                              <Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
+                              <Pencil style={{ width: 14, height: 14 }} />
                             </button>
                             <button
+                              type="button"
                               onClick={() => setModal({ type: 'delete', app })}
                               className="btn btn-danger btn-sm"
                               style={{ padding: 6 }}
                               title="Delete"
                             >
-                              <Trash2 className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
+                              <Trash2 style={{ width: 14, height: 14 }} />
                             </button>
                           </div>
                         </td>

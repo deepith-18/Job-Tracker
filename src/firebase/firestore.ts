@@ -3,7 +3,7 @@ import {
   onSnapshot, query, where, serverTimestamp, Timestamp, type Unsubscribe,
 } from 'firebase/firestore';
 import { db, auth } from './config';
-import type { Application, ApplicationFormData } from '../types';
+import type { Application, ApplicationFormData, InterviewCodeQuestion, CodingLanguage } from '../types';
 
 const COL = 'applications';
 
@@ -277,6 +277,17 @@ export interface UserSettingsData {
   minSalary?: number;
   remotePref?: string;
   emailAlerts?: boolean;
+  currency?: string;
+  defaultView?: 'kanban' | 'table' | 'cards';
+  preferredLocations?: string;
+  targetCompanies?: string;
+  staleThresholdDays?: number;
+  weeklyGoal?: number;
+  displayName?: string;
+  bio?: string;
+  githubUrl?: string;
+  linkedinUrl?: string;
+  portfolioUrl?: string;
 }
 
 export const subscribeToUserSettings = (
@@ -298,6 +309,17 @@ export const subscribeToUserSettings = (
           minSalary: typeof data.minSalary === 'number' ? data.minSalary : 160000,
           remotePref: typeof data.remotePref === 'string' ? data.remotePref : 'Remote / Hybrid',
           emailAlerts: typeof data.emailAlerts === 'boolean' ? data.emailAlerts : true,
+          currency: typeof data.currency === 'string' ? data.currency : 'USD ($)',
+          defaultView: typeof data.defaultView === 'string' ? (data.defaultView as 'kanban' | 'table' | 'cards') : 'kanban',
+          preferredLocations: typeof data.preferredLocations === 'string' ? data.preferredLocations : 'Remote, San Francisco, New York',
+          targetCompanies: typeof data.targetCompanies === 'string' ? data.targetCompanies : 'Google, Stripe, Linear, Vercel',
+          staleThresholdDays: typeof data.staleThresholdDays === 'number' ? data.staleThresholdDays : 14,
+          weeklyGoal: typeof data.weeklyGoal === 'number' ? data.weeklyGoal : 5,
+          displayName: typeof data.displayName === 'string' ? data.displayName : '',
+          bio: typeof data.bio === 'string' ? data.bio : '',
+          githubUrl: typeof data.githubUrl === 'string' ? data.githubUrl : '',
+          linkedinUrl: typeof data.linkedinUrl === 'string' ? data.linkedinUrl : '',
+          portfolioUrl: typeof data.portfolioUrl === 'string' ? data.portfolioUrl : '',
         });
       } else {
         callback({
@@ -308,6 +330,17 @@ export const subscribeToUserSettings = (
           minSalary: 160000,
           remotePref: 'Remote / Hybrid',
           emailAlerts: true,
+          currency: 'USD ($)',
+          defaultView: 'kanban',
+          preferredLocations: 'Remote, San Francisco, New York',
+          targetCompanies: 'Google, Stripe, Linear, Vercel',
+          staleThresholdDays: 14,
+          weeklyGoal: 5,
+          displayName: '',
+          bio: '',
+          githubUrl: '',
+          linkedinUrl: '',
+          portfolioUrl: '',
         });
       }
     },
@@ -360,6 +393,82 @@ export const initializeUserCollections = async (uid: string, email?: string | nu
     // Re-throw so callers can show a visible error to the user
     throw err;
   }
+};
+
+// ── CODE & QUESTIONS VAULT ──
+const CODE_QUESTIONS_COL = 'code_questions';
+
+export const subscribeToCodeQuestions = (
+  uid: string,
+  callback: (questions: InterviewCodeQuestion[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe => {
+  const q = query(collection(db, CODE_QUESTIONS_COL), where('uid', '==', uid));
+  return onSnapshot(
+    q,
+    (snap) => {
+      const items: InterviewCodeQuestion[] = snap.docs.map((d) => {
+        const data = d.data() as Record<string, unknown>;
+        return {
+          id: d.id,
+          uid: (data.uid as string) || uid,
+          title: (data.title as string) || '',
+          company: (data.company as string) || '',
+          round: (data.round as string) || 'Technical Round 1',
+          difficulty: (data.difficulty as InterviewCodeQuestion['difficulty']) || 'Medium',
+          topic: (data.topic as string) || 'Data Structures & Design',
+          language: (data.language as CodingLanguage) || 'python',
+          code: (data.code as string) || '',
+          timeComplexity: (data.timeComplexity as string) || '',
+          spaceComplexity: (data.spaceComplexity as string) || '',
+          approach: (data.approach as string) || '',
+          followUps: (data.followUps as string) || '',
+          isStarred: Boolean(data.isStarred),
+          dateAdded: (data.dateAdded as string) || new Date().toISOString().split('T')[0],
+          applicationId: (data.applicationId as string) || '',
+        };
+      });
+
+      // Sort: Starred first, then by dateAdded descending
+      items.sort((a, b) => {
+        if (a.isStarred !== b.isStarred) return a.isStarred ? -1 : 1;
+        return (b.dateAdded || '').localeCompare(a.dateAdded || '');
+      });
+
+      callback(items);
+    },
+    onError
+  );
+};
+
+export const addCodeQuestionItem = async (
+  uid: string,
+  item: Omit<InterviewCodeQuestion, 'id'>
+): Promise<string> => {
+  const email = auth.currentUser?.email || '';
+  const ref = await addDoc(collection(db, CODE_QUESTIONS_COL), {
+    ...item,
+    uid,
+    email,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  return ref.id;
+};
+
+export const updateCodeQuestionItem = async (
+  questionId: string,
+  updates: Partial<Omit<InterviewCodeQuestion, 'id' | 'uid'>>
+): Promise<void> => {
+  const ref = doc(db, CODE_QUESTIONS_COL, questionId);
+  await updateDoc(ref, {
+    ...updates,
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const deleteCodeQuestionItem = async (questionId: string): Promise<void> => {
+  await deleteDoc(doc(db, CODE_QUESTIONS_COL, questionId));
 };
 
 

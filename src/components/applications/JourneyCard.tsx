@@ -28,14 +28,14 @@ const statusCardClass = (s: ApplicationStatus): string => {
   const map: Record<ApplicationStatus, string> = {
     Wishlist: 'status-wishlist', Applied: 'status-applied',
     'OA/Assessment': 'status-oa', Interview: 'status-interview',
-    Offer: 'status-offer', Rejected: 'status-rejected', Withdrawn: 'status-withdrawn',
+    Offer: 'status-offer', Ghosted: 'status-ghosted', Rejected: 'status-rejected', Withdrawn: 'status-withdrawn',
   };
   return map[s];
 };
 
 // Journey step index (for the stepper)
 const stepIndex = (status: ApplicationStatus): number => {
-  if (status === 'Rejected' || status === 'Withdrawn') return -1; // terminal
+  if (status === 'Rejected' || status === 'Withdrawn' || status === 'Ghosted') return -1; // terminal
   return JOURNEY_STEPS.indexOf(status);
 };
 
@@ -43,6 +43,7 @@ const Stepper: React.FC<{ status: ApplicationStatus }> = ({ status }) => {
   const current = stepIndex(status);
   const isTerminal = current === -1;
   const isRejected = status === 'Rejected';
+  const isGhosted = status === 'Ghosted';
 
   if (isTerminal) {
     return (
@@ -50,11 +51,11 @@ const Stepper: React.FC<{ status: ApplicationStatus }> = ({ status }) => {
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px',
           borderRadius: 20, fontSize: 12, fontWeight: 700,
-          background: isRejected ? '#fff1f2' : '#f8fafc',
-          color: isRejected ? '#be123c' : '#64748b',
-          border: `1px solid ${isRejected ? '#fecdd3' : '#e2e8f0'}`,
+          background: isRejected ? '#fff1f2' : isGhosted ? '#f1f5f9' : '#f8fafc',
+          color: isRejected ? '#be123c' : isGhosted ? '#475569' : '#64748b',
+          border: `1px solid ${isRejected ? '#fecdd3' : isGhosted ? '#cbd5e1' : '#e2e8f0'}`,
         }}>
-          {isRejected ? '✕ Rejected' : '○ Withdrawn'}
+          {isRejected ? 'Rejected' : isGhosted ? 'Ghosted / No Reply' : 'Withdrawn'}
         </div>
       </div>
     );
@@ -149,9 +150,9 @@ export const JourneyCard: React.FC<JourneyCardProps> = ({ app, index, onEdit, on
               {app.rating > 0 && <Stars rating={app.rating} />}
               <button
                 onClick={() => onEdit(app)}
-                style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t3)', transition: 'all 0.15s' }}
+                style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--card)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t3)', transition: 'all 0.15s' }}
                 onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent-bg)'; e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--t3)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--card)'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--t3)'; }}
               >
                 <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -159,9 +160,9 @@ export const JourneyCard: React.FC<JourneyCardProps> = ({ app, index, onEdit, on
               </button>
               <button
                 onClick={() => onDelete(app)}
-                style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t3)', transition: 'all 0.15s' }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#fff1f2'; e.currentTarget.style.borderColor = '#fca5a5'; e.currentTarget.style.color = '#ef4444'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--t3)'; }}
+                style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--card)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t3)', transition: 'all 0.15s' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'; e.currentTarget.style.borderColor = '#ef4444'; e.currentTarget.style.color = '#ef4444'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--card)'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--t3)'; }}
               >
                 <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from './Button';
+import { Trash2 } from 'lucide-react';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -29,30 +29,93 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={(e) => e.target === e.currentTarget && onCancel()}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.6)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
+          zIndex: 9999,
+        }}
       >
         <motion.div
           className="modal-card"
-          style={{ maxWidth: 400 }}
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          style={{
+            maxWidth: 440,
+            width: '100%',
+            background: 'var(--card)',
+            borderRadius: 16,
+            padding: '28px 26px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--border)',
+            border: '1px solid var(--border)',
+            overflow: 'hidden',
+          }}
+          initial={{ opacity: 0, scale: 0.92, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ type: 'spring', damping: 28, stiffness: 400 }}
         >
-          <div className="p-6">
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             <div
-              className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
-              style={{ background: '#fee2e2' }}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                background: '#fee2e2',
+                color: '#ef4444',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 16,
+              }}
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="#ef4444" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round"
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
+              <Trash2 style={{ width: 20, height: 20 }} />
             </div>
-            <h3 className="text-base font-bold mb-1.5" style={{ color: 'var(--text-primary)' }}>{title}</h3>
-            <p className="text-sm mb-5" style={{ color: 'var(--text-secondary)' }}>{message}</p>
-            <div className="flex gap-3 justify-end">
-              <Button variant="secondary" onClick={onCancel} disabled={loading}>Cancel</Button>
-              <Button variant="danger" onClick={onConfirm} loading={loading}>{confirmLabel}</Button>
+
+            <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--t1)', margin: '0 0 8px 0', lineHeight: 1.3 }}>
+              {title}
+            </h3>
+            <p style={{ fontSize: 13.5, color: 'var(--t2)', margin: '0 0 24px 0', lineHeight: 1.5 }}>
+              {message}
+            </p>
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', alignItems: 'center' }}>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={onCancel}
+                disabled={loading}
+                style={{
+                  padding: '9px 18px',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  borderRadius: 10,
+                  border: '1px solid var(--border)',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger"
+                onClick={onConfirm}
+                disabled={loading}
+                style={{
+                  padding: '9px 20px',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  borderRadius: 10,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <Trash2 style={{ width: 14, height: 14 }} />
+                <span>{loading ? 'Deleting…' : confirmLabel}</span>
+              </button>
             </div>
           </div>
         </motion.div>

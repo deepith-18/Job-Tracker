@@ -4,11 +4,12 @@ export type ApplicationStatus =
   | 'OA/Assessment'
   | 'Interview'
   | 'Offer'
+  | 'Ghosted'
   | 'Rejected'
   | 'Withdrawn';
 
 export const APPLICATION_STATUSES: ApplicationStatus[] = [
-  'Wishlist', 'Applied', 'OA/Assessment', 'Interview', 'Offer', 'Rejected', 'Withdrawn',
+  'Wishlist', 'Applied', 'OA/Assessment', 'Interview', 'Offer', 'Ghosted', 'Rejected', 'Withdrawn',
 ];
 
 // Linear journey steps (non-terminal)
@@ -66,5 +67,34 @@ export interface AnalyticsFilter {
   source: string;
   roleType: string;
   status: ApplicationStatus | 'All';
+}
+
+export type CodingLanguage =
+  | 'javascript'
+  | 'typescript'
+  | 'python'
+  | 'java'
+  | 'cpp'
+  | 'go'
+  | 'sql'
+  | 'rust';
+
+export interface InterviewCodeQuestion {
+  id: string;
+  uid?: string;
+  title: string;
+  company: string;
+  round: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  topic: string;
+  language: CodingLanguage;
+  code: string;
+  timeComplexity?: string;
+  spaceComplexity?: string;
+  approach: string;
+  followUps?: string;
+  isStarred: boolean;
+  dateAdded: string;
+  applicationId?: string;
 }
 

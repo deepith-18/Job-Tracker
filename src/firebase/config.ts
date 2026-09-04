@@ -23,7 +23,7 @@ const missingVars = REQUIRED_VARS.filter(
 );
 
 if (missingVars.length > 0) {
-  const msg = `[ApplyFlow] Missing Firebase environment variables: ${missingVars.join(', ')}.\n` +
+  const msg = `[Job Orbit] Missing Firebase environment variables: ${missingVars.join(', ')}.\n` +
     'Add these to Vercel: Project → Settings → Environment Variables, then redeploy.';
   console.error(msg);
   // Show a visible banner in the page so it is impossible to miss

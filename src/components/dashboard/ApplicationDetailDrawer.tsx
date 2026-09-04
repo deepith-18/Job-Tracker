@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
+import {
+  ExternalLink,
+  X,
+  FileText,
+  Mail,
+  Copy,
+  Check,
+  Award,
+  CheckCircle2,
+} from 'lucide-react';
 import { useToast } from '../ui/ToastContext';
 import { StatusDropdown } from '../applications/StatusDropdown';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
@@ -25,6 +35,19 @@ export const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = (
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
+  // Drawer Tab State: 'details' vs 'copilot'
+  const [activeTab, setActiveTab] = useState<'details' | 'copilot'>('details');
+
+  // Copilot Email State
+  const [emailTemplate, setEmailTemplate] = useState<'thank-you' | 'check-in' | 'updates'>('thank-you');
+  const [copied, setCopied] = useState(false);
+
+  // STAR Story Builder State
+  const [starSituation, setStarSituation] = useState('');
+  const [starTask, setStarTask] = useState('');
+  const [starAction, setStarAction] = useState('');
+  const [starResult, setStarResult] = useState('');
+
   useEffect(() => {
     if (application) {
       setFormData({
@@ -40,10 +63,12 @@ export const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = (
         rating: application.rating,
         rejectionReasons: application.rejectionReasons || [],
       });
+      setActiveTab('details');
+      setCopied(false);
     }
   }, [application]);
 
-  // Keyboard shortcut handler: Esc to close, Enter to save
+  // Keyboard shortcut handler: Esc to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
@@ -83,7 +108,7 @@ export const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = (
         rejectionReasons: formData.rejectionReasons || [],
       });
 
-      addToast('Application Saved 💾', `Updated ${compName} (${roleName})`, 'success');
+      addToast('Application Saved', `Updated ${compName} (${roleName})`, 'success');
       onClose();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error updating';
@@ -114,6 +139,88 @@ export const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = (
     setFormData({ ...formData, rejectionReasons: updated });
   };
 
+  // Generate dynamic email draft based on selected template
+  const getGeneratedEmail = () => {
+    const company = formData.company || 'the team';
+    const role = formData.role || 'this role';
+
+    if (emailTemplate === 'thank-you') {
+      return `Subject: Thank you — ${role} interview with ${company}
+
+Hi [Interviewer Name],
+
+Thank you for taking the time to speak with me today regarding the ${role} opportunity at ${company}. I really enjoyed our conversation and learning more about the team's priorities and upcoming initiatives.
+
+Our discussion reinforced my enthusiasm for the role, and I am confident that my technical background and problem-solving skills will allow me to deliver immediate value.
+
+Please let me know if you need any additional work samples, references, or details from my side. Looking forward to the next steps in the process!
+
+Best regards,
+[Your Name]`;
+    }
+
+    if (emailTemplate === 'check-in') {
+      return `Subject: Following up on ${role} application — ${company}
+
+Hi [Recruiter / Hiring Team],
+
+I hope your week is going well!
+
+I wanted to follow up on my application for the ${role} position at ${company}. I remain very interested in the team's mission and would love to know if there are any updates regarding the hiring timeline.
+
+Thank you for your time and consideration, and I look forward to hearing from you.
+
+Best regards,
+[Your Name]`;
+    }
+
+    return `Subject: Application Update: ${role} — ${company}
+
+Hi [Hiring Team],
+
+I hope you're having a productive week!
+
+I'm reaching out with a brief update regarding my application for the ${role} position at ${company}. I recently completed [Key Project / Milestone / Certification] which directly aligns with the technical scope of your team.
+
+I would welcome the opportunity to discuss how this hands-on experience can help accelerate ${company}'s goals.
+
+Best regards,
+[Your Name]`;
+  };
+
+  const handleCopyEmail = () => {
+    navigator.clipboard.writeText(getGeneratedEmail());
+    setCopied(true);
+    addToast('Copied to Clipboard', 'Email template copied successfully', 'success');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleAppendStarToNotes = () => {
+    if (!starSituation && !starTask && !starAction && !starResult) {
+      addToast('Empty Story', 'Please fill in at least one STAR field', 'error');
+      return;
+    }
+
+    const starBlock = `\n\n--- STAR Story (${format(new Date(), 'MMM d, yyyy')}) ---
+• Situation: ${starSituation || '—'}
+• Task: ${starTask || '—'}
+• Action: ${starAction || '—'}
+• Result: ${starResult || '—'}`;
+
+    setFormData((prev) => ({
+      ...prev,
+      interviewNotes: (prev.interviewNotes || '') + starBlock,
+    }));
+
+    setStarSituation('');
+    setStarTask('');
+    setStarAction('');
+    setStarResult('');
+
+    addToast('Story Appended', 'STAR story inserted into Interview Notes', 'success');
+    setActiveTab('details');
+  };
+
   return (
     <AnimatePresence>
       <div className="drawer-backdrop" onClick={onClose} style={{ zIndex: 1000 }}>
@@ -124,32 +231,50 @@ export const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = (
           animate={{ x: 0 }}
           exit={{ x: '100%' }}
           transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-          style={{ width: 560, maxWidth: '100vw' }}
+          style={{
+            width: 580,
+            maxWidth: '100vw',
+            background: 'var(--card)',
+            borderLeft: '1px solid var(--border)',
+            boxShadow: '-10px 0 40px rgba(0, 0, 0, 0.25)',
+          }}
         >
           {/* Header */}
-          <div className="drawer-header" style={{ background: '#0d1136', color: '#fff' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div
+            className="drawer-header"
+            style={{
+              background: 'var(--page)',
+              borderBottom: '1px solid var(--border)',
+              padding: '18px 22px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
               <div
                 style={{
-                  width: 40,
-                  height: 40,
+                  width: 42,
+                  height: 42,
                   borderRadius: 12,
-                  background: 'linear-gradient(135deg, #818cf8, #4f46e5)',
-                  color: '#fff',
+                  background: 'linear-gradient(135deg, var(--accent), var(--accent-deep))',
+                  color: '#ffffff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: 16,
+                  fontSize: 17,
                   fontWeight: 800,
+                  boxShadow: '0 4px 12px var(--accent-glow)',
+                  flexShrink: 0,
                 }}
               >
                 {formData.company?.charAt(0).toUpperCase() || '?'}
               </div>
-              <div>
-                <h2 style={{ fontSize: 18, fontWeight: 800, color: '#fff', margin: 0 }}>
+              <div style={{ minWidth: 0 }}>
+                <h2 style={{ fontSize: 17, fontWeight: 800, color: 'var(--t1)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {formData.company || 'Application Details'}
                 </h2>
-                <p style={{ fontSize: 13, color: '#a5b4fc', margin: 0, marginTop: 2 }}>
+                <p style={{ fontSize: 12.5, color: 'var(--t2)', margin: 0, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {formData.role}
                 </p>
               </div>
@@ -158,236 +283,382 @@ export const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = (
             <button
               onClick={onClose}
               style={{
-                background: 'rgba(255,255,255,0.1)',
-                border: 'none',
-                color: '#fff',
+                background: 'var(--card)',
+                border: '1px solid var(--border)',
+                color: 'var(--t2)',
                 width: 32,
                 height: 32,
-                borderRadius: 10,
+                borderRadius: 9,
                 cursor: 'pointer',
-                fontSize: 16,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.15s ease',
               }}
               title="Close (Esc)"
             >
-              ✕
+              <X style={{ width: 16, height: 16 }} />
             </button>
           </div>
 
-          {/* Body */}
-          <div className="drawer-body" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {/* Status Dropdown + Rating */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <div>
-                <label className="lbl">Pipeline Status</label>
-                <StatusDropdown
-                  current={(formData.status as ApplicationStatus) || 'Wishlist'}
-                  isOpen={dropdownOpen}
-                  onOpen={() => setDropdownOpen(true)}
-                  onClose={() => setDropdownOpen(false)}
-                  onSelect={async (status) => {
-                    setFormData((prev) => ({ ...prev, status }));
-                    setDropdownOpen(false);
-                    try {
-                      await updateApplication(application.id, { status });
-                      addToast('Status Updated 🚀', `Moved to ${status}`, 'success');
-                    } catch (err: unknown) {
-                      const msg = err instanceof Error ? err.message : 'Error updating status';
-                      addToast('Failed to update status', msg, 'error');
-                    }
-                  }}
-                />
-              </div>
+          {/* Segmented Mode Switcher */}
+          <div
+            style={{
+              display: 'flex',
+              padding: '10px 22px 0',
+              background: 'var(--page)',
+              borderBottom: '1px solid var(--border)',
+              gap: 8,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setActiveTab('details')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '8px 14px',
+                fontSize: 13,
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                borderBottom: activeTab === 'details' ? '2.5px solid var(--accent)' : '2.5px solid transparent',
+                background: 'transparent',
+                color: activeTab === 'details' ? 'var(--accent)' : 'var(--t2)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <FileText style={{ width: 14, height: 14 }} />
+              <span>Overview & Notes</span>
+            </button>
 
-              <div>
-                <label className="lbl">Dream Rating (1–5)</label>
-                <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, rating: star })}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        fontSize: 22,
-                        cursor: 'pointer',
-                        color: star <= (formData.rating || 0) ? '#fbbf24' : '#cbd5e1',
-                        transition: 'transform 0.1s ease',
+            <button
+              type="button"
+              onClick={() => setActiveTab('copilot')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '8px 14px',
+                fontSize: 13,
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                borderBottom: activeTab === 'copilot' ? '2.5px solid var(--accent)' : '2.5px solid transparent',
+                background: 'transparent',
+                color: activeTab === 'copilot' ? 'var(--accent)' : 'var(--t2)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Mail style={{ width: 14, height: 14 }} />
+              <span>Interview Copilot & Follow-Up</span>
+            </button>
+          </div>
+
+          {/* Body Content */}
+          <div className="drawer-body" style={{ flex: 1, overflowY: 'auto', padding: '22px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {activeTab === 'details' ? (
+              <>
+                {/* Status Dropdown + Source */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <div>
+                    <label className="lbl">Pipeline Status</label>
+                    <StatusDropdown
+                      current={(formData.status as ApplicationStatus) || 'Wishlist'}
+                      isOpen={dropdownOpen}
+                      onOpen={() => setDropdownOpen(true)}
+                      onClose={() => setDropdownOpen(false)}
+                      onSelect={async (status) => {
+                        setFormData((prev) => ({ ...prev, status }));
+                        setDropdownOpen(false);
+                        try {
+                          await updateApplication(application.id, { status });
+                          addToast('Status Updated', `Moved to ${status}`, 'success');
+                        } catch (err: unknown) {
+                          const msg = err instanceof Error ? err.message : 'Error updating status';
+                          addToast('Failed to update status', msg, 'error');
+                        }
                       }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="lbl">Source / Portal</label>
+                    <select
+                      className="inp"
+                      value={formData.source || ''}
+                      onChange={(e) => setFormData({ ...formData, source: e.target.value })}
                     >
-                      ★
-                    </button>
-                  ))}
+                      <option value="">Select source…</option>
+                      {COMMON_SOURCES.map((src) => (
+                        <option key={src} value={src}>
+                          {src}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Company & Role */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <div>
-                <label className="lbl">Company Name</label>
-                <input
-                  type="text"
-                  className="inp"
-                  value={formData.company || ''}
-                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  placeholder="e.g. Google"
-                />
-              </div>
-              <div>
-                <label className="lbl">Role Title</label>
-                <input
-                  type="text"
-                  className="inp"
-                  value={formData.role || ''}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  placeholder="e.g. Senior Frontend Engineer"
-                />
-              </div>
-            </div>
+                {/* Company & Role Inputs */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <div>
+                    <label className="lbl">Company Name *</label>
+                    <input
+                      className="inp"
+                      value={formData.company || ''}
+                      onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                    />
+                  </div>
 
-            {/* Applied Date & Deadline */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <div>
-                <label className="lbl">Applied Date</label>
-                <input
-                  type="date"
-                  className="inp"
-                  value={
-                    formData.appliedDate
-                      ? format(new Date(formData.appliedDate), 'yyyy-MM-dd')
-                      : ''
-                  }
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      appliedDate: e.target.value ? new Date(e.target.value) : null,
-                    })
-                  }
-                />
-              </div>
+                  <div>
+                    <label className="lbl">Role Title *</label>
+                    <input
+                      className="inp"
+                      value={formData.role || ''}
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    />
+                  </div>
+                </div>
 
-              <div>
-                <label className="lbl">Deadline</label>
-                <input
-                  type="date"
-                  className="inp"
-                  value={
-                    formData.deadline
-                      ? format(new Date(formData.deadline), 'yyyy-MM-dd')
-                      : ''
-                  }
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      deadline: e.target.value ? new Date(e.target.value) : null,
-                    })
-                  }
-                />
-              </div>
-            </div>
+                {/* Job Link */}
+                <div>
+                  <label className="lbl">Job Listing URL</label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      className="inp"
+                      type="url"
+                      placeholder="https://company.com/careers/…"
+                      value={formData.jobLink || ''}
+                      onChange={(e) => setFormData({ ...formData, jobLink: e.target.value })}
+                    />
+                    {formData.jobLink && (
+                      <a
+                        href={formData.jobLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-ghost"
+                        style={{ padding: '8px 12px', flexShrink: 0 }}
+                        title="Open posting in new tab"
+                      >
+                        <ExternalLink style={{ width: 14, height: 14 }} />
+                      </a>
+                    )}
+                  </div>
+                </div>
 
-            {/* Source & Job Link */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <div>
-                <label className="lbl">Source</label>
-                <select
-                  className="inp"
-                  value={formData.source || 'LinkedIn'}
-                  onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                >
-                  {COMMON_SOURCES.map((src) => (
-                    <option key={src} value={src}>
-                      {src}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="lbl">Job URL</label>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <input
-                    type="url"
+                {/* Notes Fields */}
+                <div>
+                  <label className="lbl">Application & Compensation Notes</label>
+                  <textarea
                     className="inp"
-                    value={formData.jobLink || ''}
-                    onChange={(e) => setFormData({ ...formData, jobLink: e.target.value })}
-                    placeholder="https://..."
+                    rows={3}
+                    value={formData.notes || ''}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="Salary range, tech stack requirements, recruiter contact info…"
                   />
-                  {formData.jobLink && (
-                    <a
-                      href={formData.jobLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-ghost"
-                      style={{ padding: '0 10px', flexShrink: 0 }}
-                      title="Open Job URL"
-                    >
-                      🔗
-                    </a>
-                  )}
                 </div>
-              </div>
-            </div>
 
-            {/* General Notes */}
-            <div>
-              <label className="lbl">Notes & Preparation</label>
-              <textarea
-                className="inp"
-                rows={3}
-                value={formData.notes || ''}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Key requirements, salary range, referrals..."
-              />
-            </div>
-
-            {/* Interview Notes & Dates */}
-            <div>
-              <label className="lbl">Interview Logs & Question Notes</label>
-              <textarea
-                className="inp"
-                rows={3}
-                value={formData.interviewNotes || ''}
-                onChange={(e) => setFormData({ ...formData, interviewNotes: e.target.value })}
-                placeholder="System design questions asked, interviewer details, next steps..."
-              />
-            </div>
-
-            {/* Rejection Reasons (if rejected or learning) */}
-            <div>
-              <label className="lbl">Rejection / Post-Mortem Tags</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
-                {REJECTION_REASONS.map((reason) => {
-                  const active = (formData.rejectionReasons || []).includes(reason);
-                  return (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <label className="lbl" style={{ margin: 0 }}>Interview Prep & Notes</label>
                     <button
-                      key={reason}
                       type="button"
-                      onClick={() => toggleRejectionReason(reason)}
+                      onClick={() => setActiveTab('copilot')}
                       style={{
-                        padding: '4px 10px',
-                        borderRadius: 16,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        border: `1px solid ${active ? '#be123c' : 'var(--border)'}`,
-                        background: active ? '#fff1f2' : '#fff',
-                        color: active ? '#be123c' : 'var(--t2)',
+                        border: 'none',
+                        background: 'transparent',
+                        color: 'var(--accent)',
+                        fontSize: 11.5,
+                        fontWeight: 700,
                         cursor: 'pointer',
-                        transition: 'all 0.15s ease',
                       }}
                     >
-                      {active ? '✓ ' : '+ '}
-                      {reason}
+                      Open STAR Builder →
                     </button>
-                  );
-                })}
+                  </div>
+                  <textarea
+                    className="inp"
+                    rows={3}
+                    value={formData.interviewNotes || ''}
+                    onChange={(e) => setFormData({ ...formData, interviewNotes: e.target.value })}
+                    placeholder="Questions asked, topics to review, STAR stories…"
+                  />
+                </div>
+
+                {/* Rejection / Post-Mortem Tags */}
+                <div>
+                  <label className="lbl">Post-Mortem / Outcome Tags</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                    {REJECTION_REASONS.map((reason) => {
+                      const active = (formData.rejectionReasons || []).includes(reason);
+                      return (
+                        <button
+                          key={reason}
+                          type="button"
+                          onClick={() => toggleRejectionReason(reason)}
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: 16,
+                            fontSize: 12,
+                            fontWeight: 600,
+                            border: `1px solid ${active ? '#dc2626' : 'var(--border)'}`,
+                            background: active ? '#fef2f2' : '#ffffff',
+                            color: active ? '#dc2626' : 'var(--t2)',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          {active ? '✓ ' : '+ '}
+                          {reason}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* Interview Copilot & Follow-Up Tab */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {/* Email Generator Section */}
+                <div style={{ background: 'var(--page)', border: '1px solid var(--border)', borderRadius: 16, padding: 18 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Mail style={{ width: 16, height: 16, color: 'var(--accent)' }} />
+                      <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--t1)' }}>
+                        1-Click Follow-Up & Thank You Draft
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleCopyEmail}
+                      className="btn btn-primary btn-sm"
+                      style={{ padding: '5px 12px', fontSize: 12 }}
+                    >
+                      {copied ? <Check style={{ width: 13, height: 13 }} /> : <Copy style={{ width: 13, height: 13 }} />}
+                      <span>{copied ? 'Copied!' : 'Copy Draft'}</span>
+                    </button>
+                  </div>
+
+                  {/* Template Picker */}
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+                    {[
+                      { id: 'thank-you', label: 'Thank You Email' },
+                      { id: 'check-in', label: '1-Week Check-in' },
+                      { id: 'updates', label: 'Project Update' },
+                    ].map((tpl) => (
+                      <button
+                        key={tpl.id}
+                        type="button"
+                        onClick={() => setEmailTemplate(tpl.id as any)}
+                        style={{
+                          padding: '5px 10px',
+                          borderRadius: 8,
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          border: emailTemplate === tpl.id ? '1px solid var(--accent)' : '1px solid var(--border)',
+                          background: emailTemplate === tpl.id ? '#ffffff' : 'transparent',
+                          color: emailTemplate === tpl.id ? 'var(--accent)' : 'var(--t2)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {tpl.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <textarea
+                    className="inp"
+                    rows={8}
+                    readOnly
+                    value={getGeneratedEmail()}
+                    style={{ fontFamily: 'monospace', fontSize: 12, lineHeight: 1.5, background: 'var(--card)' }}
+                  />
+                </div>
+
+                {/* STAR Story Builder Section */}
+                <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 18 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                    <Award style={{ width: 16, height: 16, color: 'var(--accent)' }} />
+                    <div>
+                      <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--t1)' }}>
+                        STAR Story Battlecard Builder
+                      </span>
+                      <p style={{ fontSize: 11.5, color: 'var(--t3)', margin: '2px 0 0' }}>
+                        Craft a compelling response to nail behavioral questions at {formData.company || 'this interview'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div>
+                      <label className="lbl">Situation (Context & Setting)</label>
+                      <input
+                        className="inp"
+                        placeholder="e.g. During peak Q4 migration, our primary database hit high latency…"
+                        value={starSituation}
+                        onChange={(e) => setStarSituation(e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="lbl">Task (Objective & Responsibility)</label>
+                      <input
+                        className="inp"
+                        placeholder="e.g. I was assigned to optimize queries and cut response time under 150ms…"
+                        value={starTask}
+                        onChange={(e) => setStarTask(e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="lbl">Action (What You Specifically Did)</label>
+                      <input
+                        className="inp"
+                        placeholder="e.g. Profiling slow traces, implementing Redis caching layer, refactoring indices…"
+                        value={starAction}
+                        onChange={(e) => setStarAction(e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="lbl">Result (Measurable Impact & Outcome)</label>
+                      <input
+                        className="inp"
+                        placeholder="e.g. Reduced p99 latency by 72%, prevented downtime for 200k active users…"
+                        value={starResult}
+                        onChange={(e) => setStarResult(e.target.value)}
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleAppendStarToNotes}
+                      className="btn btn-primary"
+                      style={{ marginTop: 6, padding: '9px 18px', fontSize: 13 }}
+                    >
+                      <CheckCircle2 style={{ width: 15, height: 15 }} />
+                      <span>Save STAR Story to Interview Notes</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Footer */}
-          <div className="drawer-footer" style={{ justifyContent: 'space-between' }}>
+          <div
+            className="drawer-footer"
+            style={{
+              padding: '16px 22px',
+              borderTop: '1px solid var(--border)',
+              background: 'var(--page)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
             <button
               type="button"
               onClick={() => setShowDeleteConfirm(true)}
@@ -399,14 +670,14 @@ export const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = (
 
             <div style={{ display: 'flex', gap: 10 }}>
               <button type="button" onClick={onClose} className="btn btn-ghost">
-                Cancel (Esc)
+                Cancel
               </button>
               <button
                 type="button"
                 onClick={() => handleSave()}
                 className="btn btn-primary"
               >
-                Save Changes (Enter)
+                Save Changes
               </button>
             </div>
           </div>

@@ -14,13 +14,14 @@ interface KanbanBoardProps {
 }
 
 const COLUMN_THEMES: Record<ApplicationStatus, { label: string; bg: string; dot: string; countBg: string; text: string }> = {
-  Wishlist:       { label: 'Wishlist', bg: '#f8fafc', dot: '#94a3b8', countBg: '#e2e8f0', text: '#475569' },
-  Applied:        { label: 'Applied', bg: '#eff6ff', dot: '#3b82f6', countBg: '#dbeafe', text: '#1d4ed8' },
-  'OA/Assessment':{ label: 'OA / Assessment', bg: '#f5f3ff', dot: '#8b5cf6', countBg: '#ede9fe', text: '#6d28d9' },
-  Interview:      { label: 'Interview', bg: '#fffbeb', dot: '#f59e0b', countBg: '#fef3c7', text: '#b45309' },
-  Offer:          { label: 'Offer 🎉', bg: '#f0fdf4', dot: '#10b981', countBg: '#dcfce7', text: '#15803d' },
-  Rejected:       { label: 'Rejected', bg: '#fff1f2', dot: '#ef4444', countBg: '#ffe4e6', text: '#be123c' },
-  Withdrawn:      { label: 'Withdrawn', bg: '#f8fafc', dot: '#64748b', countBg: '#e2e8f0', text: '#475569' },
+  Wishlist:        { label: 'Wishlist', bg: 'var(--card-hover)', dot: '#94a3b8', countBg: 'rgba(148,163,184,0.18)', text: 'var(--t1)' },
+  Applied:         { label: 'Applied', bg: 'var(--card-hover)', dot: '#0ea5e9', countBg: 'rgba(14,165,233,0.18)', text: '#0284c7' },
+  'OA/Assessment': { label: 'OA / Assessment', bg: 'var(--card-hover)', dot: '#8b5cf6', countBg: 'rgba(139,92,246,0.18)', text: '#7c3aed' },
+  Interview:       { label: 'Interview', bg: 'var(--card-hover)', dot: '#f59e0b', countBg: 'rgba(245,158,11,0.18)', text: '#d97706' },
+  Offer:           { label: 'Offer', bg: 'var(--card-hover)', dot: '#10b981', countBg: 'rgba(16,185,129,0.18)', text: '#059669' },
+  Ghosted:         { label: 'Ghosted / No Reply', bg: 'var(--card-hover)', dot: '#64748b', countBg: 'rgba(100,116,139,0.18)', text: 'var(--t2)' },
+  Rejected:        { label: 'Rejected', bg: 'var(--card-hover)', dot: '#f43f5e', countBg: 'rgba(244,63,94,0.18)', text: '#e11d48' },
+  Withdrawn:       { label: 'Withdrawn', bg: 'var(--card-hover)', dot: '#94a3b8', countBg: 'rgba(148,163,184,0.18)', text: 'var(--t2)' },
 };
 
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({
@@ -119,14 +120,14 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                   minWidth: 280,
                   width: 280,
                   flexShrink: 0,
-                  background: '#f8fafc',
+                  background: 'var(--card-hover)',
                   border: '1px solid var(--border)',
                   borderRadius: 16,
                   display: 'flex',
                   flexDirection: 'column',
                   maxHeight: 'calc(100vh - 220px)',
                   minHeight: 400,
-                  boxShadow: '0 2px 8px rgba(15,23,42,0.03)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                 }}
               >
                 {/* Column Header */}
@@ -137,7 +138,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    background: '#ffffff',
+                    background: 'var(--card)',
                     borderTopLeftRadius: 16,
                     borderTopRightRadius: 16,
                   }}
@@ -188,7 +189,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       {columnApps.length === 0 ? (
                         <div
                           style={{
-                            border: '2px dashed #e2e8f0',
+                            border: '2px dashed var(--border)',
                             borderRadius: 12,
                             padding: '30px 16px',
                             textAlign: 'center',

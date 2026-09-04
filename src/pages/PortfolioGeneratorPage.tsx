@@ -8,7 +8,7 @@ export const PortfolioGeneratorPage: React.FC = () => {
 
   const [devTitle, setDevTitle] = useState('Senior Full-Stack Engineer');
   const [keySkills, setKeySkills] = useState('React, TypeScript, Node.js, Go, PostgreSQL, AWS');
-  const [topProject, setTopProject] = useState('ApplyFlow — High-Scale Job Search OS with AI ATS Optimization');
+  const [topProject, setTopProject] = useState('Job Orbit — High-Scale Career OS with AI ATS Optimization');
 
   const [pitch, setPitch] = useState('');
   const [copied, setCopied] = useState(false);

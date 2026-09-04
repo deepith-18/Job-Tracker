@@ -104,7 +104,7 @@ export const InterviewCalendarPage: React.FC = () => {
   const exportIcsFile = (event: ScheduledEvent) => {
     const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//ApplyFlow//Job Search Calendar//EN
+PRODID:-//Job Orbit//Career Calendar//EN
 BEGIN:VEVENT
 SUMMARY:${event.type}: ${event.company} (${event.role})
 DESCRIPTION:Scheduled ${event.type} for ${event.role} position at ${event.company}.

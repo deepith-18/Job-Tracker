@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -17,14 +18,18 @@ export const Modal: React.FC<ModalProps> = ({
   maxWidth = '720px',
 }) => {
   useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
     if (isOpen) document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
   }, [isOpen, onClose]);
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen]);
 
   return (
@@ -37,42 +42,83 @@ export const Modal: React.FC<ModalProps> = ({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
           onClick={(e) => e.target === e.currentTarget && onClose()}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            zIndex: 9999,
+          }}
         >
           <motion.div
             className="modal-card"
-            style={{ maxWidth, maxHeight: '90vh', overflowY: 'auto' }}
-            initial={{ opacity: 0, scale: 0.93, y: 20 }}
+            style={{
+              maxWidth,
+              width: '100%',
+              background: 'var(--card)',
+              borderRadius: 18,
+              boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--border)',
+              border: '1px solid var(--border)',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: '90vh',
+            }}
+            initial={{ opacity: 0, scale: 0.93, y: 18 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ type: 'spring', damping: 28, stiffness: 380 }}
           >
             {/* Header */}
             <div
-              className="flex items-center justify-between p-5"
-              style={{ borderBottom: '1px solid var(--border)' }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '20px 24px',
+                borderBottom: '1px solid var(--border)',
+                flexShrink: 0,
+              }}
             >
-              <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>
+              <h2 style={{ fontSize: 17, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
                 {title}
               </h2>
               <button
+                type="button"
                 onClick={onClose}
-                className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
-                style={{ color: 'var(--text-muted)' }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = '#f3f4f6';
-                  e.currentTarget.style.color = 'var(--text-primary)';
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: 'var(--page)',
+                  color: 'var(--t2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
                 }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'var(--text-muted)';
-                }}
+                title="Close (Esc)"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X style={{ width: 15, height: 15 }} />
               </button>
             </div>
-            <div className="p-5">{children}</div>
+
+            {/* Scrollable Modal Body */}
+            <div
+              style={{
+                padding: '24px',
+                overflowY: 'auto',
+                flex: 1,
+              }}
+            >
+              {children}
+            </div>
           </motion.div>
         </motion.div>
       )}

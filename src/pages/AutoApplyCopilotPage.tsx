@@ -94,7 +94,7 @@ export const AutoApplyCopilotPage: React.FC = () => {
                     fontSize: 11,
                     fontWeight: 800,
                     color: portal.color,
-                    background: '#ffffff',
+                    background: 'var(--card)',
                     padding: '3px 8px',
                     borderRadius: 6,
                     border: `1px solid ${portal.color}`,

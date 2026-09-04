@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ResponsiveContainer,
   BarChart,
@@ -22,6 +22,18 @@ import {
   startOfYear,
   eachDayOfInterval,
 } from 'date-fns';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  HelpCircle,
+  Sparkles,
+  ArrowRight,
+  RotateCcw,
+  BarChart2,
+  Table as TableIcon,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import type { Application, ApplicationStatus, DateRangeOption } from '../../types';
 import { COMMON_SOURCES } from '../../types';
 import { useAuthStore } from '../../store/authStore';
@@ -38,6 +50,7 @@ const STATUS_COLORS: Record<ApplicationStatus, string> = {
   'OA/Assessment': '#8b5cf6',
   Interview: '#f59e0b',
   Offer: '#10b981',
+  Ghosted: '#64748b',
   Rejected: '#ef4444',
   Withdrawn: '#64748b',
 };
@@ -48,10 +61,21 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
   onStatusSelect,
 }) => {
   const user = useAuthStore((s) => s.user);
+
   // Global dashboard filter states
   const [dateRange, setDateRange] = useState<DateRangeOption>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [showGlossary, setShowGlossary] = useState(false);
+  const [sourceViewMode, setSourceViewMode] = useState<'chart' | 'table'>('table');
+
+  const hasActiveFilters = dateRange !== 'all' || sourceFilter !== 'all' || roleFilter !== 'all';
+
+  const resetFilters = () => {
+    setDateRange('all');
+    setSourceFilter('all');
+    setRoleFilter('all');
+  };
 
   // Filtered applications based on global filters
   const filteredApps = useMemo(() => {
@@ -186,27 +210,134 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
     return Object.entries(buckets).map(([bucket, count]) => ({ bucket, count }));
   }, [filteredApps]);
 
-  // 3. Source Effectiveness Data
+  // 3. Source Effectiveness & ROI Matrix Data
   const sourceEffectiveness = useMemo(() => {
-    const map: Record<string, { total: number; interviews: number }> = {};
+    const map: Record<string, { total: number; interviews: number; offers: number }> = {};
     filteredApps.forEach((app) => {
       const src = app.source || 'Other';
-      if (!map[src]) map[src] = { total: 0, interviews: 0 };
+      if (!map[src]) map[src] = { total: 0, interviews: 0, offers: 0 };
       map[src].total++;
       if (['Interview', 'Offer'].includes(app.status)) {
         map[src].interviews++;
       }
+      if (app.status === 'Offer') {
+        map[src].offers++;
+      }
     });
 
-    return Object.entries(map).map(([source, { total, interviews }]) => ({
-      source,
-      total,
-      interviews,
-      interviewRate: total > 0 ? Math.round((interviews / total) * 100) : 0,
-    }));
+    return Object.entries(map)
+      .map(([source, { total, interviews, offers }]) => ({
+        source,
+        total,
+        interviews,
+        offers,
+        interviewRate: total > 0 ? Math.round((interviews / total) * 100) : 0,
+        offerRate: total > 0 ? Math.round((offers / total) * 100) : 0,
+        sharePct: filteredApps.length > 0 ? Math.round((total / filteredApps.length) * 100) : 0,
+      }))
+      .sort((a, b) => b.interviewRate - a.interviewRate || b.total - a.total);
   }, [filteredApps]);
 
-  // 4. Status Donut Data
+  // 4. Bottleneck & Pipeline Diagnostic Engine
+  const bottleneckAnalysis = useMemo(() => {
+    const total = filteredApps.length;
+    if (total === 0) {
+      return {
+        stage: 'No Data',
+        severity: 'neutral' as const,
+        leakPct: 0,
+        title: 'Awaiting Application Data',
+        description: 'Log or import your job applications to generate live pipeline diagnostics and stage leakage analysis.',
+        recommendation: 'Add opportunities from LinkedIn, company careers pages, or employee referrals to see automated insights.',
+        topChannel: null,
+        ghostedCount: 0,
+        ghostedPct: 0,
+      };
+    }
+
+    const applied = filteredApps.filter((a) => a.status !== 'Wishlist').length;
+    const oa = filteredApps.filter((a) =>
+      ['OA/Assessment', 'Interview', 'Offer', 'Rejected'].includes(a.status)
+    ).length;
+    const interview = filteredApps.filter((a) => ['Interview', 'Offer'].includes(a.status)).length;
+    const offer = filteredApps.filter((a) => a.status === 'Offer').length;
+
+    // Leak calculations
+    const appToScreenLeak = applied > 0 ? Math.max(0, Math.round(((applied - oa) / applied) * 100)) : 0;
+    const screenToIntLeak = oa > 0 ? Math.max(0, Math.round(((oa - interview) / oa) * 100)) : 0;
+    const intToOfferLeak = interview > 0 ? Math.max(0, Math.round(((interview - offer) / interview) * 100)) : 0;
+
+    // Ghosting calculation (unanswered > 21 days)
+    const now = new Date();
+    const ghostedCount = filteredApps.filter((a) => {
+      if (a.status === 'Ghosted') return true;
+      if (['Applied'].includes(a.status)) {
+        const ref = a.appliedDate || a.createdAt;
+        return differenceInDays(now, new Date(ref)) > 21;
+      }
+      return false;
+    }).length;
+    const ghostedPct = Math.round((ghostedCount / total) * 100);
+
+    // Top channel with at least 1 application
+    const topChannel = sourceEffectiveness.length > 0 ? sourceEffectiveness[0] : null;
+
+    if (applied >= 3 && appToScreenLeak >= 60) {
+      return {
+        stage: 'Application ➔ Screening Gate',
+        severity: 'warning' as const,
+        leakPct: appToScreenLeak,
+        title: `Screening Gate Bottleneck (${appToScreenLeak}% Drop-off)`,
+        description: `${applied - oa} out of ${applied} applications were eliminated or received no human reply before the initial screening stage.`,
+        recommendation: 'Target resume keyword density directly to ATS job specs, quantify key impact metrics in bullet points, and prioritize 1st-degree employee referrals.',
+        topChannel,
+        ghostedCount,
+        ghostedPct,
+      };
+    }
+
+    if (oa >= 2 && screenToIntLeak >= 50) {
+      return {
+        stage: 'OA / Screen ➔ Live Interview',
+        severity: 'warning' as const,
+        leakPct: screenToIntLeak,
+        title: `Assessment & Screening Barrier (${screenToIntLeak}% Drop-off)`,
+        description: `${oa - interview} candidates did not convert past technical assessments (OA) or recruiter initial phone screens.`,
+        recommendation: 'Dedicate 30 mins daily to timed algorithmic problem-solving (Medium LeetCode) and craft concise 2-minute elevator pitches for recruiter calls.',
+        topChannel,
+        ghostedCount,
+        ghostedPct,
+      };
+    }
+
+    if (interview >= 2 && intToOfferLeak >= 70) {
+      return {
+        stage: 'Interview ➔ Written Offer',
+        severity: 'info' as const,
+        leakPct: intToOfferLeak,
+        title: `Final Conversion Gap (${intToOfferLeak}% Drop-off)`,
+        description: `Strong interview volume (${interview} rounds), but closing final written offers requires elevating executive presence and objection handling.`,
+        recommendation: 'Rehearse structured STAR behavioral responses with clear business outcomes, and prepare 3 high-leverage reverse questions for leadership.',
+        topChannel,
+        ghostedCount,
+        ghostedPct,
+      };
+    }
+
+    return {
+      stage: 'Balanced Pipeline Flow',
+      severity: 'success' as const,
+      leakPct: 0,
+      title: 'Pipeline Flow Healthy & Balanced',
+      description: 'Your applications are progressing smoothly through initial screening, interview loops, and decision checkpoints.',
+      recommendation: 'Maintain consistent weekly submission volume and send polite follow-ups for any opportunities pending feedback past 7 business days.',
+      topChannel,
+      ghostedCount,
+      ghostedPct,
+    };
+  }, [filteredApps, sourceEffectiveness]);
+
+  // 5. Status Donut Data
   const donutData = useMemo(() => {
     const counts: Partial<Record<ApplicationStatus, number>> = {};
     filteredApps.forEach((app) => {
@@ -220,7 +351,7 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
     }));
   }, [filteredApps]);
 
-  // 5. Rolling 30-Day Trend Data
+  // 6. Rolling 30-Day Trend Data
   const rollingTrendData = useMemo(() => {
     const last30 = eachDayOfInterval({
       start: subDays(new Date(), 29),
@@ -244,7 +375,7 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
     });
   }, [filteredApps]);
 
-  // 6. GitHub-style Activity Heatmap (Last 16 weeks) with Per-User Persistence
+  // 7. GitHub-style Activity Heatmap (Last 16 weeks)
   const heatmapWeeks = useMemo(() => {
     const days = eachDayOfInterval({
       start: subDays(new Date(), 111), // 16 weeks * 7 days - 1
@@ -259,14 +390,19 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
       dayMap[key] = (dayMap[key] || 0) + 1;
     });
 
-    // 2. From Persistent User Activity Log (per user)
+    // 2. From Persistent User Activity Log (checking both new and legacy storage keys)
     if (user?.uid) {
       try {
-        const storageKey = `applyflow_activity_log_${user.uid}`;
-        const storedLog: Record<string, number> = JSON.parse(localStorage.getItem(storageKey) || '{}');
-        Object.entries(storedLog).forEach(([dateStr, count]) => {
-          dayMap[dateStr] = Math.max(dayMap[dateStr] || 0, count);
-        });
+        const keys = [`joborbit_activity_log_${user.uid}`, `applyflow_activity_log_${user.uid}`];
+        for (const k of keys) {
+          const stored = localStorage.getItem(k);
+          if (stored) {
+            const parsed: Record<string, number> = JSON.parse(stored);
+            Object.entries(parsed).forEach(([dateStr, count]) => {
+              dayMap[dateStr] = Math.max(dayMap[dateStr] || 0, count);
+            });
+          }
+        }
       } catch (e) {
         console.error('Error reading heatmap log:', e);
       }
@@ -292,11 +428,11 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
   }, [filteredApps, user]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 32 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 32 }}>
       {/* ── Global Analytics Toolbar / Filters ── */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #ffffff, #fafbff)',
+          background: 'linear-gradient(135deg, var(--card), var(--card-hover))',
           border: '1px solid var(--border)',
           borderRadius: 16,
           padding: '14px 20px',
@@ -308,20 +444,69 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
           boxShadow: 'var(--shadow)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 18 }}>📈</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 10,
+              background: 'linear-gradient(135deg, #e0e7ff 0%, #ede9fe 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--accent)',
+            }}
+          >
+            <Sparkles style={{ width: 20, height: 20 }} />
+          </div>
           <div>
-            <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-              Analytics & Insights
-            </h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
+                Overview & Pipeline Intelligence
+              </h3>
+              {hasActiveFilters && (
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: 12,
+                    background: '#e0e7ff',
+                    color: 'var(--accent)',
+                  }}
+                >
+                  Filtered: {filteredApps.length} of {applications.length}
+                </span>
+              )}
+            </div>
             <p style={{ fontSize: 12, color: 'var(--t2)', margin: 0 }}>
-              Real-time pipeline diagnostics across {filteredApps.length} applications
+              Live stage conversion metrics, benchmark indicators, and strategic bottlenecks
             </p>
           </div>
         </div>
 
-        {/* Filters */}
+        {/* Action Controls & Filters */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          {/* Glossary Toggle Button */}
+          <button
+            onClick={() => setShowGlossary(!showGlossary)}
+            className="btn btn-ghost btn-sm"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 12,
+              fontWeight: 600,
+              color: showGlossary ? 'var(--accent)' : 'var(--t2)',
+              borderColor: showGlossary ? 'var(--accent)' : 'var(--border)',
+            }}
+            title="Toggle Metric Explanations & Industry Benchmarks"
+          >
+            <HelpCircle style={{ width: 14, height: 14 }} />
+            <span>Metric Glossary</span>
+            {showGlossary ? <ChevronUp style={{ width: 12, height: 12 }} /> : <ChevronDown style={{ width: 12, height: 12 }} />}
+          </button>
+
           {/* Date Range */}
           <div>
             <select
@@ -373,47 +558,364 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
               <option value="design">Design</option>
             </select>
           </div>
+
+          {/* Reset Filters button */}
+          {hasActiveFilters && (
+            <button
+              onClick={resetFilters}
+              className="btn btn-ghost btn-sm"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: 11.5,
+                color: 'var(--danger)',
+                padding: '6px 10px',
+              }}
+              title="Reset all filters to defaults"
+            >
+              <RotateCcw style={{ width: 12, height: 12 }} />
+              <span>Reset</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* ── Summary Key Stat Cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 14 }}>
-        <motion.div className="stat" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="stat-icon" style={{ background: '#eef2ff' }}>⚡</div>
-          <div className="stat-val" style={{ color: 'var(--accent)' }}>{metrics.responseRate}%</div>
+      {/* ── Expandable Metric Clarity & Definitions Guide ── */}
+      <AnimatePresence>
+        {showGlossary && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div
+              className="card"
+              style={{
+                padding: '18px 22px',
+                background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                border: '1px solid #cbd5e1',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <HelpCircle style={{ width: 16, height: 16, color: 'var(--accent)' }} />
+                <h4 style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
+                  Metric Definitions & Industry Benchmarks Guide
+                </h4>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+                <div style={{ background: 'var(--card)', padding: 12, borderRadius: 10, border: '1px solid var(--border)' }}>
+                  <div style={{ fontWeight: 700, fontSize: 12.5, color: '#3b82f6', marginBottom: 4 }}>
+                    ⚡ Response Rate
+                  </div>
+                  <div style={{ fontSize: 11.5, color: 'var(--t2)', lineHeight: 1.45 }}>
+                    Percentage of applications receiving any recruiter update (OA, interview, or decision).
+                    <div style={{ marginTop: 4, fontWeight: 600, color: 'var(--t3)' }}>
+                      Tech median: 15% – 20%
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ background: 'var(--card)', padding: 12, borderRadius: 10, border: '1px solid var(--border)' }}>
+                  <div style={{ fontWeight: 700, fontSize: 12.5, color: '#d97706', marginBottom: 4 }}>
+                    🎙️ Interview Rate
+                  </div>
+                  <div style={{ fontSize: 11.5, color: 'var(--t2)', lineHeight: 1.45 }}>
+                    Ratio of submissions progressing to formal live screening rounds or technical panels.
+                    <div style={{ marginTop: 4, fontWeight: 600, color: 'var(--t3)' }}>
+                      Tech target: 10% – 15%
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ background: 'var(--card)', padding: 12, borderRadius: 10, border: '1px solid var(--border)' }}>
+                  <div style={{ fontWeight: 700, fontSize: 12.5, color: '#16a34a', marginBottom: 4 }}>
+                    🏆 Offer Rate
+                  </div>
+                  <div style={{ fontSize: 11.5, color: 'var(--t2)', lineHeight: 1.45 }}>
+                    Proportion of all submitted applications culminating in official written job offers.
+                    <div style={{ marginTop: 4, fontWeight: 600, color: 'var(--t3)' }}>
+                      Tech target: 2% – 5%
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ background: 'var(--card)', padding: 12, borderRadius: 10, border: '1px solid var(--border)' }}>
+                  <div style={{ fontWeight: 700, fontSize: 12.5, color: '#7c3aed', marginBottom: 4 }}>
+                    ⏳ Avg Days to Response
+                  </div>
+                  <div style={{ fontSize: 11.5, color: 'var(--t2)', lineHeight: 1.45 }}>
+                    Calendar days elapsed from initial application submission to first employer contact.
+                    <div style={{ marginTop: 4, fontWeight: 600, color: 'var(--t3)' }}>
+                      Healthy pacing: &lt; 14 days
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Key Stat Cards with Industry Benchmark Badges ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14 }}>
+        {/* Response Rate */}
+        <motion.div className="stat" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div className="stat-icon" style={{ background: '#eef2ff' }}>⚡</div>
+            <span
+              style={{
+                fontSize: 10.5,
+                fontWeight: 700,
+                padding: '2px 8px',
+                borderRadius: 12,
+                background: metrics.responseRate >= 18 ? '#dcfce7' : '#f1f5f9',
+                color: metrics.responseRate >= 18 ? '#15803d' : '#64748b',
+              }}
+            >
+              {metrics.responseRate >= 18 ? 'Healthy (15-20%)' : 'Benchmark: 15-20%'}
+            </span>
+          </div>
+          <div className="stat-val" style={{ color: 'var(--accent)', marginTop: 8 }}>{metrics.responseRate}%</div>
           <div className="stat-label">Response Rate</div>
-          <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 3 }}>Active recruiter engagement</div>
+          <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 3 }}>Recruiter & status engagement</div>
         </motion.div>
 
-        <motion.div className="stat" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-          <div className="stat-icon" style={{ background: '#fffbeb' }}>🎙️</div>
-          <div className="stat-val" style={{ color: '#d97706' }}>{metrics.interviewRate}%</div>
+        {/* Interview Rate */}
+        <motion.div className="stat" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div className="stat-icon" style={{ background: '#fffbeb' }}>🎙️</div>
+            <span
+              style={{
+                fontSize: 10.5,
+                fontWeight: 700,
+                padding: '2px 8px',
+                borderRadius: 12,
+                background: metrics.interviewRate >= 12 ? '#dcfce7' : '#fef3c7',
+                color: metrics.interviewRate >= 12 ? '#15803d' : '#b45309',
+              }}
+            >
+              {metrics.interviewRate >= 12 ? 'Competitive (10-15%)' : 'Target: 10-15%'}
+            </span>
+          </div>
+          <div className="stat-val" style={{ color: '#d97706', marginTop: 8 }}>{metrics.interviewRate}%</div>
           <div className="stat-label">Interview Rate</div>
-          <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 3 }}>Screenings & rounds</div>
+          <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 3 }}>Screenings & live panels</div>
         </motion.div>
 
-        <motion.div className="stat" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <div className="stat-icon" style={{ background: '#f0fdf4' }}>🏆</div>
-          <div className="stat-val" style={{ color: '#16a34a' }}>{metrics.offerRate}%</div>
+        {/* Offer Rate */}
+        <motion.div className="stat" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div className="stat-icon" style={{ background: '#f0fdf4' }}>🏆</div>
+            <span
+              style={{
+                fontSize: 10.5,
+                fontWeight: 700,
+                padding: '2px 8px',
+                borderRadius: 12,
+                background: metrics.offerRate >= 3 ? '#dcfce7' : '#f1f5f9',
+                color: metrics.offerRate >= 3 ? '#15803d' : '#64748b',
+              }}
+            >
+              {metrics.offerRate >= 3 ? 'High Close (2-5%)' : 'Target: 2-5%'}
+            </span>
+          </div>
+          <div className="stat-val" style={{ color: '#16a34a', marginTop: 8 }}>{metrics.offerRate}%</div>
           <div className="stat-label">Offer Rate</div>
-          <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 3 }}>Final conversion success</div>
+          <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 3 }}>Final offer conversion</div>
         </motion.div>
 
-        <motion.div className="stat" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-          <div className="stat-icon" style={{ background: '#f5f3ff' }}>⏳</div>
-          <div className="stat-val" style={{ color: '#7c3aed' }}>{metrics.avgDaysToResponse}d</div>
+        {/* Avg Days to Response */}
+        <motion.div className="stat" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div className="stat-icon" style={{ background: '#f5f3ff' }}>⏳</div>
+            <span
+              style={{
+                fontSize: 10.5,
+                fontWeight: 700,
+                padding: '2px 8px',
+                borderRadius: 12,
+                background: metrics.avgDaysToResponse <= 14 ? '#dcfce7' : '#fee2e2',
+                color: metrics.avgDaysToResponse <= 14 ? '#15803d' : '#b91c1c',
+              }}
+            >
+              {metrics.avgDaysToResponse <= 14 ? 'Swift (<14d)' : 'Slow (>14d)'}
+            </span>
+          </div>
+          <div className="stat-val" style={{ color: '#7c3aed', marginTop: 8 }}>{metrics.avgDaysToResponse}d</div>
           <div className="stat-label">Avg Days to Response</div>
-          <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 3 }}>Time to first status update</div>
+          <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 3 }}>Time to first status feedback</div>
         </motion.div>
       </div>
+
+      {/* ── Executive Pipeline Diagnostic & Bottleneck Card ── */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+        <div
+          className="card"
+          style={{
+            padding: '20px 24px',
+            border:
+              bottleneckAnalysis.severity === 'warning'
+                ? '1px solid rgba(245, 158, 11, 0.35)'
+                : bottleneckAnalysis.severity === 'success'
+                ? '1px solid rgba(16, 185, 129, 0.35)'
+                : '1px solid var(--border)',
+            background:
+              bottleneckAnalysis.severity === 'warning'
+                ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, var(--card) 100%)'
+                : bottleneckAnalysis.severity === 'success'
+                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, var(--card) 100%)'
+                : 'linear-gradient(135deg, var(--card-hover) 0%, var(--card) 100%)',
+            boxShadow: 'var(--shadow)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+            {/* Left Diagnosis */}
+            <div style={{ flex: '1 1 480px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                {bottleneckAnalysis.severity === 'warning' ? (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      fontSize: 11,
+                      fontWeight: 800,
+                      padding: '3px 10px',
+                      borderRadius: 14,
+                      background: '#ffedd5',
+                      color: '#c2410c',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    <AlertTriangle style={{ width: 13, height: 13 }} />
+                    Pipeline Bottleneck Detected
+                  </span>
+                ) : (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      fontSize: 11,
+                      fontWeight: 800,
+                      padding: '3px 10px',
+                      borderRadius: 14,
+                      background: '#dcfce7',
+                      color: '#15803d',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    <CheckCircle2 style={{ width: 13, height: 13 }} />
+                    Pipeline Health Check
+                  </span>
+                )}
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--t3)' }}>
+                  Stage: {bottleneckAnalysis.stage}
+                </span>
+              </div>
+
+              <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', margin: '0 0 6px 0' }}>
+                {bottleneckAnalysis.title}
+              </h3>
+              <p style={{ fontSize: 12.5, color: 'var(--t2)', margin: '0 0 12px 0', lineHeight: 1.45 }}>
+                {bottleneckAnalysis.description}
+              </p>
+
+              {/* Actionable Strategy Box */}
+              <div
+                style={{
+                  background: 'var(--card-hover)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 10,
+                  padding: '10px 14px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 10,
+                }}
+              >
+                <div style={{ color: 'var(--accent)', marginTop: 2 }}>
+                  <ArrowRight style={{ width: 15, height: 15 }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Recommended Tactical Move
+                  </div>
+                  <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--t1)', marginTop: 2 }}>
+                    {bottleneckAnalysis.recommendation}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Vital Stats */}
+            <div
+              style={{
+                display: 'flex',
+                gap: 12,
+                flexWrap: 'wrap',
+                alignItems: 'center',
+              }}
+            >
+              {bottleneckAnalysis.topChannel && (
+                <div
+                  style={{
+                    background: 'var(--card)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 12,
+                    padding: '12px 16px',
+                    minWidth: 140,
+                    textAlign: 'center',
+                  }}
+                >
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--t3)' }}>Top Converting Channel</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#0d9488', marginTop: 3 }}>
+                    {bottleneckAnalysis.topChannel.source}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--t2)', marginTop: 2 }}>
+                    {bottleneckAnalysis.topChannel.interviewRate}% interview rate
+                  </div>
+                </div>
+              )}
+
+              <div
+                style={{
+                  background: 'var(--card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 12,
+                  padding: '12px 16px',
+                  minWidth: 140,
+                  textAlign: 'center',
+                }}
+              >
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--t3)' }}>Stale / Silent Roles</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: bottleneckAnalysis.ghostedCount > 0 ? '#ea580c' : '#10b981', marginTop: 3 }}>
+                  {bottleneckAnalysis.ghostedCount} apps ({bottleneckAnalysis.ghostedPct}%)
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--t2)', marginTop: 2 }}>
+                  &gt;21 days with no reply
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
 
       {/* ── Grid Row 1: Funnel Chart & Donut Chart ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 20 }}>
         {/* Funnel Chart */}
         <div className="card" style={{ padding: 20 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-            🔻 Application Pipeline Funnel & Stage Leakage
-          </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
+              🔻 Application Pipeline Funnel & Stage Drop-off
+            </h3>
+            <span style={{ fontSize: 11, color: 'var(--t3)', fontWeight: 600 }}>Step-by-step conversion</span>
+          </div>
           <div style={{ height: 220 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={funnelData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -440,10 +942,10 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
         {/* Status Distribution Donut Chart */}
         <div className="card" style={{ padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)' }}>
+            <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
               🍩 Status Distribution
             </h3>
-            <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600 }}>Click slice to filter board</span>
+            <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600 }}>Click slice to filter</span>
           </div>
 
           <div style={{ height: 210, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -483,13 +985,16 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
         </div>
       </div>
 
-      {/* ── Grid Row 2: Response-Time Histogram & Source Effectiveness ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      {/* ── Grid Row 2: Response-Time Histogram & Source ROI Matrix ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: 20 }}>
         {/* Response-Time Histogram */}
         <div className="card" style={{ padding: 20 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-            ⏱️ Response-Time Histogram (Days to First Reply)
-          </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
+              ⏱️ Response-Time Distribution
+            </h3>
+            <span style={{ fontSize: 11, color: 'var(--t3)' }}>Days to first contact</span>
+          </div>
           <div style={{ height: 220 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={histogramData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -506,25 +1011,157 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
           </div>
         </div>
 
-        {/* Source Effectiveness */}
+        {/* Source Effectiveness & Channel ROI Matrix */}
         <div className="card" style={{ padding: 20 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-            🎯 Source Effectiveness (Interview Rate % by Channel)
-          </h3>
-          <div style={{ height: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={sourceEffectiveness} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="source" stroke="#64748b" fontSize={11} />
-                <YAxis stroke="#64748b" fontSize={11} unit="%" />
-                <Tooltip
-                  formatter={(val: unknown) => [`${val}% interview rate`, 'Effectiveness']}
-                  contentStyle={{ borderRadius: 10, border: '1px solid #e2e8f0' }}
-                />
-                <Bar dataKey="interviewRate" fill="#f59e0b" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+            <div>
+              <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
+                🎯 Channel Conversion & Source ROI
+              </h3>
+              <p style={{ fontSize: 11.5, color: 'var(--t2)', margin: '2px 0 0 0' }}>
+                Compare yields across job boards, referrals, and company portals
+              </p>
+            </div>
+
+            {/* View Mode Toggle */}
+            <div style={{ display: 'flex', background: 'var(--border-light)', padding: 2, borderRadius: 8 }}>
+              <button
+                onClick={() => setSourceViewMode('table')}
+                style={{
+                  border: 'none',
+                  background: sourceViewMode === 'table' ? 'var(--card)' : 'transparent',
+                  color: sourceViewMode === 'table' ? 'var(--accent)' : 'var(--t2)',
+                  padding: '4px 8px',
+                  borderRadius: 6,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  boxShadow: sourceViewMode === 'table' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                }}
+              >
+                <TableIcon style={{ width: 12, height: 12 }} />
+                <span>ROI Table</span>
+              </button>
+              <button
+                onClick={() => setSourceViewMode('chart')}
+                style={{
+                  border: 'none',
+                  background: sourceViewMode === 'chart' ? 'var(--card)' : 'transparent',
+                  color: sourceViewMode === 'chart' ? 'var(--accent)' : 'var(--t2)',
+                  padding: '4px 8px',
+                  borderRadius: 6,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  boxShadow: sourceViewMode === 'chart' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                }}
+              >
+                <BarChart2 style={{ width: 12, height: 12 }} />
+                <span>Bar Chart</span>
+              </button>
+            </div>
           </div>
+
+          {sourceViewMode === 'table' ? (
+            <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--t3)', fontSize: 11 }}>
+                    <th style={{ padding: '6px 8px', fontWeight: 700 }}>Channel / Source</th>
+                    <th style={{ padding: '6px 8px', fontWeight: 700 }}>Applications</th>
+                    <th style={{ padding: '6px 8px', fontWeight: 700 }}>Interview Rate</th>
+                    <th style={{ padding: '6px 8px', fontWeight: 700 }}>Offers</th>
+                    <th style={{ padding: '6px 8px', fontWeight: 700 }}>Verdict</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sourceEffectiveness.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} style={{ padding: 16, textAlign: 'center', color: 'var(--t3)' }}>
+                        No sources recorded
+                      </td>
+                    </tr>
+                  ) : (
+                    sourceEffectiveness.map((s) => {
+                      const isHighROI = s.interviewRate >= 25;
+                      const isSolid = s.interviewRate >= 12;
+                      const isLowYield = s.total >= 4 && s.interviewRate < 10;
+
+                      return (
+                        <tr key={s.source} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '8px 8px', fontWeight: 700, color: 'var(--t1)' }}>
+                            {s.source}
+                          </td>
+                          <td style={{ padding: '8px 8px', color: 'var(--t2)' }}>
+                            <strong>{s.total}</strong> ({s.sharePct}%)
+                          </td>
+                          <td style={{ padding: '8px 8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <div style={{ width: 45, height: 6, borderRadius: 3, background: '#e2e8f0', overflow: 'hidden' }}>
+                                <div
+                                  style={{
+                                    width: `${Math.min(100, s.interviewRate)}%`,
+                                    height: '100%',
+                                    background: isHighROI ? '#10b981' : isSolid ? '#f59e0b' : '#94a3b8',
+                                  }}
+                                />
+                              </div>
+                              <span style={{ fontWeight: 700, color: 'var(--t1)', fontSize: 11.5 }}>
+                                {s.interviewRate}%
+                              </span>
+                            </div>
+                          </td>
+                          <td style={{ padding: '8px 8px', color: 'var(--t1)', fontWeight: 600 }}>
+                            {s.offers > 0 ? `🎉 ${s.offers}` : '—'}
+                          </td>
+                          <td style={{ padding: '8px 8px' }}>
+                            {isHighROI ? (
+                              <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 10, background: '#dcfce7', color: '#15803d' }}>
+                                ⭐ High ROI
+                              </span>
+                            ) : isSolid ? (
+                              <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 10, background: '#e0e7ff', color: 'var(--accent)' }}>
+                                ✅ Solid Yield
+                              </span>
+                            ) : isLowYield ? (
+                              <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 10, background: '#fee2e2', color: '#b91c1c' }}>
+                                ⚠️ Low Yield
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 10, background: '#f1f5f9', color: '#64748b' }}>
+                                Emerging
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div style={{ height: 220 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={sourceEffectiveness} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="source" stroke="#64748b" fontSize={11} />
+                  <YAxis stroke="#64748b" fontSize={11} unit="%" />
+                  <Tooltip
+                    formatter={(val: unknown) => [`${val}% interview rate`, 'Effectiveness']}
+                    contentStyle={{ borderRadius: 10, border: '1px solid #e2e8f0' }}
+                  />
+                  <Bar dataKey="interviewRate" fill="#0d9488" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       </div>
 
@@ -532,9 +1169,12 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 20 }}>
         {/* Rolling 30-Day Trend */}
         <div className="card" style={{ padding: 20 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-            📈 Rolling 30-Day Activity Trend (Sent vs. Responses)
-          </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
+              📈 Rolling 30-Day Activity Trend (Sent vs. Responses)
+            </h3>
+            <span style={{ fontSize: 11, color: 'var(--t3)' }}>Daily velocity</span>
+          </div>
           <div style={{ height: 220 }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={rollingTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -561,7 +1201,7 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
 
         {/* GitHub-style Contribution Heatmap */}
         <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column' }}>
-          <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', marginBottom: 14 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', marginBottom: 6 }}>
             🟩 Weekly Application Activity Heatmap
           </h3>
           <p style={{ fontSize: 12, color: 'var(--t2)', marginBottom: 16 }}>

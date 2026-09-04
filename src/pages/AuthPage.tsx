@@ -6,6 +6,7 @@ import { signInWithEmail, signUpWithEmail, signInWithGoogle } from '../firebase/
 import { Button } from '../components/ui/Button';
 import { useToast } from '../components/ui/ToastContext';
 import { useAuthStore } from '../store/authStore';
+import { BrandLogo } from '../components/common/BrandLogo';
 
 const LOGIN_ERRORS: Record<string, string> = {
   'auth/user-not-found': 'No account found with this email.',
@@ -78,7 +79,7 @@ export const AuthPage: React.FC = () => {
         addToast('Welcome back! 👋', 'Signed in successfully', 'success');
       } else {
         await signUpWithEmail(email, password);
-        addToast('Account created!', 'Welcome to ApplyFlow', 'success');
+        addToast('Account created!', 'Welcome to Job Orbit', 'success');
       }
       navigate('/dashboard');
     } catch (err: unknown) {
@@ -321,29 +322,15 @@ export const AuthPage: React.FC = () => {
       >
         {/* Logo & Product Header */}
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <div
-            className="auth-logo-pulse"
-            style={{
-              width: 52,
-              height: 52,
-              borderRadius: 16,
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: 10,
-            }}
-          >
-            <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#ffffff" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
+          <div style={{ display: 'inline-flex', marginBottom: 12 }}>
+            <BrandLogo size={56} showGlow />
           </div>
 
-          <h1 style={{ fontSize: 25, fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.02em', margin: 0 }}>
-            ApplyFlow
+          <h1 style={{ fontSize: 26, fontWeight: 900, color: '#f8fafc', letterSpacing: '-0.02em', margin: 0 }}>
+            Job Orbit
           </h1>
-          <p style={{ fontSize: 13, color: '#a5b4fc', marginTop: 3, margin: 0, fontWeight: 500 }}>
-            Smart Job Tracker & Career Pipeline OS
+          <p style={{ fontSize: 13, color: '#a5b4fc', marginTop: 4, margin: 0, fontWeight: 500 }}>
+            Intelligent Career Operating System & Pipeline OS
           </p>
 
           {/* Headline Message Badge */}

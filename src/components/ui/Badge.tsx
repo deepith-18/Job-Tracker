@@ -3,11 +3,11 @@ import type { ApplicationStatus } from '../../types';
 
 const CLS: Record<ApplicationStatus, string> = {
   Wishlist: 'badge-wishlist', Applied: 'badge-applied', 'OA/Assessment': 'badge-oa',
-  Interview: 'badge-interview', Offer: 'badge-offer', Rejected: 'badge-rejected', Withdrawn: 'badge-withdrawn',
+  Interview: 'badge-interview', Offer: 'badge-offer', Ghosted: 'badge-ghosted', Rejected: 'badge-rejected', Withdrawn: 'badge-withdrawn',
 };
 const DOT: Record<ApplicationStatus, string> = {
   Wishlist: '#94a3b8', Applied: '#6366f1', 'OA/Assessment': '#8b5cf6',
-  Interview: '#f59e0b', Offer: '#10b981', Rejected: '#ef4444', Withdrawn: '#94a3b8',
+  Interview: '#f59e0b', Offer: '#10b981', Ghosted: '#64748b', Rejected: '#ef4444', Withdrawn: '#94a3b8',
 };
 
 interface BadgeProps {

@@ -79,7 +79,7 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({ applications, onAdded 
         rejectionReasons: [],
       });
 
-      addToast(`Added "${company} — ${role}" to Wishlist 🚀`, 'You can view and update details anytime', 'success');
+      addToast(`Added "${company} — ${role}" to Wishlist`, 'Application successfully logged to pipeline', 'success');
       setInput('');
       setDuplicateWarn(null);
       if (onAdded) onAdded();
@@ -132,11 +132,11 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({ applications, onAdded 
           style={{
             display: 'flex',
             alignItems: 'center',
-            background: 'linear-gradient(135deg, #ffffff, #f8fafc)',
+            background: 'linear-gradient(135deg, var(--card), var(--card-hover))',
             border: '1.5px solid var(--border)',
             borderRadius: 16,
             padding: '6px 8px 6px 18px',
-            boxShadow: '0 8px 30px rgba(99,102,241,0.08), 0 2px 8px rgba(15,23,42,0.04)',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04)',
             transition: 'all 0.2s ease',
           }}
           className="quick-add-container"

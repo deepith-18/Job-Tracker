@@ -12,6 +12,17 @@ export const useUserSettings = () => {
     minSalary: 160000,
     remotePref: 'Remote / Hybrid',
     emailAlerts: true,
+    currency: 'USD ($)',
+    defaultView: 'kanban',
+    preferredLocations: 'Remote, San Francisco, New York',
+    targetCompanies: 'Google, Stripe, Linear, Vercel',
+    staleThresholdDays: 14,
+    weeklyGoal: 5,
+    displayName: '',
+    bio: '',
+    githubUrl: '',
+    linkedinUrl: '',
+    portfolioUrl: '',
   });
   const [loading, setLoading] = useState<boolean>(true);
 

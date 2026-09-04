@@ -12,7 +12,7 @@ export const EmptyState: React.FC<EmptyStateProps> = () => {
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
       style={{
-        background: '#ffffff',
+        background: 'var(--card)',
         border: '1px dashed var(--border)',
         borderRadius: 20,
         padding: '64px 24px',

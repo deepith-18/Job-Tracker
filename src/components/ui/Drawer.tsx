@@ -52,11 +52,11 @@ export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, title, subtitle
                 onClick={onClose}
                 style={{
                   width: 32, height: 32, borderRadius: 9, border: '1px solid var(--border)',
-                  background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'var(--card)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: 'var(--t3)', transition: 'all 0.15s',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = 'var(--t1)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = 'var(--t3)'; }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--card-hover)'; e.currentTarget.style.color = 'var(--t1)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--card)'; e.currentTarget.style.color = 'var(--t3)'; }}
               >
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

@@ -97,7 +97,7 @@ export const InterviewPrepPage: React.FC = () => {
                 borderRadius: 10,
                 fontSize: 12.5,
                 padding: '6px 14px',
-                background: categoryFilter === cat ? 'var(--accent-bg)' : '#ffffff',
+                background: categoryFilter === cat ? 'var(--accent-bg)' : 'var(--card)',
                 color: categoryFilter === cat ? 'var(--accent)' : 'var(--t2)',
                 border: categoryFilter === cat ? '1px solid var(--accent)' : '1px solid var(--border)',
                 fontWeight: 700,
@@ -128,7 +128,7 @@ export const InterviewPrepPage: React.FC = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                background: flipped ? 'linear-gradient(135deg, #fafbff, #e0e7ff)' : '#ffffff',
+                background: flipped ? 'linear-gradient(135deg, var(--card-hover), var(--card))' : 'var(--card)',
                 border: '1.5px solid var(--border)',
                 boxShadow: 'var(--shadow)',
                 position: 'relative',
@@ -173,7 +173,7 @@ export const InterviewPrepPage: React.FC = () => {
                   </p>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {currentCard.keyConcepts.map((kc) => (
-                      <span key={kc} style={{ fontSize: 11, background: '#ffffff', color: '#4338ca', padding: '3px 8px', borderRadius: 6, fontWeight: 700, border: '1px solid #c7d2fe' }}>
+                      <span key={kc} style={{ fontSize: 11, background: 'var(--card)', color: 'var(--accent)', padding: '3px 8px', borderRadius: 6, fontWeight: 700, border: '1px solid var(--border)' }}>
                         #{kc}
                       </span>
                     ))}
