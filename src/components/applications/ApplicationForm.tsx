@@ -1,6 +1,7 @@
-import { AlertTriangle, BarChart, FileText, Mic, Save, Briefcase, Plus } from 'lucide-react';
+import { AlertTriangle, BarChart, FileText, Mic, Save, Briefcase, Plus, Clock } from 'lucide-react';
 import React, { useState } from 'react';
-import { APPLICATION_STATUSES, type Application, type ApplicationFormData, type ApplicationStatus } from '../../types';
+import { format } from 'date-fns';
+import { APPLICATION_STATUSES, COMMON_SOURCES, type Application, type ApplicationFormData, type ApplicationStatus } from '../../types';
 
 interface Props {
   initial?: Application;
@@ -8,8 +9,20 @@ interface Props {
   onCancel: () => void;
 }
 
-const toDate = (d: Date | null) => (d ? d.toISOString().split('T')[0] : '');
-const fromDate = (s: string): Date | null => (s ? new Date(s) : null);
+const toDate = (d: unknown): string => {
+  if (!d) return '';
+  if (d instanceof Date && !isNaN(d.getTime())) return d.toISOString().split('T')[0];
+  if (typeof d === 'string') {
+    const parsed = new Date(d);
+    return isNaN(parsed.getTime()) ? '' : parsed.toISOString().split('T')[0];
+  }
+  if (typeof d === 'object' && d !== null && 'seconds' in d) {
+    return new Date((d as { seconds: number }).seconds * 1000).toISOString().split('T')[0];
+  }
+  return '';
+};
+
+const fromDate = (s: string): Date | null => (s ? new Date(s + 'T00:00:00') : null);
 
 // Star rating input
 const StarInput: React.FC<{ value: number; onChange: (v: number) => void }> = ({ value, onChange }) => {
@@ -48,7 +61,9 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
     company: initial?.company ?? '',
     role: initial?.role ?? '',
     status: (initial?.status ?? 'Applied') as ApplicationStatus,
-    appliedDate: toDate(initial?.appliedDate ?? null),
+    appliedDate: initial
+      ? toDate(initial.appliedDate ?? (initial.status === 'Applied' ? initial.createdAt : null))
+      : toDate(new Date()),
     deadline: toDate(initial?.deadline ?? null),
     jobLink: initial?.jobLink ?? '',
     source: initial?.source ?? '',
@@ -109,6 +124,33 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
       {errors.form && (
         <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '10px 14px', borderRadius: 12, fontSize: 13, fontWeight: 600 }}>
           <AlertTriangle className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> {errors.form}
+        </div>
+      )}
+
+      {/* When editing: show when this application was originally added */}
+      {initial?.createdAt && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '10px 14px',
+            borderRadius: 12,
+            background: 'var(--card-hover, rgba(0,0,0,0.02))',
+            border: '1px solid var(--border)',
+            fontSize: 12,
+            color: 'var(--t2)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Clock style={{ width: 14, height: 14, color: 'var(--accent)' }} />
+            <span>Application Added on: <strong>{format(new Date(initial.createdAt), 'MMM d, yyyy')}</strong></span>
+          </div>
+          {initial.updatedAt && (
+            <span style={{ fontSize: 11, color: 'var(--t3)' }}>
+              Last updated {format(new Date(initial.updatedAt), 'MMM d, yyyy')}
+            </span>
+          )}
         </div>
       )}
 
@@ -183,7 +225,18 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
 
           <div>
             <label className="lbl">Pipeline Status</label>
-            <select className="inp" value={form.status} onChange={set('status')}>
+            <select
+              className="inp"
+              value={form.status}
+              onChange={(e) => {
+                const newStatus = e.target.value as ApplicationStatus;
+                setForm((f) => ({
+                  ...f,
+                  status: newStatus,
+                  appliedDate: (newStatus === 'Applied' && !f.appliedDate) ? toDate(new Date()) : f.appliedDate,
+                }));
+              }}
+            >
               {APPLICATION_STATUSES.map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -194,12 +247,47 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
 
           <div className="modal-form-grid-compact">
             <div>
-              <label className="lbl">Applied Date</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <label className="lbl" style={{ margin: 0 }}>Applied Date</label>
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, appliedDate: toDate(new Date()) }))}
+                  style={{
+                    border: 'none',
+                    background: 'transparent',
+                    color: 'var(--accent)',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                >
+                  Today
+                </button>
+              </div>
               <input type="date" className="inp" value={form.appliedDate} onChange={set('appliedDate')} />
             </div>
 
             <div>
-              <label className="lbl">Deadline</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <label className="lbl" style={{ margin: 0 }}>Deadline</label>
+                {form.deadline && (
+                  <button
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, deadline: '' }))}
+                    style={{
+                      border: 'none',
+                      background: 'transparent',
+                      color: 'var(--t3)',
+                      fontSize: 11,
+                      cursor: 'pointer',
+                      padding: 0,
+                    }}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
               <input type="date" className="inp" value={form.deadline} onChange={set('deadline')} />
             </div>
           </div>
@@ -212,7 +300,18 @@ export const ApplicationForm: React.FC<Props> = ({ initial, onSubmit, onCancel }
 
             <div>
               <label className="lbl">Source</label>
-              <input className="inp" placeholder="LinkedIn, Referral..." value={form.source} onChange={set('source')} />
+              <input
+                className="inp"
+                list="modal-sources-list"
+                placeholder="LinkedIn, Referral..."
+                value={form.source}
+                onChange={set('source')}
+              />
+              <datalist id="modal-sources-list">
+                {COMMON_SOURCES.map((s) => (
+                  <option key={s} value={s} />
+                ))}
+              </datalist>
             </div>
           </div>
         </div>

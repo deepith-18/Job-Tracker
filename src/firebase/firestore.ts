@@ -7,15 +7,30 @@ import type { Application, ApplicationFormData, InterviewCodeQuestion, CodingLan
 
 const COL = 'applications';
 
+export const toValidDate = (val: unknown): Date | null => {
+  if (!val) return null;
+  if (val instanceof Timestamp) return val.toDate();
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+  if (typeof val === 'object' && val !== null && 'seconds' in val) {
+    const s = (val as { seconds: number; nanoseconds?: number }).seconds;
+    return new Date(s * 1000);
+  }
+  if (typeof val === 'string' || typeof val === 'number') {
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+};
+
 const docToApp = (id: string, data: Record<string, unknown>): Application => ({
   id,
   uid: data.uid as string,
   company: data.company as string,
   role: data.role as string,
   status: data.status as Application['status'],
-  appliedDate: data.appliedDate instanceof Timestamp ? data.appliedDate.toDate() : null,
-  deadline: data.deadline instanceof Timestamp ? data.deadline.toDate() : null,
-  firstResponseDate: data.firstResponseDate instanceof Timestamp ? data.firstResponseDate.toDate() : null,
+  appliedDate: toValidDate(data.appliedDate),
+  deadline: toValidDate(data.deadline),
+  firstResponseDate: toValidDate(data.firstResponseDate),
   interviewDates: Array.isArray(data.interviewDates) ? data.interviewDates : [],
   jobLink: (data.jobLink as string) || '',
   notes: (data.notes as string) || '',
@@ -23,8 +38,8 @@ const docToApp = (id: string, data: Record<string, unknown>): Application => ({
   source: (data.source as string) || '',
   rating: (data.rating as number) || 0,
   rejectionReasons: (data.rejectionReasons as string[]) || [],
-  createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(),
-  updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : new Date(),
+  createdAt: toValidDate(data.createdAt) || new Date(),
+  updatedAt: toValidDate(data.updatedAt) || new Date(),
 });
 
 /**
@@ -107,16 +122,8 @@ export const addApplication = async (uid: string, data: ApplicationFormData) => 
 };
 
 const safeTimestamp = (d: unknown): Timestamp | null => {
-  if (!d) return null;
-  if (d instanceof Timestamp) return d;
-  if (d instanceof Date) {
-    return isNaN(d.getTime()) ? null : Timestamp.fromDate(d);
-  }
-  if (typeof d === 'string' || typeof d === 'number') {
-    const parsed = new Date(d);
-    return isNaN(parsed.getTime()) ? null : Timestamp.fromDate(parsed);
-  }
-  return null;
+  const date = toValidDate(d);
+  return date ? Timestamp.fromDate(date) : null;
 };
 
 export const updateApplication = async (appId: string, data: Partial<ApplicationFormData>) => {

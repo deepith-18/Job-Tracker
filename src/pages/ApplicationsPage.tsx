@@ -641,7 +641,15 @@ export const ApplicationsPage: React.FC = () => {
                           />
                         </td>
                         <td style={{ fontSize: 13 }}>
-                          {app.appliedDate ? format(app.appliedDate, 'MMM d, yyyy') : '—'}
+                          {app.appliedDate ? (
+                            format(new Date(app.appliedDate), 'MMM d, yyyy')
+                          ) : app.createdAt ? (
+                            <span style={{ color: 'var(--t3)' }} title="Added to tracker date">
+                              Added {format(new Date(app.createdAt), 'MMM d, yyyy')}
+                            </span>
+                          ) : (
+                            '—'
+                          )}
                         </td>
                         <td>
                           <DeadlineCell deadline={app.deadline} />

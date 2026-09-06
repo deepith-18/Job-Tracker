@@ -149,11 +149,15 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
               </span>
             )}
 
-            {application.appliedDate && (
+            {application.appliedDate ? (
               <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                 Applied {format(application.appliedDate, 'MMM d, yyyy')}
               </span>
-            )}
+            ) : application.createdAt ? (
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                Added {format(new Date(application.createdAt), 'MMM d, yyyy')}
+              </span>
+            ) : null}
 
             {application.deadline && (
               <span

@@ -10,6 +10,7 @@ import {
   Check,
   Award,
   CheckCircle2,
+  Clock,
 } from 'lucide-react';
 import { useToast } from '../ui/ToastContext';
 import { StatusDropdown } from '../applications/StatusDropdown';
@@ -17,6 +18,25 @@ import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { updateApplication, deleteApplication } from '../../firebase/firestore';
 import type { Application, ApplicationStatus } from '../../types';
 import { COMMON_SOURCES, REJECTION_REASONS } from '../../types';
+
+const toDateInputStr = (d: unknown): string => {
+  if (!d) return '';
+  if (d instanceof Date && !isNaN(d.getTime())) return d.toISOString().split('T')[0];
+  if (typeof d === 'string') {
+    const parsed = new Date(d);
+    return isNaN(parsed.getTime()) ? '' : parsed.toISOString().split('T')[0];
+  }
+  if (typeof d === 'object' && d !== null && 'seconds' in d) {
+    return new Date((d as { seconds: number }).seconds * 1000).toISOString().split('T')[0];
+  }
+  return '';
+};
+
+const parseDateInputStr = (str: string): Date | null => {
+  if (!str) return null;
+  const d = new Date(str + 'T00:00:00');
+  return isNaN(d.getTime()) ? null : d;
+};
 
 interface ApplicationDetailDrawerProps {
   application: Application | null;
@@ -360,6 +380,31 @@ Best regards,
           <div className="drawer-body" style={{ flex: 1, overflowY: 'auto', padding: '22px', display: 'flex', flexDirection: 'column', gap: 20 }}>
             {activeTab === 'details' ? (
               <>
+                {/* Timeline & Metadata Info */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '10px 14px',
+                    background: 'var(--card-hover, rgba(0,0,0,0.02))',
+                    borderRadius: 10,
+                    border: '1px solid var(--border)',
+                    fontSize: 12,
+                    color: 'var(--t2)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Clock style={{ width: 14, height: 14, color: 'var(--accent)' }} />
+                    <span>Added on <strong>{format(new Date(application.createdAt), 'MMM d, yyyy')}</strong></span>
+                  </div>
+                  {application.updatedAt && (
+                    <span style={{ fontSize: 11, color: 'var(--t3)' }}>
+                      Updated {format(new Date(application.updatedAt), 'MMM d')}
+                    </span>
+                  )}
+                </div>
+
                 {/* Status Dropdown + Source */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                   <div>
@@ -370,10 +415,14 @@ Best regards,
                       onOpen={() => setDropdownOpen(true)}
                       onClose={() => setDropdownOpen(false)}
                       onSelect={async (status) => {
-                        setFormData((prev) => ({ ...prev, status }));
+                        const newAppliedDate = (status === 'Applied' && !formData.appliedDate) ? new Date() : formData.appliedDate;
+                        setFormData((prev) => ({ ...prev, status, appliedDate: newAppliedDate }));
                         setDropdownOpen(false);
                         try {
-                          await updateApplication(application.id, { status });
+                          await updateApplication(application.id, {
+                            status,
+                            appliedDate: newAppliedDate,
+                          });
                           addToast('Status Updated', `Moved to ${status}`, 'success');
                         } catch (err: unknown) {
                           const msg = err instanceof Error ? err.message : 'Error updating status';
@@ -391,12 +440,74 @@ Best regards,
                       onChange={(e) => setFormData({ ...formData, source: e.target.value })}
                     >
                       <option value="">Select source…</option>
+                      {/* Ensure any custom or extension-detected source is rendered so it never shows blank */}
+                      {formData.source && !COMMON_SOURCES.includes(formData.source) && (
+                        <option value={formData.source}>{formData.source}</option>
+                      )}
                       {COMMON_SOURCES.map((src) => (
                         <option key={src} value={src}>
                           {src}
                         </option>
                       ))}
                     </select>
+                  </div>
+                </div>
+
+                {/* Applied Date & Deadline Inputs */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      <label className="lbl" style={{ margin: 0 }}>Applied Date</label>
+                      <button
+                        type="button"
+                        onClick={() => setFormData((prev) => ({ ...prev, appliedDate: new Date() }))}
+                        style={{
+                          border: 'none',
+                          background: 'transparent',
+                          color: 'var(--accent)',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          padding: 0,
+                        }}
+                      >
+                        Set to Today
+                      </button>
+                    </div>
+                    <input
+                      type="date"
+                      className="inp"
+                      value={toDateInputStr(formData.appliedDate)}
+                      onChange={(e) => setFormData({ ...formData, appliedDate: parseDateInputStr(e.target.value) })}
+                    />
+                  </div>
+
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      <label className="lbl" style={{ margin: 0 }}>Deadline</label>
+                      {formData.deadline && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData((prev) => ({ ...prev, deadline: null }))}
+                          style={{
+                            border: 'none',
+                            background: 'transparent',
+                            color: 'var(--t3)',
+                            fontSize: 11,
+                            cursor: 'pointer',
+                            padding: 0,
+                          }}
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="date"
+                      className="inp"
+                      value={toDateInputStr(formData.deadline)}
+                      onChange={(e) => setFormData({ ...formData, deadline: parseDateInputStr(e.target.value) })}
+                    />
                   </div>
                 </div>
 

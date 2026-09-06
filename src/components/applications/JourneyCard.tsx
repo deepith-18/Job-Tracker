@@ -187,11 +187,15 @@ export const JourneyCard: React.FC<JourneyCardProps> = ({ app, index, onEdit, on
           onSelect={handleStatus}
         />
 
-        {app.appliedDate && (
+        {app.appliedDate ? (
           <span style={{ fontSize: 12, color: 'var(--t3)' }}>
             Applied {format(app.appliedDate, 'MMM d')}
           </span>
-        )}
+        ) : app.createdAt ? (
+          <span style={{ fontSize: 12, color: 'var(--t3)' }}>
+            Added {format(new Date(app.createdAt), 'MMM d')}
+          </span>
+        ) : null}
 
         {app.deadline && (
           <span className={`dl-near${isDeadlinePast ? ' dl-past' : isDeadlineToday ? ' dl-today' : ''}`}>

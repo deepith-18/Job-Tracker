@@ -25,12 +25,19 @@ export const REJECTION_REASONS = [
 
 export const COMMON_SOURCES = [
   'LinkedIn',
-  'Referral',
-  'Company Site',
-  'Cold Apply',
   'Indeed',
+  'Company Site',
   'Glassdoor',
+  'Greenhouse',
+  'Lever',
+  'Workday',
+  'Ashby',
+  'ZipRecruiter',
+  'Wellfound',
+  'Referral',
+  'Cold Apply',
   'Recruiter Contact',
+  'Browser Extension',
   'Other',
 ];
 
