@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+  "name": "Job Orbit - Career Application Tracker",
+  "version": "1.0.1",
+  "description": "Streamline job application tracking across LinkedIn, Indeed, Greenhouse, Workday, and company career portals directly into your Job Orbit workspace.",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Job Orbit Tracker",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "scripts": [
+      "lib/firebase-rest.js",
+      "background/background.js"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/content.js"],
+      "css": ["content/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "job-orbit-tracker@antigravity.local",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
+  }
+}
