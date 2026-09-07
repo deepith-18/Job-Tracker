@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Sparkles,
@@ -15,23 +15,52 @@ import {
   Compass,
   Target,
   Clock,
+  Loader2,
+  AlertCircle,
+  Mail,
+  ExternalLink,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { BrandLogo } from '../components/common/BrandLogo';
 import { useApplications } from '../hooks/useApplications';
 import { useToast } from '../components/ui/ToastContext';
+import { useAuth } from '../hooks/useAuth';
+import { db } from '../firebase/config';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+
+const CATEGORY_LABELS: Record<'appreciation' | 'feature' | 'question', string> = {
+  appreciation: '💜 Appreciation',
+  feature: '💡 Feature Request / Change Requested',
+  question: '❓ Query / Inquiry',
+};
 
 export const AboutPage: React.FC = () => {
+  const { user } = useAuth();
   const { applications } = useApplications();
   const { addToast } = useToast();
 
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [senderName, setSenderName] = useState('');
+  const [senderEmail, setSenderEmail] = useState('');
   const [feedbackText, setFeedbackText] = useState('');
-  const [feedbackCategory, setFeedbackCategory] = useState<'appreciation' | 'feature' | 'question'>('appreciation');
+  const [feedbackCategory, setFeedbackCategory] = useState<'appreciation' | 'feature' | 'question'>('question');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const creatorEmail = 'deepith.dev@gmail.com';
+  const creatorEmail = 'deepith1718@gmail.com';
+
+  useEffect(() => {
+    if (user) {
+      if (!senderEmail && user.email) {
+        setSenderEmail(user.email);
+      }
+      if (!senderName && user.displayName) {
+        setSenderName(user.displayName);
+      }
+    }
+  }, [user]);
 
   const handleCopyEmail = () => {
     navigator.clipboard.writeText(creatorEmail);
@@ -40,17 +69,86 @@ export const AboutPage: React.FC = () => {
     setTimeout(() => setCopiedEmail(false), 2500);
   };
 
-  const handleSendFeedback = (e: React.FormEvent) => {
+  const handleSendFeedback = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!feedbackText.trim()) return;
-    setFeedbackSent(true);
-    addToast('Note Sent to Deepith!', 'Thank you for your message and support for Job Orbit.', 'success');
-    setTimeout(() => {
-      setFeedbackOpen(false);
-      setFeedbackSent(false);
-      setFeedbackText('');
-    }, 1800);
+    if (!feedbackText.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    const categoryLabel = CATEGORY_LABELS[feedbackCategory] || 'Query';
+    const cleanSenderName = senderName.trim() || (user?.displayName ?? 'Job Orbit User');
+    const cleanSenderEmail = senderEmail.trim() || (user?.email ?? '');
+
+    try {
+      // 1. Dispatch real email via FormSubmit AJAX API directly to deepith1718@gmail.com
+      const response = await fetch(`https://formsubmit.co/ajax/${creatorEmail}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          _subject: `[Job Orbit] ${categoryLabel} from ${cleanSenderName}`,
+          name: cleanSenderName,
+          email: cleanSenderEmail || 'No email provided',
+          _replyto: cleanSenderEmail || undefined,
+          category: categoryLabel,
+          message: feedbackText.trim(),
+          _template: 'table',
+          _captcha: 'false',
+          clientTimestamp: new Date().toLocaleString(),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error ${response.status}`);
+      }
+
+      // 2. Best-effort Firestore record if authenticated
+      if (user) {
+        try {
+          await addDoc(collection(db, 'inbox_queries'), {
+            senderUid: user.uid,
+            senderName: cleanSenderName,
+            senderEmail: cleanSenderEmail,
+            category: feedbackCategory,
+            message: feedbackText.trim(),
+            destination: creatorEmail,
+            createdAt: serverTimestamp(),
+            status: 'sent',
+          });
+        } catch (dbErr) {
+          console.warn('Firestore backup note failed (non-blocking):', dbErr);
+        }
+      }
+
+      setFeedbackSent(true);
+      addToast('Query Dispatched!', `Directly delivered to ${creatorEmail}`, 'success');
+    } catch (err: any) {
+      console.error('Failed to send query:', err);
+      setSubmitError(
+        'Direct API delivery encountered an issue. You can still email Deepith directly using the link below.'
+      );
+      addToast('Send Failed', 'Could not deliver directly. Please use the direct email option.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const resetForm = () => {
+    setFeedbackOpen(false);
+    setFeedbackSent(false);
+    setSubmitError(null);
+    setFeedbackText('');
+  };
+
+  const mailtoSubject = encodeURIComponent(`[Job Orbit] ${CATEGORY_LABELS[feedbackCategory]}: ${senderName || 'Query'}`);
+  const mailtoBody = encodeURIComponent(
+    `From: ${senderName || 'Job Orbit User'}${senderEmail ? ` (${senderEmail})` : ''}\nCategory: ${CATEGORY_LABELS[feedbackCategory]}\n\n${feedbackText}`
+  );
+  const mailtoHref = `mailto:${creatorEmail}?subject=${mailtoSubject}&body=${mailtoBody}`;
 
   const PRODUCT_PILLARS = [
     {
@@ -706,69 +804,77 @@ export const AboutPage: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Interactive Modal: Send Note to Deepith ── */}
+        {/* ── Interactive Modal: Send Query / Change Request to Deepith ── */}
         {feedbackOpen && (
           <div
             style={{
               position: 'fixed',
               inset: 0,
-              background: 'rgba(15, 23, 42, 0.65)',
-              backdropFilter: 'blur(6px)',
-              WebkitBackdropFilter: 'blur(6px)',
+              background: 'rgba(15, 23, 42, 0.72)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               zIndex: 99999,
               padding: 16,
             }}
-            onClick={() => setFeedbackOpen(false)}
+            onClick={resetForm}
           >
             <div
               style={{
                 background: 'var(--card)',
                 borderRadius: 20,
                 padding: 28,
-                maxWidth: 480,
+                maxWidth: 520,
                 width: '100%',
                 boxShadow: 'var(--shadow-lg)',
                 border: '1px solid var(--border)',
+                position: 'relative',
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div
                     style={{
-                      width: 38,
-                      height: 38,
+                      width: 42,
+                      height: 42,
                       borderRadius: 12,
                       background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       color: '#ffffff',
+                      boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
                     }}
                   >
-                    <Send style={{ width: 18, height: 18 }} />
+                    <Mail style={{ width: 20, height: 20 }} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-                      Send a Note to Deepith
+                    <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
+                      Send Query or Request to Deepith
                     </h3>
-                    <span style={{ fontSize: 12, color: 'var(--t3)' }}>
-                      Creator & Product Architect of Job Orbit
+                    <span style={{ fontSize: 12.5, color: 'var(--t3)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      Delivers directly to <strong style={{ color: 'var(--accent)' }}>{creatorEmail}</strong>
                     </span>
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setFeedbackOpen(false)}
+                  onClick={resetForm}
                   style={{
                     border: 'none',
-                    background: 'transparent',
+                    background: 'var(--page)',
                     cursor: 'pointer',
-                    fontSize: 18,
-                    color: 'var(--t3)',
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 16,
+                    color: 'var(--t2)',
                   }}
                   aria-label="Close modal"
                 >
@@ -777,55 +883,127 @@ export const AboutPage: React.FC = () => {
               </div>
 
               {feedbackSent ? (
-                <div style={{ textAlign: 'center', padding: '32px 16px' }}>
+                <div style={{ textAlign: 'center', padding: '24px 12px' }}>
                   <div
                     style={{
-                      width: 52,
-                      height: 52,
+                      width: 60,
+                      height: 60,
                       borderRadius: '50%',
                       background: 'var(--accent-bg)',
                       color: 'var(--accent)',
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      marginBottom: 12,
+                      marginBottom: 16,
+                      boxShadow: '0 0 20px rgba(99, 102, 241, 0.2)',
                     }}
                   >
-                    <CheckCircle2 style={{ width: 28, height: 28 }} />
+                    <CheckCircle2 style={{ width: 32, height: 32 }} />
                   </div>
-                  <h4 style={{ fontSize: 18, fontWeight: 800, color: 'var(--t1)', margin: '0 0 6px 0' }}>
-                    Note Dispatched!
+                  <h4 style={{ fontSize: 20, fontWeight: 800, color: 'var(--t1)', margin: '0 0 8px 0' }}>
+                    Query Dispatched to Deepith!
                   </h4>
-                  <p style={{ fontSize: 14, color: 'var(--t2)', margin: 0 }}>
-                    Deepith appreciates your message and feedback on Job Orbit. Keep soaring in your search!
+                  <p style={{ fontSize: 14, color: 'var(--t2)', margin: '0 0 20px 0', lineHeight: 1.6 }}>
+                    Your message has been sent directly to <strong style={{ color: 'var(--t1)' }}>{creatorEmail}</strong>.
+                    {senderEmail ? (
+                      <span> Deepith will review your inquiry and follow up at <strong>{senderEmail}</strong>.</span>
+                    ) : (
+                      <span> Deepith appreciates your feedback and will review it directly in his inbox.</span>
+                    )}
                   </p>
+                  <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={resetForm}
+                      className="btn btn-primary"
+                      style={{ padding: '8px 24px', borderRadius: 10, fontWeight: 700 }}
+                    >
+                      Done
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFeedbackSent(false);
+                        setFeedbackText('');
+                      }}
+                      className="btn btn-ghost"
+                      style={{ padding: '8px 18px', borderRadius: 10, fontWeight: 600, border: '1px solid var(--border)' }}
+                    >
+                      Send Another Query
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <form onSubmit={handleSendFeedback} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <form onSubmit={handleSendFeedback} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {submitError && (
+                    <div
+                      style={{
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '1px solid rgba(239, 68, 68, 0.25)',
+                        borderRadius: 10,
+                        padding: '10px 14px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 8,
+                        fontSize: 13,
+                        color: 'var(--t1)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#ef4444', fontWeight: 700 }}>
+                        <AlertCircle style={{ width: 16, height: 16 }} />
+                        <span>Transmission Notice</span>
+                      </div>
+                      <p style={{ margin: 0, color: 'var(--t2)', fontSize: 12.5 }}>
+                        {submitError}
+                      </p>
+                      <a
+                        href={mailtoHref}
+                        className="btn btn-sm"
+                        style={{
+                          alignSelf: 'flex-start',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          background: '#ef4444',
+                          color: '#ffffff',
+                          borderRadius: 8,
+                          padding: '6px 12px',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          textDecoration: 'none',
+                        }}
+                      >
+                        <ExternalLink style={{ width: 13, height: 13 }} />
+                        <span>Send via Email Client (deepith1718@gmail.com)</span>
+                      </a>
+                    </div>
+                  )}
+
                   <div>
-                    <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--t2)', marginBottom: 6 }}>
-                      Message Type
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--t2)', marginBottom: 8 }}>
+                      Request Category
                     </label>
-                    <div style={{ display: 'flex', gap: 8 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                       {[
+                        { id: 'question', label: '❓ Query / Ask' },
+                        { id: 'feature', label: '💡 Change / Feature' },
                         { id: 'appreciation', label: '💜 Appreciation' },
-                        { id: 'feature', label: '💡 Feature Request' },
-                        { id: 'question', label: '❓ Inquiry' },
                       ].map((type) => (
                         <button
                           key={type.id}
                           type="button"
                           onClick={() => setFeedbackCategory(type.id as any)}
                           style={{
-                            flex: 1,
-                            padding: '8px 8px',
-                            borderRadius: 8,
+                            padding: '9px 6px',
+                            borderRadius: 10,
                             border: `1px solid ${feedbackCategory === type.id ? 'var(--accent)' : 'var(--border)'}`,
                             background: feedbackCategory === type.id ? 'var(--accent-bg)' : 'var(--page)',
                             color: feedbackCategory === type.id ? 'var(--accent)' : 'var(--t2)',
                             fontSize: 12,
                             fontWeight: 700,
                             cursor: 'pointer',
+                            textAlign: 'center',
+                            transition: 'all 0.15s ease',
                           }}
                         >
                           {type.label}
@@ -834,15 +1012,73 @@ export const AboutPage: React.FC = () => {
                     </div>
                   </div>
 
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: 'var(--t2)', marginBottom: 6 }}>
+                        Your Name
+                      </label>
+                      <input
+                        type="text"
+                        value={senderName}
+                        onChange={(e) => setSenderName(e.target.value)}
+                        placeholder="Your name or handle"
+                        style={{
+                          width: '100%',
+                          padding: '9px 12px',
+                          borderRadius: 10,
+                          border: '1px solid var(--border)',
+                          fontSize: 13.5,
+                          color: 'var(--t1)',
+                          background: 'var(--page)',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: 'var(--t2)', marginBottom: 6 }}>
+                        Your Email (for response)
+                      </label>
+                      <input
+                        type="email"
+                        value={senderEmail}
+                        onChange={(e) => setSenderEmail(e.target.value)}
+                        placeholder="e.g. you@domain.com"
+                        style={{
+                          width: '100%',
+                          padding: '9px 12px',
+                          borderRadius: 10,
+                          border: '1px solid var(--border)',
+                          fontSize: 13.5,
+                          color: 'var(--t1)',
+                          background: 'var(--page)',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+                  </div>
+
                   <div>
                     <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--t2)', marginBottom: 6 }}>
-                      Your Note
+                      {feedbackCategory === 'feature'
+                        ? 'Describe the Requested Change or Feature'
+                        : feedbackCategory === 'question'
+                        ? 'Your Query or Question'
+                        : 'Your Note'}
                     </label>
                     <textarea
                       rows={4}
                       value={feedbackText}
                       onChange={(e) => setFeedbackText(e.target.value)}
-                      placeholder="Share your thoughts, praise, ideas, or connect with Deepith..."
+                      placeholder={
+                        feedbackCategory === 'feature'
+                          ? 'Explain what you would like changed or added in Job Orbit...'
+                          : feedbackCategory === 'question'
+                          ? 'Type your query or inquiry for Deepith here...'
+                          : 'Share your thoughts, feedback, or appreciation...'
+                      }
                       required
                       style={{
                         width: '100%',
@@ -851,34 +1087,80 @@ export const AboutPage: React.FC = () => {
                         border: '1px solid var(--border)',
                         fontSize: 14,
                         color: 'var(--t1)',
+                        background: 'var(--page)',
                         resize: 'none',
                         outline: 'none',
                         fontFamily: 'inherit',
                         boxSizing: 'border-box',
+                        lineHeight: 1.5,
                       }}
                     />
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 6 }}>
-                    <span style={{ fontSize: 12, color: 'var(--t3)' }}>
-                      Directly relays to Deepith
-                    </span>
-                    <button
-                      type="submit"
-                      className="btn btn-primary"
-                      style={{
-                        padding: '8px 20px',
-                        borderRadius: 12,
-                        fontSize: 14,
-                        fontWeight: 700,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6,
-                      }}
-                    >
-                      <Send style={{ width: 14, height: 14 }} />
-                      <span>Send Message</span>
-                    </button>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: 12,
+                      paddingTop: 4,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--t3)' }}>
+                      <CheckCircle2 style={{ width: 14, height: 14, color: 'var(--accent)' }} />
+                      <span>Arrives at {creatorEmail}</span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <a
+                        href={mailtoHref}
+                        title="Directly launch your default email program"
+                        style={{
+                          fontSize: 12.5,
+                          color: 'var(--t2)',
+                          textDecoration: 'none',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          padding: '7px 10px',
+                          borderRadius: 8,
+                          border: '1px solid var(--border)',
+                        }}
+                      >
+                        <ExternalLink style={{ width: 12, height: 12 }} />
+                        <span>Email app</span>
+                      </a>
+
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="btn btn-primary"
+                        style={{
+                          padding: '9px 20px',
+                          borderRadius: 12,
+                          fontSize: 14,
+                          fontWeight: 700,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 7,
+                          opacity: isSubmitting ? 0.75 : 1,
+                          cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="animate-spin" style={{ width: 15, height: 15 }} />
+                            <span>Sending to Deepith...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Send style={{ width: 14, height: 14 }} />
+                            <span>Send Query to Deepith</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </form>
               )}
