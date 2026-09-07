@@ -1,5 +1,5 @@
 import {
-  collection, doc, addDoc, updateDoc, deleteDoc, setDoc,
+  collection, doc, addDoc, updateDoc, deleteDoc, setDoc, getDoc,
   onSnapshot, query, where, serverTimestamp, Timestamp, type Unsubscribe,
 } from 'firebase/firestore';
 import { db, auth } from './config';
@@ -97,6 +97,38 @@ export const subscribeToApplications = (
   };
 };
 
+export const recordUserActivityAndStreak = async (uid: string) => {
+  try {
+    const today = new Date().toDateString();
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    const todayISO = new Date().toISOString().split('T')[0];
+
+    // 1. Update local activity log for heatmap
+    const storageKey = `applyflow_activity_log_${uid}`;
+    const existing: Record<string, number> = JSON.parse(localStorage.getItem(storageKey) || '{}');
+    existing[todayISO] = (existing[todayISO] || 0) + 1;
+    localStorage.setItem(storageKey, JSON.stringify(existing));
+
+    // 2. Fetch current user settings doc and increment streak if active on consecutive days
+    const ref = doc(db, SETTINGS_COL, uid);
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+      const data = snap.data();
+      const lastActive = data.lastActive || '';
+      const currentStreak = typeof data.streak === 'number' ? data.streak : 1;
+
+      if (lastActive !== today) {
+        const newStreak = lastActive === yesterday ? currentStreak + 1 : 1;
+        await setDoc(ref, { streak: newStreak, lastActive: today, updatedAt: serverTimestamp() }, { merge: true });
+      }
+    } else {
+      await setDoc(ref, { streak: 1, lastActive: today, updatedAt: serverTimestamp() }, { merge: true });
+    }
+  } catch (err) {
+    console.warn('Auto-update streak activity error (non-fatal):', err);
+  }
+};
+
 export const addApplication = async (uid: string, data: ApplicationFormData) => {
   const email = auth.currentUser?.email || '';
   const ref = await addDoc(collection(db, COL), {
@@ -118,6 +150,12 @@ export const addApplication = async (uid: string, data: ApplicationFormData) => 
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
+
+  // Automatically update streak and log activity when a job is applied or added
+  if (uid) {
+    recordUserActivityAndStreak(uid);
+  }
+
   return ref.id;
 };
 
@@ -143,6 +181,14 @@ export const updateApplication = async (appId: string, data: Partial<Application
 
   // Use setDoc with merge: true so updates work seamlessly whether document exists or not
   await setDoc(ref, u, { merge: true });
+
+  // Auto-update streak when status moves to Applied, OA, or Interview
+  if (data.status && ['Applied', 'OA/Assessment', 'Interview'].includes(data.status)) {
+    const currentUid = auth.currentUser?.uid;
+    if (currentUid) {
+      recordUserActivityAndStreak(currentUid);
+    }
+  }
 };
 
 export const deleteApplication = async (appId: string) => deleteDoc(doc(db, COL, appId));

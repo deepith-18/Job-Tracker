@@ -46,6 +46,7 @@ function App() {
         <Route path="/profile" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
         {/* ── Legacy Routes (direct URL access preserved) ── */}
+        <Route path="/interview-rounds" element={<ProtectedRoute><JournalPage /></ProtectedRoute>} />
         <Route path="/mission" element={<ProtectedRoute><MissionControlPage /></ProtectedRoute>} />
         <Route path="/interviews" element={<ProtectedRoute><JournalPage /></ProtectedRoute>} />
         <Route path="/skills" element={<ProtectedRoute><InsightsPage /></ProtectedRoute>} />

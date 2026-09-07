@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -18,7 +18,11 @@ import {
   Keyboard,
   Sun,
   Moon,
+  CheckCircle2,
+  Sparkles,
+  Calendar,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CommandPalette } from './CommandPalette';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 import { BrandLogo } from '../common/BrandLogo';
@@ -66,12 +70,14 @@ const NAV_SECTIONS = [
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const user = useAuthStore((s) => s.user);
   const { applications, error } = useApplications();
-  const { settings, updateSettings } = useUserSettings();
+  const { settings, loading: settingsLoading, updateSettings } = useUserSettings();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [streakModalOpen, setStreakModalOpen] = useState(false);
+  const [boostSuccess, setBoostSuccess] = useState(false);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
   const resolvedTheme = useThemeStore((s) => s.resolvedTheme);
 
@@ -89,19 +95,24 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         setShortcutsOpen(false);
         setPaletteOpen(false);
         setMobileOpen(false);
+        setStreakModalOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Safe streak check: Only update once settings are finished loading from Firestore
   useEffect(() => {
-    if (!user) return;
+    if (!user || settingsLoading) return;
     const today = new Date().toDateString();
     const yesterday = new Date(Date.now() - 86400000).toDateString();
-    if (settings.lastActive !== today) {
-      const newStreak = settings.lastActive === yesterday ? settings.streak + 1 : 1;
+
+    if (settings.lastActive && settings.lastActive !== today) {
+      const newStreak = settings.lastActive === yesterday ? (settings.streak || 1) + 1 : 1;
       updateSettings({ streak: newStreak, lastActive: today });
+    } else if (!settings.lastActive) {
+      updateSettings({ streak: Math.max(settings.streak || 1, 1), lastActive: today });
     }
 
     try {
@@ -115,9 +126,81 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     } catch (e) {
       console.error('Heatmap activity log error:', e);
     }
-  }, [user, settings.lastActive, settings.streak, updateSettings]);
+  }, [user, settingsLoading, settings.lastActive, settings.streak, updateSettings]);
 
-  const streak = settings.streak || 1;
+  // Compute live streak from actual application dates + activity log + settings
+  const computedStreak = useMemo(() => {
+    const activeDays = new Set<string>();
+
+    applications.forEach((app) => {
+      const d = app.appliedDate || app.createdAt;
+      if (d) {
+        const dateStr = new Date(d).toISOString().split('T')[0];
+        activeDays.add(dateStr);
+      }
+    });
+
+    if (user?.uid) {
+      try {
+        const storageKey = `applyflow_activity_log_${user.uid}`;
+        const existing: Record<string, number> = JSON.parse(localStorage.getItem(storageKey) || '{}');
+        Object.keys(existing).forEach((d) => activeDays.add(d));
+      } catch {
+        // ignore
+      }
+    }
+
+    const todayISO = new Date().toISOString().split('T')[0];
+    if (settings.lastActive === new Date().toDateString()) {
+      activeDays.add(todayISO);
+    }
+
+    const now = new Date();
+    let count = 0;
+    const cursor = new Date(now);
+    const getISO = (d: Date) => d.toISOString().split('T')[0];
+
+    // Check starting today
+    while (activeDays.has(getISO(cursor))) {
+      count++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+
+    // If no activity yet today, check starting yesterday
+    if (count === 0) {
+      cursor.setTime(now.getTime());
+      cursor.setDate(cursor.getDate() - 1);
+      while (activeDays.has(getISO(cursor))) {
+        count++;
+        cursor.setDate(cursor.getDate() - 1);
+      }
+    }
+
+    return Math.max(count, settings.streak || 1);
+  }, [applications, user, settings.lastActive, settings.streak]);
+
+  const handleBoostStreak = () => {
+    const today = new Date().toDateString();
+    const todayISO = new Date().toISOString().split('T')[0];
+    const newStreak = computedStreak + 1;
+    updateSettings({ streak: newStreak, lastActive: today });
+
+    if (user?.uid) {
+      try {
+        const storageKey = `applyflow_activity_log_${user.uid}`;
+        const existing: Record<string, number> = JSON.parse(localStorage.getItem(storageKey) || '{}');
+        existing[todayISO] = (existing[todayISO] || 0) + 1;
+        localStorage.setItem(storageKey, JSON.stringify(existing));
+      } catch {
+        // ignore
+      }
+    }
+
+    setBoostSuccess(true);
+    setTimeout(() => setBoostSuccess(false), 2500);
+  };
+
+  const streak = computedStreak;
   const initial = (settings?.displayName || user?.email || 'U').charAt(0).toUpperCase();
   const displayName = settings?.displayName || (user?.email ? user.email.split('@')[0] : 'Candidate');
   const activeCount = applications.filter((a) => ['Applied', 'OA/Assessment', 'Interview'].includes(a.status)).length;
@@ -146,12 +229,31 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               </div>
             </NavLink>
 
-            {streak >= 1 && (
-              <div className="nav-streak-pill" title={`${streak} day active streak`}>
-                <Flame style={{ width: 13, height: 13, color: 'var(--streak)' }} />
-                <span>{streak}d streak</span>
-              </div>
-            )}
+            {/* Clickable Active Streak Pill */}
+            <button
+              type="button"
+              onClick={() => setStreakModalOpen(true)}
+              className="nav-streak-pill"
+              title={`${streak} day active streak • Click to view activity & boost`}
+              style={{
+                cursor: 'pointer',
+                border: 'none',
+                outline: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                transition: 'transform 0.15s ease, background 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              <Flame style={{ width: 14, height: 14, color: 'var(--streak)' }} />
+              <span>{streak}d streak</span>
+            </button>
           </div>
 
           {/* Center Navigation Pills (Desktop Only) */}
@@ -608,6 +710,178 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
       {/* ── Global Keyboard Shortcuts Cheatsheet Modal ── */}
       <KeyboardShortcutsModal isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+
+      {/* ── Interactive Streak & Activity Modal ── */}
+      <AnimatePresence>
+        {streakModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 9999,
+              background: 'rgba(0,0,0,0.65)',
+              backdropFilter: 'blur(6px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 16,
+            }}
+            onClick={() => setStreakModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="card"
+              style={{
+                width: '100%',
+                maxWidth: 420,
+                padding: 24,
+                borderRadius: 16,
+                background: 'var(--card)',
+                border: '1.5px solid var(--border)',
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+                textAlign: 'center',
+                position: 'relative',
+              }}
+            >
+              {/* Close button */}
+              <button
+                onClick={() => setStreakModalOpen(false)}
+                className="btn-ghost"
+                style={{ position: 'absolute', top: 12, right: 12, padding: 6, borderRadius: 8 }}
+              >
+                ✕
+              </button>
+
+              {/* Animated Flame Badge */}
+              <div
+                style={{
+                  width: 68,
+                  height: 68,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(239, 68, 68, 0.2) 100%)',
+                  border: '1.5px solid rgba(245, 158, 11, 0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
+                  boxShadow: '0 0 24px rgba(245, 158, 11, 0.25)',
+                }}
+              >
+                <Flame style={{ width: 36, height: 36, color: 'var(--streak)' }} />
+              </div>
+
+              <h3 style={{ fontSize: 22, fontWeight: 900, color: 'var(--t1)', margin: 0 }}>
+                {streak} Day Active Streak
+              </h3>
+              <p style={{ fontSize: 13, color: 'var(--t2)', marginTop: 6, lineHeight: 1.5 }}>
+                You're building consistent interview momentum. Daily submissions and prep keep your career trajectory on fire!
+              </p>
+
+              {/* Status pill */}
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '6px 14px',
+                  borderRadius: 20,
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  color: '#10b981',
+                  border: '1px solid rgba(16, 185, 129, 0.25)',
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  margin: '12px 0 18px',
+                }}
+              >
+                <CheckCircle2 style={{ width: 14, height: 14 }} />
+                <span>Streak Protected Today</span>
+              </div>
+
+              {/* Stats Strip */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 10,
+                  padding: '12px 14px',
+                  borderRadius: 12,
+                  background: 'var(--card-hover)',
+                  border: '1px solid var(--border)',
+                  marginBottom: 18,
+                  textAlign: 'left',
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--t3)', fontWeight: 600, textTransform: 'uppercase' }}>Active Applications</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--t1)', marginTop: 2 }}>{activeCount}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--t3)', fontWeight: 600, textTransform: 'uppercase' }}>Interviews in Pipeline</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent)', marginTop: 2 }}>{interviewCount}</div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <button
+                  onClick={handleBoostStreak}
+                  className="btn"
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: 10,
+                    fontWeight: 800,
+                    fontSize: 13,
+                    background: boostSuccess ? 'rgba(16, 185, 129, 0.2)' : 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(245, 158, 11, 0.3)',
+                  }}
+                >
+                  <Sparkles style={{ width: 15, height: 15 }} />
+                  <span>{boostSuccess ? 'Streak Boosted! 🔥 (+1 Day)' : 'Boost Today\'s Activity Streak'}</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setStreakModalOpen(false);
+                    navigate('/insights');
+                  }}
+                  className="btn"
+                  style={{
+                    width: '100%',
+                    padding: '9px',
+                    borderRadius: 10,
+                    fontWeight: 600,
+                    fontSize: 12.5,
+                    background: 'var(--card-hover)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--t1)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <Calendar style={{ width: 14, height: 14, color: 'var(--accent)' }} />
+                  <span>View 52-Week Heatmap & Velocity</span>
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

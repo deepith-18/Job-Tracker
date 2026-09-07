@@ -26,7 +26,9 @@ import {
   Building2,
   Sparkles,
   Code2,
+  FileSpreadsheet,
 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { AppShell } from '../components/layout/AppShell';
 import { useApplications } from '../hooks/useApplications';
 import { useDocuments } from '../hooks/useDocuments';
@@ -34,11 +36,13 @@ import { useToast } from '../components/ui/ToastContext';
 import { updateApplication } from '../firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CodeQuestionVault } from '../components/journal/CodeQuestionVault';
+import { CompanyRoundNotesMdViewer } from '../components/journal/CompanyRoundNotesMdViewer';
 
 // ── TABS (Vector Lucide icons, no emojis) ──
 const TABS = [
   { id: 'notes', label: 'Interview Notes', icon: FileText },
   { id: 'code-vault', label: 'Code & Questions', icon: Code2 },
+  { id: 'md-rounds', label: 'Company Rounds & MD', icon: FileSpreadsheet },
   { id: 'documents', label: 'Document Vault', icon: Folder },
   { id: 'flashcards', label: 'Flashcard Studio', icon: Layers },
   { id: 'mock', label: 'Mock Simulator', icon: Mic },
@@ -48,8 +52,20 @@ const TABS = [
 ];
 
 export const JournalPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('notes');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(() => {
+    if (location.pathname === '/interview-rounds' || location.search.includes('tab=md-rounds') || location.hash === '#md-rounds') {
+      return 'md-rounds';
+    }
+    return 'notes';
+  });
   const [codeVaultFilter, setCodeVaultFilter] = useState('All');
+
+  useEffect(() => {
+    if (location.pathname === '/interview-rounds' || location.search.includes('tab=md-rounds') || location.hash === '#md-rounds') {
+      setActiveTab('md-rounds');
+    }
+  }, [location]);
 
   const handleOpenCodeVault = (company?: string) => {
     if (company) setCodeVaultFilter(company);
@@ -62,7 +78,7 @@ export const JournalPage: React.FC = () => {
       <div className="ph" style={{ paddingBottom: 0 }}>
         <h1 className="page-title">Interview Journal & Prep Hub</h1>
         <p className="page-sub" style={{ marginBottom: 16 }}>
-          Comprehensive interview notes, code & questions vault, document repository, interactive flashcards, mock simulators, and outreach copilot.
+          Comprehensive interview notes, code & questions vault, company rounds & MD reader, document repository, interactive flashcards, and mock simulators.
         </p>
 
         {/* Tab Bar */}
@@ -97,7 +113,13 @@ export const JournalPage: React.FC = () => {
         <JournalNotesContent onOpenCodeVault={handleOpenCodeVault} />
       </div>
       <div style={{ display: activeTab === 'code-vault' ? 'block' : 'none' }}>
-        <CodeQuestionVault initialCompanyFilter={codeVaultFilter} />
+        <CodeQuestionVault
+          initialCompanyFilter={codeVaultFilter}
+          onOpenMdRounds={() => setActiveTab('md-rounds')}
+        />
+      </div>
+      <div style={{ display: activeTab === 'md-rounds' ? 'block' : 'none' }}>
+        <CompanyRoundNotesMdViewer />
       </div>
       <div style={{ display: activeTab === 'documents' ? 'block' : 'none' }}>
         <JournalDocumentsContent />

@@ -4,8 +4,6 @@ import {
   Search,
   Star,
   Plus,
-  Copy,
-  Check,
   Building2,
   Tag,
   Clock,
@@ -18,11 +16,13 @@ import {
   ChevronDown,
   ChevronUp,
   Cloud,
+  Brain,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCodeQuestions } from '../../hooks/useCodeQuestions';
 import { useApplications } from '../../hooks/useApplications';
 import { useToast } from '../ui/ToastContext';
+import { CodeInterpreterViewer } from '../common/CodeInterpreterViewer';
 import type { InterviewCodeQuestion, CodingLanguage } from '../../types';
 
 const LANGUAGE_LABELS: Record<CodingLanguage, string> = {
@@ -51,10 +51,12 @@ const TOPIC_SUGGESTIONS = [
 interface CodeQuestionVaultProps {
   initialCompanyFilter?: string;
   onNavigateToApplications?: () => void;
+  onOpenMdRounds?: () => void;
 }
 
 export const CodeQuestionVault: React.FC<CodeQuestionVaultProps> = ({
   initialCompanyFilter = 'All',
+  onOpenMdRounds,
 }) => {
   const { questions, loading, addQuestion, updateQuestion, deleteQuestion, toggleStar } =
     useCodeQuestions();
@@ -71,7 +73,6 @@ export const CodeQuestionVault: React.FC<CodeQuestionVaultProps> = ({
 
   // Expanded cards state (keep all open by default for effortless scanning, allow collapsing)
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
-  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
@@ -143,17 +144,6 @@ export const CodeQuestionVault: React.FC<CodeQuestionVaultProps> = ({
       }
       return next;
     });
-  };
-
-  const handleCopyCode = async (id: string, code: string) => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopiedId(id);
-      addToast('Copied', 'Code snippet copied to clipboard', 'info');
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch {
-      addToast('Copy Failed', 'Unable to access clipboard', 'error');
-    }
   };
 
   const openAddModal = (prefilledCompany?: string) => {
@@ -446,6 +436,27 @@ export const CodeQuestionVault: React.FC<CodeQuestionVaultProps> = ({
                 <span>{loading ? 'Syncing...' : 'Cloud Synced'}</span>
               </div>
 
+              {/* Upload MD Round Notes Button */}
+              {onOpenMdRounds && (
+                <button
+                  onClick={onOpenMdRounds}
+                  className="btn"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    whiteSpace: 'nowrap',
+                    background: 'rgba(139, 92, 246, 0.12)',
+                    color: '#8b5cf6',
+                    border: '1px solid rgba(139, 92, 246, 0.3)',
+                    fontWeight: 700,
+                  }}
+                >
+                  <Brain style={{ width: 15, height: 15 }} />
+                  <span>Upload MD Round Notes</span>
+                </button>
+              )}
+
               {/* Add Question Button */}
               <button
                 onClick={() => openAddModal()}
@@ -599,7 +610,6 @@ export const CodeQuestionVault: React.FC<CodeQuestionVaultProps> = ({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {filteredQuestions.map((q) => {
             const isCollapsed = collapsedIds.has(q.id);
-            const isCopied = copiedId === q.id;
 
             // Difficulty color accents
             const diffColor =
@@ -932,115 +942,13 @@ export const CodeQuestionVault: React.FC<CodeQuestionVaultProps> = ({
                       </div>
                     )}
 
-                    {/* ── Syntax Code Snippet Box ── */}
-                    <div
-                      style={{
-                        borderRadius: 12,
-                        background: '#090d16',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        overflow: 'hidden',
-                        position: 'relative',
-                      }}
-                    >
-                      {/* Code Header Bar */}
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '8px 14px',
-                          background: 'rgba(255, 255, 255, 0.04)',
-                          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span
-                            style={{
-                              width: 9,
-                              height: 9,
-                              borderRadius: '50%',
-                              background: '#ef4444',
-                              display: 'inline-block',
-                            }}
-                          />
-                          <span
-                            style={{
-                              width: 9,
-                              height: 9,
-                              borderRadius: '50%',
-                              background: '#f59e0b',
-                              display: 'inline-block',
-                            }}
-                          />
-                          <span
-                            style={{
-                              width: 9,
-                              height: 9,
-                              borderRadius: '50%',
-                              background: '#10b981',
-                              display: 'inline-block',
-                            }}
-                          />
-                          <span
-                            style={{
-                              fontSize: 11.5,
-                              fontWeight: 700,
-                              fontFamily: 'monospace',
-                              color: '#94a3b8',
-                              marginLeft: 8,
-                              textTransform: 'uppercase',
-                            }}
-                          >
-                            {LANGUAGE_LABELS[q.language] || q.language}
-                          </span>
-                        </div>
-
-                        {/* 1-Click Copy Code Button */}
-                        <button
-                          onClick={() => handleCopyCode(q.id, q.code)}
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            padding: '4px 10px',
-                            borderRadius: 6,
-                            background: isCopied ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.08)',
-                            border: isCopied ? '1px solid #10b981' : '1px solid rgba(255, 255, 255, 0.1)',
-                            color: isCopied ? '#34d399' : '#e2e8f0',
-                            fontSize: 11.5,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                          }}
-                        >
-                          {isCopied ? (
-                            <>
-                              <Check style={{ width: 12, height: 12 }} />
-                              <span>Copied!</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy style={{ width: 12, height: 12 }} />
-                              <span>Copy Code</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-
-                      {/* Code Content */}
-                      <pre
-                        style={{
-                          margin: 0,
-                          padding: '14px 18px',
-                          overflowX: 'auto',
-                          fontSize: 13,
-                          lineHeight: 1.55,
-                          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                          color: '#e2e8f0',
-                        }}
-                      >
-                        <code>{q.code}</code>
-                      </pre>
+                    {/* ── Syntax Code Snippet Box (Interpreter View) ── */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <CodeInterpreterViewer
+                        code={q.code}
+                        language={q.language}
+                        title={`${q.company} • ${q.title}`}
+                      />
                     </div>
                   </div>
                 )}

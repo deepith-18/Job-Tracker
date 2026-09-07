@@ -105,3 +105,77 @@ export interface InterviewCodeQuestion {
   applicationId?: string;
 }
 
+export type QuestionCategoryType =
+  | 'Theory & Concepts'
+  | 'Coding & DSA'
+  | 'System Design'
+  | 'Behavioral & Leadership'
+  | 'General';
+
+export type RejectionCategory =
+  | 'Theory Gap'
+  | 'Edge Case Failure'
+  | 'Complexity Suboptimal'
+  | 'Communication & Tradeoffs'
+  | 'System Architecture Flaw'
+  | 'Behavioral Alignment';
+
+export interface QuestionRejectionLearning {
+  identifiedMistake: string;
+  whatToLearn: string;
+  category: RejectionCategory;
+  correctiveAction: string[];
+}
+
+export interface ParsedRoundQuestion {
+  id: string;
+  questionNumber: number;
+  question: string;
+  type: QuestionCategoryType;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  category: string;
+  keyConcepts: string[];
+  answer: string;
+  codeSnippet?: string;
+  codeLanguage?: CodingLanguage;
+  timeComplexity?: string;
+  spaceComplexity?: string;
+  followUps?: string[];
+  isStarred?: boolean;
+  rejectionLearning?: QuestionRejectionLearning;
+}
+
+export interface InterviewRoundSection {
+  roundNumber: number;
+  roundTitle: string;
+  roundType: 'Screening' | 'Technical / DSA' | 'Theory & Core CS' | 'System Design' | 'Behavioral / HR';
+  roundNotes: string;
+  interviewerRole?: string;
+  commonPitfalls?: string[];
+  roundTakeaway?: string;
+  questions: ParsedRoundQuestion[];
+}
+
+export interface CompanyRoundDocument {
+  id: string;
+  fileName: string;
+  company: string;
+  role: string;
+  interviewDate?: string;
+  overview: string;
+  status?: 'Rejected' | 'Offer' | 'In Progress' | 'Debrief';
+  totalRounds: number;
+  totalQuestions: number;
+  theoryQuestionsCount: number;
+  codingQuestionsCount: number;
+  rawMarkdown: string;
+  rounds: InterviewRoundSection[];
+  overallRejectionAnalysis?: {
+    primaryMistakes: string[];
+    growthAreas: string[];
+    actionableRoadmap: string[];
+  };
+}
+
+
+
