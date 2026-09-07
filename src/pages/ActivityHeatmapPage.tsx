@@ -1,4 +1,4 @@
-import { Flame, Calendar, Rocket } from 'lucide-react';
+import { Flame, Calendar, Rocket, Grid } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { eachDayOfInterval, subDays, format } from 'date-fns';
 import { AppShell } from '../components/layout/AppShell';
@@ -23,38 +23,51 @@ export const ActivityHeatmapPage: React.FC = () => {
     const weeks: { date: Date; count: number; level: number }[][] = [];
     let currentWeek: { date: Date; count: number; level: number }[] = [];
 
-    days.forEach((date) => {
-      const key = format(date, 'yyyy-MM-dd');
+    days.forEach((day, index) => {
+      const key = format(day, 'yyyy-MM-dd');
       const count = dayCounts[key] || 0;
       const level = count === 0 ? 0 : count === 1 ? 1 : count <= 3 ? 2 : 3;
 
-      currentWeek.push({ date, count, level });
-      if (currentWeek.length === 7) {
+      currentWeek.push({ date: day, count, level });
+
+      if (currentWeek.length === 7 || index === days.length - 1) {
         weeks.push(currentWeek);
         currentWeek = [];
       }
     });
 
-    if (currentWeek.length > 0) weeks.push(currentWeek);
-    return { weeks, totalSent: applications.length };
+    return {
+      weeks,
+      totalSent: applications.length,
+    };
   }, [applications]);
 
   // Streak calculations
   const streakStats = useMemo(() => {
-    const dates = applications
-      .map((a) => format(new Date(a.appliedDate || a.createdAt), 'yyyy-MM-dd'))
-      .sort();
-
-    const uniqueDates = Array.from(new Set(dates));
     let currentStreak = 0;
-    const today = format(new Date(), 'yyyy-MM-dd');
-    const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+    let activeDays = 0;
 
-    if (uniqueDates.includes(today) || uniqueDates.includes(yesterday)) {
-      currentStreak = uniqueDates.length;
+    const dayCounts: Record<string, number> = {};
+    applications.forEach((app) => {
+      const key = format(new Date(app.appliedDate || app.createdAt), 'yyyy-MM-dd');
+      dayCounts[key] = (dayCounts[key] || 0) + 1;
+    });
+
+    activeDays = Object.keys(dayCounts).length;
+
+    // Check backwards from today
+    let checkDate = new Date();
+    while (true) {
+      const key = format(checkDate, 'yyyy-MM-dd');
+      if (dayCounts[key] && dayCounts[key] > 0) {
+        currentStreak++;
+        checkDate = subDays(checkDate, 1);
+      } else {
+        break;
+      }
     }
 
-    return { currentStreak: Math.max(1, currentStreak), activeDays: uniqueDates.length };
+    return { currentStreak, activeDays };
   }, [applications]);
 
   if (loading) {
@@ -74,7 +87,10 @@ export const ActivityHeatmapPage: React.FC = () => {
     <AppShell>
       {/* Header */}
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title">🟩 Application Activity Heatmap</h1>
+        <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Grid size={24} color="var(--accent)" />
+          <span>Application Activity Heatmap</span>
+        </h1>
         <p className="page-sub">
           Track daily submission velocity and maintain your application streak over 52 weeks
         </p>
@@ -84,7 +100,7 @@ export const ActivityHeatmapPage: React.FC = () => {
         {/* Streak & Velocity Banner */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
           <div className="card" style={{ padding: 20 }}>
-            <div style={{ fontSize: 28, marginBottom: 4 }}><Flame className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></div>
+            <div style={{ marginBottom: 6 }}><Flame size={24} color="var(--accent)" /></div>
             <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--accent)' }}>
               {streakStats.currentStreak} Days
             </div>
@@ -92,7 +108,7 @@ export const ActivityHeatmapPage: React.FC = () => {
           </div>
 
           <div className="card" style={{ padding: 20 }}>
-            <div style={{ fontSize: 28, marginBottom: 4 }}><Calendar className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></div>
+            <div style={{ marginBottom: 6 }}><Calendar size={24} color="#10b981" /></div>
             <div style={{ fontSize: 26, fontWeight: 800, color: '#10b981' }}>
               {streakStats.activeDays} Days
             </div>
@@ -100,7 +116,7 @@ export const ActivityHeatmapPage: React.FC = () => {
           </div>
 
           <div className="card" style={{ padding: 20 }}>
-            <div style={{ fontSize: 28, marginBottom: 4 }}><Rocket className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></div>
+            <div style={{ marginBottom: 6 }}><Rocket size={24} color="#8b5cf6" /></div>
             <div style={{ fontSize: 26, fontWeight: 800, color: '#8b5cf6' }}>
               {calendarData.totalSent} Apps
             </div>
@@ -111,8 +127,9 @@ export const ActivityHeatmapPage: React.FC = () => {
         {/* 52-Week Contribution Grid Card */}
         <div className="card" style={{ padding: 24 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)' }}>
-              🗓️ 52-Week Submission Grid
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Calendar size={18} color="var(--t3)" />
+              <span>52-Week Submission Grid</span>
             </h3>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--t3)' }}>

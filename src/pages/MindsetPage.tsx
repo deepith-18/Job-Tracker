@@ -35,17 +35,17 @@ export const MindsetPage: React.FC = () => {
     <AppShell>
       {/* Header */}
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title">🧘 Pre-Interview Mindset & Stress Reduction Studio</h1>
+        <h1 className="page-title">Pre-Interview Mindset & Focus Studio</h1>
         <p className="page-sub">
           Calm pre-interview jitters with 4-7-8 breathing exercises and technical confidence checklists
         </p>
       </div>
 
-      <div className="pb" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div className="pb" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 20 }}>
         {/* 4-7-8 Breathing Exercise */}
         <div className="card" style={{ padding: 24, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 8 }}>
-            🫁 4-7-8 Tactical Breathing Timer
+            4-7-8 Tactical Breathing Timer
           </div>
 
           <div

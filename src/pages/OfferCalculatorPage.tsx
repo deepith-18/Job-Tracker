@@ -1,5 +1,5 @@
 import { DollarSign, Pencil, Trash2, Handshake, Sparkles } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppShell } from '../components/layout/AppShell';
 import { useToast } from '../components/ui/ToastContext';
@@ -15,33 +15,26 @@ interface OfferPackage {
   location: string;
 }
 
-const INITIAL_OFFERS: OfferPackage[] = [
-  {
-    id: '1',
-    company: 'Stripe',
-    role: 'Senior Staff Engineer',
-    baseSalary: 195000,
-    bonusPercent: 15,
-    stockGrant4Yr: 320000,
-    signOnBonus: 25000,
-    location: 'San Francisco, CA',
-  },
-  {
-    id: '2',
-    company: 'Google',
-    role: 'L5 Software Engineer',
-    baseSalary: 185000,
-    bonusPercent: 15,
-    stockGrant4Yr: 360000,
-    signOnBonus: 30000,
-    location: 'Remote',
-  },
-];
-
 export const OfferCalculatorPage: React.FC = () => {
   const { addToast } = useToast();
 
-  const [offers, setOffers] = useState<OfferPackage[]>(INITIAL_OFFERS);
+  const [offers, setOffers] = useState<OfferPackage[]>(() => {
+    try {
+      const saved = localStorage.getItem('joborbit_user_offers');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('joborbit_user_offers', JSON.stringify(offers));
+    } catch (err) {
+      console.error('Failed to save offers locally:', err);
+    }
+  }, [offers]);
+
   const [offerModal, setOfferModal] = useState<{ open: boolean; editOffer?: OfferPackage }>({ open: false });
 
   // Form states
@@ -173,11 +166,48 @@ Candidate`;
 
       <div className="pb" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         {/* Side-by-Side Offer Comparison Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 20 }}>
-          {offers.map((off, idx) => {
-            const comp = calcAnnualComp(off);
-            const borderColors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899'];
-            const borderColor = borderColors[idx % borderColors.length];
+        {offers.length === 0 ? (
+          <div
+            className="card"
+            style={{
+              padding: '48px 24px',
+              textAlign: 'center',
+              maxWidth: 500,
+              margin: '20px auto',
+              border: '1px dashed var(--border)',
+            }}
+          >
+            <div
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 26,
+                background: 'var(--card-subtle, #f1f5f9)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+                color: 'var(--t2)',
+              }}
+            >
+              <DollarSign style={{ width: 24, height: 24 }} />
+            </div>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', marginBottom: 8 }}>
+              No offer packages saved yet
+            </h3>
+            <p style={{ fontSize: 13, color: 'var(--t2)', lineHeight: 1.5, margin: '0 auto 20px' }}>
+              Add job offers to calculate base, bonus, 4-year equity, and sign-on numbers to compare your year-1 and 4-year total compensation side-by-side.
+            </p>
+            <button onClick={openAddModal} className="btn btn-primary" style={{ borderRadius: 12, fontSize: 13 }}>
+              + Add First Offer
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 20 }}>
+            {offers.map((off, idx) => {
+              const comp = calcAnnualComp(off);
+              const borderColors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899'];
+              const borderColor = borderColors[idx % borderColors.length];
 
             return (
               <motion.div
@@ -247,8 +277,9 @@ Candidate`;
             );
           })}
         </div>
+      )}
 
-        {/* Negotiation Script Generator Card */}
+      {/* Negotiation Script Generator Card */}
         <div className="card" style={{ padding: 24 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)' }}>

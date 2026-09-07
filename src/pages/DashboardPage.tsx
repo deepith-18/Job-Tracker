@@ -183,7 +183,7 @@ export const DashboardPage: React.FC = () => {
                   <span style={{ fontSize: 12, color: 'var(--t2)', fontWeight: 600 }}>Active Pipeline</span>
                 </div>
                 <span style={{ fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: '#e0e7ff', color: 'var(--accent)' }}>
-                  {offers.length > 0 ? `${offers.length} offer in hand 🎉` : `${total} total tracked`}
+                  {offers.length > 0 ? `${offers.length} offer in hand` : `${total} total tracked`}
                 </span>
               </div>
               <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--t1)', lineHeight: 1 }}>{activePipeline.length}</div>
@@ -211,7 +211,7 @@ export const DashboardPage: React.FC = () => {
                   <span style={{ fontSize: 12, color: 'var(--t2)', fontWeight: 600 }}>Velocity (7 Days)</span>
                 </div>
                 <span style={{ fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: thisWeekApps >= (settings?.weeklyGoal || 5) ? '#dcfce7' : '#ede9fe', color: thisWeekApps >= (settings?.weeklyGoal || 5) ? '#15803d' : '#7c3aed' }}>
-                  {thisWeekApps >= (settings?.weeklyGoal || 5) ? 'Weekly goal met 🎯' : `${Math.max(0, (settings?.weeklyGoal || 5) - thisWeekApps)} left to goal`}
+                  {thisWeekApps >= (settings?.weeklyGoal || 5) ? 'Weekly goal met' : `${Math.max(0, (settings?.weeklyGoal || 5) - thisWeekApps)} left to goal`}
                 </span>
               </div>
               <div style={{ fontSize: 26, fontWeight: 800, color: '#8b5cf6', lineHeight: 1 }}>{thisWeekApps}</div>

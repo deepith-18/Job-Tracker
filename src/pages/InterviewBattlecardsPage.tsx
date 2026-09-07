@@ -1,4 +1,4 @@
-import { Lightbulb } from 'lucide-react';
+import { Lightbulb, Layers, Code2, BookOpen } from 'lucide-react';
 import React, { useState } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 
@@ -45,13 +45,16 @@ export const InterviewBattlecardsPage: React.FC = () => {
     <AppShell>
       {/* Header */}
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title"><Lightbulb className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Technical Interview Battle Cards & Cheat Sheets</h1>
+        <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Lightbulb size={24} color="var(--accent)" />
+          <span>Technical Interview Battle Cards</span>
+        </h1>
         <p className="page-sub">
-          High-yield company interview tactics, system design mantras, and core DSA patterns
+          Targeted company interview tactics, system design mantras, and core DSA patterns
         </p>
       </div>
 
-      <div className="pb" style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 20 }}>
+      <div className="pb" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 20 }}>
         {/* Left Column: Company Cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {CARDS.map((card) => (
@@ -63,7 +66,7 @@ export const InterviewBattlecardsPage: React.FC = () => {
                 padding: 18,
                 cursor: 'pointer',
                 border: selectedCard.id === card.id ? '2px solid var(--accent)' : '1px solid var(--border)',
-                background: selectedCard.id === card.id ? '#f8fafc' : '#ffffff',
+                background: selectedCard.id === card.id ? 'var(--page)' : 'var(--card)',
               }}
             >
               <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--t1)' }}>{card.company}</div>
@@ -76,45 +79,48 @@ export const InterviewBattlecardsPage: React.FC = () => {
 
         {/* Right Column: Battlecard Detail */}
         <div className="card" style={{ padding: 24 }}>
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-            📌 {selectedCard.company} Interview Battle Card
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--t1)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <BookOpen size={22} color="var(--accent)" />
+            <span>{selectedCard.company} Interview Battle Card</span>
           </h2>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ background: '#e0e7ff', padding: 14, borderRadius: 12, border: '1px solid #c7d2fe' }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#3730a3', textTransform: 'uppercase', marginBottom: 4 }}>
+            <div style={{ background: 'var(--accent-bg)', padding: 14, borderRadius: 12, border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 4 }}>
                 Key Company Mantra:
               </div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#1e1b4b', lineHeight: 1.5 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--t1)', lineHeight: 1.5 }}>
                 "{selectedCard.keyMantra}"
               </div>
             </div>
 
             <div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--t2)', textTransform: 'uppercase', marginBottom: 8 }}>
+              <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--t2)', textTransform: 'uppercase', marginBottom: 8 }}>
                 Top Core Topics Tested:
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {selectedCard.topTopics.map((top) => (
-                  <span key={top} style={{ fontSize: 11.5, background: '#f1f5f9', color: '#334155', padding: '4px 10px', borderRadius: 8, fontWeight: 700 }}>
+                  <span key={top} style={{ fontSize: 11.5, background: 'var(--page)', border: '1px solid var(--border)', color: 'var(--t1)', padding: '4px 10px', borderRadius: 8, fontWeight: 600 }}>
                     #{top}
                   </span>
                 ))}
               </div>
             </div>
 
-            <div style={{ background: '#f8fafc', padding: 14, borderRadius: 12, border: '1px solid var(--border)' }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 4 }}>
-                🏗️ System Design Tactic:
+            <div style={{ background: 'var(--page)', padding: 14, borderRadius: 12, border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Layers size={14} />
+                <span>System Design Tactic</span>
               </div>
               <p style={{ fontSize: 13, color: 'var(--t1)', lineHeight: 1.6, margin: 0 }}>
                 {selectedCard.systemDesignTip}
               </p>
             </div>
 
-            <div style={{ background: '#f8fafc', padding: 14, borderRadius: 12, border: '1px solid var(--border)' }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#10b981', textTransform: 'uppercase', marginBottom: 4 }}>
-                ⚡ Coding & DSA Tactic:
+            <div style={{ background: 'var(--page)', padding: 14, borderRadius: 12, border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 11.5, fontWeight: 800, color: '#10b981', textTransform: 'uppercase', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Code2 size={14} />
+                <span>Coding & DSA Tactic</span>
               </div>
               <p style={{ fontSize: 13, color: 'var(--t1)', lineHeight: 1.6, margin: 0 }}>
                 {selectedCard.dsaTip}

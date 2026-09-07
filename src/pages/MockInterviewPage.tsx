@@ -1,4 +1,4 @@
-import { Sparkles, BarChart, Mic, Lightbulb } from 'lucide-react';
+import { Sparkles, BarChart, Mic, Lightbulb, RotateCw } from 'lucide-react';
 import React, { useState } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 import { useToast } from '../components/ui/ToastContext';
@@ -18,45 +18,44 @@ export const MockInterviewPage: React.FC = () => {
     score: number;
     starAnalysis: { situation: boolean; task: boolean; action: boolean; result: boolean };
     feedback: string[];
-    grade: string;
   } | null>(null);
 
-  const handleGenerateQuestion = () => {
-    const questions = [
-      'Describe a situation where you had a strong technical disagreement with a teammate. How did you resolve it?',
-      'How would you design a distributed rate limiter that handles 100,000 requests per second with low latency?',
-      'Tell me about a complex bug you encountered in production. How did you diagnose and fix it?',
-      'How do you prioritize technical debt versus shipping new product features?',
-    ];
+  const sampleQuestions = [
+    'Tell me about a time you had to optimize a slow system or resolve a technical bottleneck under high deadline pressure.',
+    'Describe a disagreement you had with a product manager or team member regarding engineering trade-offs.',
+    'How do you handle ambiguous technical requirements when starting a major new service or feature?',
+    'Tell me about a production incident you caused or helped mitigate. What went wrong and what were the key takeaways?',
+  ];
 
-    const nextQ = questions[Math.floor(Math.random() * questions.length)];
+  const handleGenerateQuestion = () => {
+    const nextQ = sampleQuestions[Math.floor(Math.random() * sampleQuestions.length)];
     setActiveQuestion(nextQ);
-    setUserAnswer('');
     setEvaluation(null);
-    addToast('New Question Generated', topicFocus, 'info');
+    setUserAnswer('');
+    addToast('New Question Loaded', `${companyTier} • ${topicFocus}`, 'info');
   };
 
   const handleEvaluateAnswer = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userAnswer.trim()) {
-      addToast('Validation Error', 'Please type your response first', 'error');
-      return;
-    }
+    if (!userAnswer.trim()) return;
 
     setEvaluating(true);
+
     setTimeout(() => {
       const lower = userAnswer.toLowerCase();
-      const hasSituation = lower.includes('when') || lower.includes('project') || lower.includes('company');
-      const hasTask = lower.includes('need') || lower.includes('goal') || lower.includes('responsible');
-      const hasAction = lower.includes('built') || lower.includes('implemented') || lower.includes('refactored') || lower.includes('designed');
-      const hasResult = lower.includes('%') || lower.includes('increased') || lower.includes('reduced') || lower.includes('result');
+      const hasSituation = lower.includes('when') || lower.includes('time') || lower.includes('at') || lower.includes('project');
+      const hasTask = lower.includes('needed to') || lower.includes('goal') || lower.includes('responsible') || lower.includes('task');
+      const hasAction = lower.includes('implemented') || lower.includes('built') || lower.includes('designed') || lower.includes('i ');
+      const hasResult = lower.includes('result') || lower.includes('reduced') || lower.includes('improved') || lower.includes('%') || lower.includes('latency');
 
-      const matches = [hasSituation, hasTask, hasAction, hasResult].filter(Boolean).length;
-      const score = Math.round((matches / 4) * 100);
+      let points = 50;
+      if (hasSituation) points += 12;
+      if (hasTask) points += 12;
+      if (hasAction) points += 13;
+      if (hasResult) points += 13;
 
       setEvaluation({
-        score: Math.max(50, score),
-        grade: score >= 75 ? 'A (Excellent STAR Format)' : 'B (Good, Add Metrics)',
+        score: Math.min(100, points),
         starAnalysis: {
           situation: hasSituation,
           task: hasTask,
@@ -64,14 +63,14 @@ export const MockInterviewPage: React.FC = () => {
           result: hasResult,
         },
         feedback: [
-          hasResult ? 'Great inclusion of quantitative results!' : 'Add specific metrics or percentage improvements to demonstrate impact.',
-          hasAction ? 'Clear explanation of technical actions taken.' : 'Detail the specific tools, languages, or algorithms you used.',
-          'Maintain a confident, concise tone during live delivery.',
+          hasAction ? 'Strong focus on personal ownership and specific engineering actions.' : 'Clarify the exact technical steps you personally took vs team contributions.',
+          hasResult ? 'Good quantification of business/system outcome metrics.' : 'Add concrete metrics to your result (e.g. latency reduction %, user impact, or downtime prevented).',
+          'Keep your answer concise and composed within 2-3 minutes for optimal interviewer retention.',
         ],
       });
 
       setEvaluating(false);
-      addToast('Answer Evaluated', `Grade: ${score >= 75 ? 'A' : 'B'}`, 'success');
+      addToast('Evaluation Ready', `STAR Score: ${points}%`, 'success');
     }, 600);
   };
 
@@ -79,13 +78,13 @@ export const MockInterviewPage: React.FC = () => {
     <AppShell>
       {/* Header */}
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title">🤖 AI Mock Interview Practice Simulator</h1>
+        <h1 className="page-title">Mock Interview Practice Simulator</h1>
         <p className="page-sub">
           Practice live interview responses, receive instant feedback, and refine your STAR framework delivery
         </p>
       </div>
 
-      <div className="pb" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div className="pb" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 20 }}>
         {/* Left Column: Question & Response Form */}
         <div className="card" style={{ padding: 22 }}>
           <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
@@ -102,12 +101,13 @@ export const MockInterviewPage: React.FC = () => {
               <option value="DSA & Coding">DSA / Live Coding</option>
             </select>
 
-            <button onClick={handleGenerateQuestion} className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>
-              🔄 Next Question
+            <button onClick={handleGenerateQuestion} className="btn btn-ghost btn-sm" style={{ fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <RotateCw style={{ width: 13, height: 13 }} />
+              <span>Next Question</span>
             </button>
           </div>
 
-          <div style={{ background: '#f8fafc', border: '1px solid var(--border)', borderRadius: 14, padding: 16, marginBottom: 18 }}>
+          <div style={{ background: 'var(--page)', border: '1px solid var(--border)', borderRadius: 14, padding: 16, marginBottom: 18 }}>
             <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 6 }}>
               Prompt Question:
             </div>
@@ -146,13 +146,13 @@ export const MockInterviewPage: React.FC = () => {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: 16, borderRadius: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--page)', border: '1px solid var(--border)', padding: 16, borderRadius: 14 }}>
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--t2)', textTransform: 'uppercase' }}>
                     Evaluation Score:
                   </div>
                   <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--accent)', marginTop: 2 }}>
-                    {evaluation.score}% ({evaluation.grade})
+                    {evaluation.score}% ({evaluation.score >= 80 ? 'Strong' : evaluation.score >= 65 ? 'Proficient' : 'Needs Polish'})
                   </div>
                 </div>
               </div>

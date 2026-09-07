@@ -100,7 +100,7 @@ Candidate`;
 
       setGeneratedDraft(draft);
       setGenerating(false);
-      addToast('AI Draft Generated ✉️', `Template: ${templateType.replace('_', ' ')}`, 'success');
+      addToast('Draft Generated', `Template: ${templateType.replace('_', ' ')}`, 'success');
     }, 500);
   };
 
@@ -115,13 +115,13 @@ Candidate`;
     <AppShell>
       {/* Header */}
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title">✉️ AI Email Assistant & Recruiter Copilot</h1>
+        <h1 className="page-title">AI Email Assistant & Recruiter Messaging</h1>
         <p className="page-sub">
           Generate recruiter cold outreach, post-interview thank you notes, and application follow-up emails
         </p>
       </div>
 
-      <div className="pb" style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: 20 }}>
+      <div className="pb" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 20 }}>
         {/* Generator Controls */}
         <div className="card" style={{ padding: 22 }}>
           <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>

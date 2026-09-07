@@ -147,30 +147,32 @@ END:VCALENDAR`;
         {/* Weekly Calendar Grid */}
         <div className="card" style={{ padding: 24 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)' }}>
-              📆 Week of {format(currentWeekStart, 'MMMM d, yyyy')}
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Calendar size={18} color="var(--accent)" />
+              <span>Week of {format(currentWeekStart, 'MMMM d, yyyy')}</span>
             </h3>
           </div>
 
-          <div className="calendar-week-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 12 }}>
-            {weekDays.map((day) => {
-              const dayEvents = customEvents.filter(
-                (e) => format(e.date, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
-              );
+          <div style={{ overflowX: 'auto', paddingBottom: 6 }}>
+            <div className="calendar-week-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(130px, 1fr))', gap: 12, minWidth: 700 }}>
+              {weekDays.map((day) => {
+                const dayEvents = customEvents.filter(
+                  (e) => format(e.date, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
+                );
 
-              return (
-                <div
-                  key={day.toISOString()}
-                  style={{
-                    background: '#f8fafc',
-                    border: '1px solid var(--border)',
-                    borderRadius: 14,
-                    padding: 12,
-                    minHeight: 180,
-                    display: 'flex',
-                    flexDirection: 'column',
-                  }}
-                >
+                return (
+                  <div
+                    key={day.toISOString()}
+                    style={{
+                      background: 'var(--page)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 14,
+                      padding: 12,
+                      minHeight: 180,
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
                   <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--t2)', textTransform: 'uppercase' }}>
                     {format(day, 'EEE')}
                   </div>
@@ -225,6 +227,7 @@ END:VCALENDAR`;
                 </div>
               );
             })}
+          </div>
           </div>
         </div>
       </div>

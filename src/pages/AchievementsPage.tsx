@@ -1,4 +1,4 @@
-import { Rocket, Mic, DollarSign, Flame } from 'lucide-react';
+import { Rocket, Mic, DollarSign, Flame, Zap, Award, Check } from 'lucide-react';
 import React from 'react';
 import { motion } from 'framer-motion';
 import { AppShell } from '../components/layout/AppShell';
@@ -6,7 +6,7 @@ import { useApplications } from '../hooks/useApplications';
 
 interface Badge {
   id: string;
-  title: React.ReactNode;
+  title: string;
   desc: string;
   icon: React.ReactNode;
   unlocked: boolean;
@@ -23,41 +23,41 @@ export const AchievementsPage: React.FC = () => {
   const badges: Badge[] = [
     {
       id: '1',
-      title: <><Rocket className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> First Flight</>,
+      title: 'First Flight',
       desc: 'Submit your first job application',
-      icon: <Rocket className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />,
+      icon: <Rocket size={24} color="var(--accent)" />,
       unlocked: appCount >= 1,
       progress: Math.min(100, (appCount / 1) * 100),
     },
     {
       id: '2',
-      title: '⚡ Speed Demon',
+      title: 'Speed Demon',
       desc: 'Submit 10 applications to target companies',
-      icon: '⚡',
+      icon: <Zap size={24} color="#f59e0b" />,
       unlocked: appCount >= 10,
       progress: Math.min(100, (appCount / 10) * 100),
     },
     {
       id: '3',
-      title: <><Mic className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Interview Ace</>,
+      title: 'Interview Ace',
       desc: 'Advance to 3 technical interview rounds',
-      icon: <Mic className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />,
+      icon: <Mic size={24} color="#8b5cf6" />,
       unlocked: interviewCount >= 3,
       progress: Math.min(100, (interviewCount / 3) * 100),
     },
     {
       id: '4',
-      title: <><DollarSign className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Offer Winner</>,
-      desc: 'Secure a official job offer package',
-      icon: <DollarSign className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />,
+      title: 'Offer Winner',
+      desc: 'Secure an official job offer package',
+      icon: <DollarSign size={24} color="#10b981" />,
       unlocked: offerCount >= 1,
       progress: Math.min(100, (offerCount / 1) * 100),
     },
     {
       id: '5',
-      title: <><Flame className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Streak Master</>,
-      desc: 'Maintain a active submission streak for 7 days',
-      icon: <Flame className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />,
+      title: 'Streak Master',
+      desc: 'Maintain an active submission streak across target companies',
+      icon: <Flame size={24} color="#f97316" />,
       unlocked: appCount >= 5,
       progress: Math.min(100, (appCount / 5) * 100),
     },
@@ -70,7 +70,10 @@ export const AchievementsPage: React.FC = () => {
     <AppShell>
       {/* Header */}
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title">🏆 Career Milestones & Achievements</h1>
+        <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Award size={24} color="#f59e0b" />
+          <span>Career Milestones & Achievements</span>
+        </h1>
         <p className="page-sub">
           Earn XP, unlock milestone badges, and track your job search gamification level
         </p>
@@ -84,13 +87,13 @@ export const AchievementsPage: React.FC = () => {
               <div style={{ fontSize: 13, fontWeight: 700, color: '#c7d2fe', textTransform: 'uppercase' }}>
                 Job Search Rank
               </div>
-              <div style={{ fontSize: 28, fontWeight: 800, marginTop: 2 }}>
-                Level {Math.floor(xpPoints / 250) + 1} — Elite Job Hunter
+              <div style={{ fontSize: 26, fontWeight: 800, marginTop: 2 }}>
+                Level {Math.floor(xpPoints / 250) + 1} — Active Candidate
               </div>
             </div>
 
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 32, fontWeight: 800, color: '#fbbf24' }}>
+              <div style={{ fontSize: 30, fontWeight: 800, color: '#fbbf24' }}>
                 {xpPoints} XP
               </div>
               <div style={{ fontSize: 12, color: '#e0e7ff' }}>
@@ -111,20 +114,21 @@ export const AchievementsPage: React.FC = () => {
               style={{
                 padding: 20,
                 border: badge.unlocked ? '1.5px solid #10b981' : '1px solid var(--border)',
-                opacity: badge.unlocked ? 1 : 0.7,
+                opacity: badge.unlocked ? 1 : 0.75,
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
                 <div
                   style={{
-                    fontSize: 32,
-                    background: badge.unlocked ? '#ecfdf5' : '#f1f5f9',
-                    width: 52,
-                    height: 52,
+                    background: badge.unlocked ? 'var(--accent-bg)' : 'var(--page)',
+                    border: '1px solid var(--border)',
+                    width: 48,
+                    height: 48,
                     borderRadius: 14,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    flexShrink: 0,
                   }}
                 >
                   {badge.icon}
@@ -135,23 +139,35 @@ export const AchievementsPage: React.FC = () => {
                   </h3>
                   <span
                     style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
                       fontSize: 10.5,
                       fontWeight: 800,
                       color: badge.unlocked ? '#047857' : 'var(--t3)',
-                      background: badge.unlocked ? '#ecfdf5' : '#f1f5f9',
+                      background: badge.unlocked ? '#ecfdf5' : 'var(--page)',
+                      border: `1px solid ${badge.unlocked ? '#a7f3d0' : 'var(--border)'}`,
                       padding: '2px 6px',
                       borderRadius: 6,
+                      marginTop: 4,
                     }}
                   >
-                    {badge.unlocked ? '✓ UNLOCKED' : 'LOCKED'}
+                    {badge.unlocked ? (
+                      <>
+                        <Check size={11} />
+                        <span>UNLOCKED</span>
+                      </>
+                    ) : (
+                      'LOCKED'
+                    )}
                   </span>
                 </div>
               </div>
 
-              <p style={{ fontSize: 12.5, color: 'var(--t2)', margin: '0 0 12px' }}>{badge.desc}</p>
+              <p style={{ fontSize: 12.5, color: 'var(--t2)', margin: '0 0 12px', lineHeight: 1.5 }}>{badge.desc}</p>
 
               {/* Progress bar */}
-              <div style={{ width: '100%', height: 6, borderRadius: 6, background: '#e2e8f0', overflow: 'hidden' }}>
+              <div style={{ width: '100%', height: 6, borderRadius: 6, background: 'var(--border-light)', overflow: 'hidden' }}>
                 <div
                   style={{
                     width: `${badge.progress}%`,

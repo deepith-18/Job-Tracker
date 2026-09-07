@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Scale, Award, Building2 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 
 export const OfferMatrixPage: React.FC = () => {
@@ -15,7 +16,10 @@ export const OfferMatrixPage: React.FC = () => {
     <AppShell>
       {/* Header */}
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title">⚖️ Weighted Job Offer Decision Matrix</h1>
+        <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Scale size={24} color="var(--blue)" />
+          <span>Weighted Job Offer Decision Matrix</span>
+        </h1>
         <p className="page-sub">
           Evaluate competing job offers using weighted criteria for compensation, equity, work-life balance, and growth
         </p>
@@ -23,8 +27,8 @@ export const OfferMatrixPage: React.FC = () => {
 
       <div className="pb" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         {/* Comparison Banner */}
-        <div className="card" style={{ padding: 24, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, textAlign: 'center' }}>
-          <div style={{ background: '#f8fafc', padding: 20, borderRadius: 16, border: totalA >= totalB ? '2px solid #10b981' : '1px solid var(--border)' }}>
+        <div className="card" style={{ padding: 24, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 20, textAlign: 'center' }}>
+          <div style={{ background: 'var(--page)', padding: 20, borderRadius: 16, border: totalA >= totalB ? '2px solid #10b981' : '1px solid var(--border)' }}>
             <input
               className="inp"
               value={companyA}
@@ -32,10 +36,15 @@ export const OfferMatrixPage: React.FC = () => {
               style={{ fontWeight: 800, textAlign: 'center', fontSize: 18, marginBottom: 8 }}
             />
             <div style={{ fontSize: 32, fontWeight: 800, color: totalA >= totalB ? '#10b981' : 'var(--t2)' }}>{totalA}% Score</div>
-            {totalA >= totalB && <div style={{ fontSize: 11.5, fontWeight: 800, color: '#047857', marginTop: 4 }}>🏆 Recommended Offer</div>}
+            {totalA >= totalB && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: '#047857', marginTop: 6 }}>
+                <Award size={15} />
+                <span>Recommended Offer</span>
+              </div>
+            )}
           </div>
 
-          <div style={{ background: '#f8fafc', padding: 20, borderRadius: 16, border: totalB > totalA ? '2px solid #10b981' : '1px solid var(--border)' }}>
+          <div style={{ background: 'var(--page)', padding: 20, borderRadius: 16, border: totalB > totalA ? '2px solid #10b981' : '1px solid var(--border)' }}>
             <input
               className="inp"
               value={companyB}
@@ -43,16 +52,22 @@ export const OfferMatrixPage: React.FC = () => {
               style={{ fontWeight: 800, textAlign: 'center', fontSize: 18, marginBottom: 8 }}
             />
             <div style={{ fontSize: 32, fontWeight: 800, color: totalB > totalA ? '#10b981' : 'var(--t2)' }}>{totalB}% Score</div>
-            {totalB > totalA && <div style={{ fontSize: 11.5, fontWeight: 800, color: '#047857', marginTop: 4 }}>🏆 Recommended Offer</div>}
+            {totalB > totalA && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: '#047857', marginTop: 6 }}>
+                <Award size={15} />
+                <span>Recommended Offer</span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Rating Sliders */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 20 }}>
           {/* Company A Rating */}
           <div className="card" style={{ padding: 22 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-              🏢 {companyA} Criteria Rating (1-10)
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Building2 size={18} color="var(--t3)" />
+              <span>{companyA} Criteria Rating (1-10)</span>
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -108,8 +123,9 @@ export const OfferMatrixPage: React.FC = () => {
 
           {/* Company B Rating */}
           <div className="card" style={{ padding: 22 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-              🏢 {companyB} Criteria Rating (1-10)
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Building2 size={18} color="var(--t3)" />
+              <span>{companyB} Criteria Rating (1-10)</span>
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

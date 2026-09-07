@@ -27,7 +27,7 @@ export const DiagnosticsPage: React.FC = () => {
     try {
       const pingRef = doc(db, 'users', user.uid);
       await setDoc(pingRef, { ping: true, lastPing: serverTimestamp() }, { merge: true });
-      addToast('Cloud Firestore Server Connected! ⚡', `Write verified to project "${projectId}" for ${user.email}`, 'success');
+      addToast('Cloud Firestore Server Connected', `Write verified to project "${projectId}" for ${user.email}`, 'success');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Write failed';
       console.error('Firestore ping failed:', err);
@@ -41,7 +41,7 @@ export const DiagnosticsPage: React.FC = () => {
     <AppShell>
       {/* Header */}
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title">⚡ Database Diagnostics & Sync Health</h1>
+        <h1 className="page-title">Database Diagnostics & Sync Health</h1>
         <p className="page-sub">
           Monitor Firebase Firestore connectivity, account authentication state, and cross-device data synchronization
         </p>
@@ -52,7 +52,7 @@ export const DiagnosticsPage: React.FC = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
           <div className="card" style={{ padding: 20 }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: error ? '#ef4444' : '#10b981', textTransform: 'uppercase', marginBottom: 4 }}>
-              {error ? '✖ Firestore Sync Alert' : '● Firestore Database Status'}
+              {error ? 'Firestore Sync Alert' : 'Firestore Database Status'}
             </div>
             <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--t1)' }}>
               {error ? 'Sync Error' : 'Connected & Active'}
@@ -72,7 +72,7 @@ export const DiagnosticsPage: React.FC = () => {
 
           <div className="card" style={{ padding: 20 }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: '#8b5cf6', textTransform: 'uppercase', marginBottom: 4 }}>
-              🔑 Account User UID
+              Account User ID (UID)
             </div>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--t1)', fontFamily: 'monospace', wordBreak: 'break-all' }}>
               {user?.uid || 'Not Authenticated'}
@@ -85,7 +85,7 @@ export const DiagnosticsPage: React.FC = () => {
         <div className="card" style={{ padding: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div>
             <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-              🧪 Firestore Latency & Sync Test
+              Firestore Latency & Sync Test
             </h3>
             <p style={{ fontSize: 13, color: 'var(--t2)', margin: '4px 0 0' }}>
               Ping Firebase Firestore servers to verify real-time security rules and active listener permissions.
@@ -93,14 +93,14 @@ export const DiagnosticsPage: React.FC = () => {
           </div>
 
           <button onClick={handleTestConnection} disabled={testingDb} className="btn btn-primary" style={{ borderRadius: 12, padding: '10px 20px' }}>
-            {testingDb ? 'Pinging Firestore...' : '⚡ Ping Database Connection'}
+            {testingDb ? 'Pinging Firestore...' : 'Ping Database Connection'}
           </button>
         </div>
 
         {/* Cross Device Troubleshooting Checklist */}
         <div className="card" style={{ padding: 24 }}>
           <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', marginBottom: 12 }}>
-            📱 Cross-Device (Mobile vs Desktop) Sync Checklist
+            Cross-Device (Mobile vs Desktop) Sync Checklist
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13, color: 'var(--t2)' }}>
             <div style={{ display: 'flex', gap: 10 }}>

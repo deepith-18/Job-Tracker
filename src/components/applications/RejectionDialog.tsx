@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { BookOpen } from 'lucide-react';
 import { REJECTION_REASONS } from '../../types';
 
 interface RejectionDialogProps {
@@ -26,7 +27,7 @@ export const RejectionDialog: React.FC<RejectionDialogProps> = ({ isOpen, compan
         >
           <motion.div
             className="modal-box"
-            style={{ maxWidth: 440 }}
+            style={{ maxWidth: 460 }}
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
@@ -34,18 +35,18 @@ export const RejectionDialog: React.FC<RejectionDialogProps> = ({ isOpen, compan
           >
             <div style={{ padding: '24px 24px 0' }}>
               {/* Icon + title */}
-              <div style={{ width: 48, height: 48, borderRadius: 14, background: '#fff1f2', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
-                <span style={{ fontSize: 22 }}>📚</span>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--page)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+                <BookOpen size={20} color="var(--accent)" />
               </div>
               <h3 style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 17, fontWeight: 800, color: 'var(--t1)', marginBottom: 6 }}>
-                What happened with {company}?
+                Outcome Feedback: {company}
               </h3>
               <p style={{ fontSize: 13, color: 'var(--t2)', marginBottom: 20, lineHeight: 1.5 }}>
-                Every rejection is a lesson. Tracking the reason helps you improve. 💪
+                Log feedback and factors to track hiring funnel bottlenecks and refine future preparation.
               </p>
 
               {/* Checkboxes */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: 8, marginBottom: 20 }}>
                 {REJECTION_REASONS.map(r => {
                   const checked = selected.includes(r);
                   return (
@@ -56,7 +57,7 @@ export const RejectionDialog: React.FC<RejectionDialogProps> = ({ isOpen, compan
                       style={{
                         display: 'flex', alignItems: 'center', gap: 8,
                         padding: '9px 12px', borderRadius: 9, cursor: 'pointer',
-                        background: checked ? 'var(--accent-bg)' : '#f8f9ff',
+                        background: checked ? 'var(--accent-bg)' : 'var(--page)',
                         border: `1.5px solid ${checked ? 'var(--accent)' : 'var(--border)'}`,
                         color: checked ? 'var(--accent)' : 'var(--t2)',
                         fontSize: 12.5, fontWeight: checked ? 700 : 500,

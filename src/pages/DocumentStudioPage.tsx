@@ -1,5 +1,5 @@
 import { File, Folder, Pencil, Trash2, Sparkles, Clipboard } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppShell } from '../components/layout/AppShell';
 import { useApplications } from '../hooks/useApplications';
@@ -13,19 +13,29 @@ interface ResumeDoc {
   link: string;
 }
 
-const INITIAL_DOCS: ResumeDoc[] = [
-  { id: '1', title: 'Senior Frontend & React Specialist Resume', targetRole: 'Frontend / FullStack', updatedAt: 'Aug 2026', link: 'https://drive.google.com/...' },
-  { id: '2', title: 'Full-Stack Software Engineer Core Resume', targetRole: 'General Software Engineering', updatedAt: 'Jul 2026', link: 'https://drive.google.com/...' },
-  { id: '3', title: 'System Architecture & Backend Lead Resume', targetRole: 'Backend / Systems', updatedAt: 'Jul 2026', link: 'https://drive.google.com/...' },
-];
-
 export const DocumentStudioPage: React.FC = () => {
   const { applications } = useApplications();
   const { addToast } = useToast();
 
-  const [docs, setDocs] = useState<ResumeDoc[]>(INITIAL_DOCS);
+  const [docs, setDocs] = useState<ResumeDoc[]>(() => {
+    try {
+      const saved = localStorage.getItem('joborbit_user_resumes');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('joborbit_user_resumes', JSON.stringify(docs));
+    } catch (err) {
+      console.error('Failed to save resumes locally:', err);
+    }
+  }, [docs]);
+
   const [selectedAppId, setSelectedAppId] = useState<string>('');
-  const [keySkillsInput, setKeySkillsInput] = useState('React, TypeScript, Node.js, System Design, GraphQL');
+  const [keySkillsInput, setKeySkillsInput] = useState('');
   const [generatedLetter, setGeneratedLetter] = useState<string>('');
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -151,58 +161,97 @@ Candidate`;
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {docs.map((doc) => (
+            {docs.length === 0 ? (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '36px 16px',
+                  background: 'var(--card-subtle, #f8fafc)',
+                  borderRadius: 14,
+                  border: '1px dashed var(--border)',
+                }}
+              >
                 <div
-                  key={doc.id}
                   style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    background: 'var(--border)',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '12px 14px',
-                    borderRadius: 14,
-                    background: '#f8fafc',
-                    border: '1px solid var(--border)',
+                    justifyContent: 'center',
+                    margin: '0 auto 12px',
+                    color: 'var(--t2)',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 20 }}><File className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></span>
-                    <div>
-                      <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--t1)' }}>{doc.title}</div>
-                      <div style={{ fontSize: 11.5, color: 'var(--t2)', marginTop: 2 }}>
-                        Target: {doc.targetRole} · Updated {doc.updatedAt}
+                  <File style={{ width: 20, height: 20 }} />
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', marginBottom: 4 }}>
+                  No resumes or documents saved
+                </div>
+                <p style={{ fontSize: 12, color: 'var(--t2)', margin: '0 auto 16px', maxWidth: 280, lineHeight: 1.5 }}>
+                  Store links to your tailored resume PDFs, portfolio docs, or Google Drive versions.
+                </p>
+                <button onClick={openAddDocModal} className="btn btn-primary btn-sm" style={{ fontSize: 12 }}>
+                  + Add Your First Resume
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {docs.map((doc) => (
+                  <div
+                    key={doc.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '12px 14px',
+                      borderRadius: 14,
+                      background: '#f8fafc',
+                      border: '1px solid var(--border)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 20 }}><File className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></span>
+                      <div>
+                        <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--t1)' }}>{doc.title}</div>
+                        <div style={{ fontSize: 11.5, color: 'var(--t2)', marginTop: 2 }}>
+                          Target: {doc.targetRole} · Updated {doc.updatedAt}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <button
-                      onClick={(e) => { e.preventDefault(); setPreviewUrl(doc.link); }}
-                      className="btn btn-ghost btn-sm"
-                      style={{ fontSize: 11.5, padding: '4px 8px' }}
-                    >
-                      View 🔗
-                    </button>
-                    <button
-                      onClick={() => openEditDocModal(doc)}
-                      className="btn btn-ghost btn-sm"
-                      style={{ fontSize: 12, padding: '4px 6px' }}
-                      title="Edit Resume"
-                    >
-                      <Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteDoc(doc.id, doc.title)}
-                      className="btn btn-ghost btn-sm"
-                      style={{ fontSize: 12, padding: '4px 6px' }}
-                      title="Delete Resume"
-                    >
-                      <Trash2 className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {doc.link && doc.link !== '#' && (
+                        <button
+                          onClick={(e) => { e.preventDefault(); setPreviewUrl(doc.link); }}
+                          className="btn btn-ghost btn-sm"
+                          style={{ fontSize: 11.5, padding: '4px 8px' }}
+                        >
+                          View 🔗
+                        </button>
+                      )}
+                      <button
+                        onClick={() => openEditDocModal(doc)}
+                        className="btn btn-ghost btn-sm"
+                        style={{ fontSize: 12, padding: '4px 6px' }}
+                        title="Edit Resume"
+                      >
+                        <Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteDoc(doc.id, doc.title)}
+                        className="btn btn-ghost btn-sm"
+                        style={{ fontSize: 12, padding: '4px 6px' }}
+                        title="Delete Resume"
+                      >
+                        <Trash2 className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

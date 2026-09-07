@@ -284,7 +284,7 @@ ORDER BY department, salary DESC;`,
 export const useCodeVaultStore = create<CodeVaultStore>()(
   persist(
     (set) => ({
-      questions: INITIAL_CODE_QUESTIONS,
+      questions: [],
       loading: false,
 
       setLoading: (loading) => set({ loading }),
@@ -381,7 +381,7 @@ export const useCodeVaultStore = create<CodeVaultStore>()(
 
       resetToDefaults: () =>
         set({
-          questions: INITIAL_CODE_QUESTIONS,
+          questions: [],
         }),
     }),
     {

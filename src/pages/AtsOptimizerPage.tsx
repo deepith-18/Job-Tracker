@@ -1,4 +1,4 @@
-import { File, Target, BarChart, AlertTriangle, Lightbulb } from 'lucide-react';
+import { File, Target, BarChart, Lightbulb } from 'lucide-react';
 import React, { useState } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 import { useToast } from '../components/ui/ToastContext';
@@ -55,7 +55,7 @@ export const AtsOptimizerPage: React.FC = () => {
     <AppShell>
       {/* Header */}
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title">🤖 AI Resume & ATS Keyword Optimizer</h1>
+        <h1 className="page-title">Resume & ATS Keyword Optimizer</h1>
         <p className="page-sub">
           Compare your resume against job descriptions to score keyword density and pass applicant tracking systems
         </p>
@@ -63,7 +63,7 @@ export const AtsOptimizerPage: React.FC = () => {
 
       <div className="pb" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         {/* Scanner Form */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 20 }}>
           <div className="card" style={{ padding: 22 }}>
             <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--t1)', marginBottom: 12 }}>
               <File className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Your Resume Text
@@ -95,7 +95,7 @@ export const AtsOptimizerPage: React.FC = () => {
 
         <div style={{ textAlign: 'center' }}>
           <button onClick={handleScanAts} disabled={scanning} className="btn btn-primary" style={{ padding: '12px 36px', borderRadius: 14, fontSize: 14 }}>
-            {scanning ? 'Analyzing Keyword Match…' : '⚡ Run ATS Match Scan'}
+            {scanning ? 'Analyzing Keyword Match…' : 'Run ATS Match Scan'}
           </button>
         </div>
 
@@ -120,11 +120,11 @@ export const AtsOptimizerPage: React.FC = () => {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: 20 }}>
               {/* Found Keywords */}
               <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: 16, borderRadius: 14 }}>
                 <div style={{ fontSize: 12, fontWeight: 800, color: '#10b981', textTransform: 'uppercase', marginBottom: 10 }}>
-                  ✓ Matched Keywords ({analysis.foundKeywords.length})
+                  Matched Keywords ({analysis.foundKeywords.length})
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {analysis.foundKeywords.map((kw) => (
@@ -138,7 +138,7 @@ export const AtsOptimizerPage: React.FC = () => {
               {/* Missing Keywords */}
               <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', padding: 16, borderRadius: 14 }}>
                 <div style={{ fontSize: 12, fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', marginBottom: 10 }}>
-                  <AlertTriangle className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Missing Recommended Keywords ({analysis.missingKeywords.length})
+                  Missing / Recommended Keywords ({analysis.missingKeywords.length})
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {analysis.missingKeywords.map((kw) => (

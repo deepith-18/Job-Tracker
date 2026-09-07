@@ -1,4 +1,4 @@
-import { CheckCircle, AlertTriangle } from 'lucide-react';
+import { CheckCircle, AlertTriangle, XCircle, Info, X } from 'lucide-react';
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -25,14 +25,17 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const addToast = useCallback((title: string, description?: string, type: ToastType = 'success') => {
-    const id = Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, title, description, type }]);
+  const addToast = useCallback(
+    (title: string, description?: string, type: ToastType = 'info') => {
+      const id = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      setToasts((prev) => [...prev.slice(-4), { id, title, description, type }]);
 
-    setTimeout(() => {
-      removeToast(id);
-    }, 4000);
-  }, [removeToast]);
+      setTimeout(() => {
+        removeToast(id);
+      }, 4000);
+    },
+    [removeToast]
+  );
 
   return (
     <ToastContext.Provider value={{ addToast, removeToast }}>
@@ -67,7 +70,15 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               ? 'linear-gradient(135deg, #7f1d1d, #b91c1c)'
               : 'linear-gradient(135deg, #1e1b4b, #4338ca)';
 
-            const icon = isSuccess ? <CheckCircle className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> : isWarning ? <AlertTriangle className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> : isError ? '❌' : 'ℹ️';
+            const icon = isSuccess ? (
+              <CheckCircle style={{ width: 18, height: 18, flexShrink: 0 }} />
+            ) : isWarning ? (
+              <AlertTriangle style={{ width: 18, height: 18, flexShrink: 0 }} />
+            ) : isError ? (
+              <XCircle style={{ width: 18, height: 18, flexShrink: 0 }} />
+            ) : (
+              <Info style={{ width: 18, height: 18, flexShrink: 0 }} />
+            );
 
             return (
               <motion.div
@@ -89,7 +100,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                   backdropFilter: 'blur(10px)',
                 }}
               >
-                <span style={{ fontSize: 18, lineHeight: 1 }}>{icon}</span>
+                <span style={{ display: 'flex', alignItems: 'center', marginTop: 1 }}>{icon}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.3 }}>
                     {toast.title}
@@ -107,13 +118,14 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     border: 'none',
                     color: 'rgba(255,255,255,0.7)',
                     cursor: 'pointer',
-                    fontSize: 14,
-                    lineHeight: 1,
                     padding: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                   title="Close"
                 >
-                  ✕
+                  <X style={{ width: 14, height: 14 }} />
                 </button>
               </motion.div>
             );

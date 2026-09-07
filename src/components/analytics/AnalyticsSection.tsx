@@ -33,6 +33,15 @@ import {
   Table as TableIcon,
   ChevronDown,
   ChevronUp,
+  Zap,
+  Mic,
+  Trophy,
+  Clock,
+  TrendingDown,
+  PieChart as PieChartIcon,
+  LineChart,
+  Grid,
+  Target,
 } from 'lucide-react';
 import type { Application, ApplicationStatus, DateRangeOption } from '../../types';
 import { COMMON_SOURCES } from '../../types';
@@ -171,7 +180,7 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
       { stage: 'Applied', count: applied, conversionPct: 100, color: '#3b82f6' },
       { stage: 'OA / Screen', count: oa, conversionPct: oaConversion, color: '#8b5cf6' },
       { stage: 'Interview', count: interview, conversionPct: intConversion, color: '#f59e0b' },
-      { stage: 'Offer 🎉', count: offer, conversionPct: offerConversion, color: '#10b981' },
+      { stage: 'Offer', count: offer, conversionPct: offerConversion, color: '#10b981' },
     ];
   }, [filteredApps]);
 
@@ -515,7 +524,7 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value as DateRangeOption)}
             >
-              <option value="all">🗓️ All Time</option>
+              <option value="all">All Time</option>
               <option value="7d">Last 7 Days</option>
               <option value="30d">Last 30 Days</option>
               <option value="90d">Last 90 Days</option>
@@ -531,7 +540,7 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
               value={sourceFilter}
               onChange={(e) => setSourceFilter(e.target.value)}
             >
-              <option value="all">🌐 All Sources</option>
+              <option value="all">All Sources</option>
               {COMMON_SOURCES.map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -548,7 +557,7 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
             >
-              <option value="all">💼 All Role Types</option>
+              <option value="all">All Role Types</option>
               <option value="software">Software Engineer</option>
               <option value="frontend">Frontend</option>
               <option value="backend">Backend</option>
@@ -608,8 +617,9 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
                 <div style={{ background: 'var(--card)', padding: 12, borderRadius: 10, border: '1px solid var(--border)' }}>
-                  <div style={{ fontWeight: 700, fontSize: 12.5, color: '#3b82f6', marginBottom: 4 }}>
-                    ⚡ Response Rate
+                  <div style={{ fontWeight: 700, fontSize: 12.5, color: '#3b82f6', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Zap size={14} />
+                    <span>Response Rate</span>
                   </div>
                   <div style={{ fontSize: 11.5, color: 'var(--t2)', lineHeight: 1.45 }}>
                     Percentage of applications receiving any recruiter update (OA, interview, or decision).
@@ -620,8 +630,9 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
                 </div>
 
                 <div style={{ background: 'var(--card)', padding: 12, borderRadius: 10, border: '1px solid var(--border)' }}>
-                  <div style={{ fontWeight: 700, fontSize: 12.5, color: '#d97706', marginBottom: 4 }}>
-                    🎙️ Interview Rate
+                  <div style={{ fontWeight: 700, fontSize: 12.5, color: '#d97706', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Mic size={14} />
+                    <span>Interview Rate</span>
                   </div>
                   <div style={{ fontSize: 11.5, color: 'var(--t2)', lineHeight: 1.45 }}>
                     Ratio of submissions progressing to formal live screening rounds or technical panels.
@@ -632,8 +643,9 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
                 </div>
 
                 <div style={{ background: 'var(--card)', padding: 12, borderRadius: 10, border: '1px solid var(--border)' }}>
-                  <div style={{ fontWeight: 700, fontSize: 12.5, color: '#16a34a', marginBottom: 4 }}>
-                    🏆 Offer Rate
+                  <div style={{ fontWeight: 700, fontSize: 12.5, color: '#16a34a', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Trophy size={14} />
+                    <span>Offer Rate</span>
                   </div>
                   <div style={{ fontSize: 11.5, color: 'var(--t2)', lineHeight: 1.45 }}>
                     Proportion of all submitted applications culminating in official written job offers.
@@ -644,8 +656,9 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
                 </div>
 
                 <div style={{ background: 'var(--card)', padding: 12, borderRadius: 10, border: '1px solid var(--border)' }}>
-                  <div style={{ fontWeight: 700, fontSize: 12.5, color: '#7c3aed', marginBottom: 4 }}>
-                    ⏳ Avg Days to Response
+                  <div style={{ fontWeight: 700, fontSize: 12.5, color: '#7c3aed', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Clock size={14} />
+                    <span>Avg Days to Response</span>
                   </div>
                   <div style={{ fontSize: 11.5, color: 'var(--t2)', lineHeight: 1.45 }}>
                     Calendar days elapsed from initial application submission to first employer contact.
@@ -665,7 +678,7 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
         {/* Response Rate */}
         <motion.div className="stat" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div className="stat-icon" style={{ background: '#eef2ff' }}>⚡</div>
+            <div className="stat-icon" style={{ background: '#eef2ff' }}><Zap size={18} color="#3b82f6" /></div>
             <span
               style={{
                 fontSize: 10.5,
@@ -687,7 +700,7 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
         {/* Interview Rate */}
         <motion.div className="stat" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div className="stat-icon" style={{ background: '#fffbeb' }}>🎙️</div>
+            <div className="stat-icon" style={{ background: '#fffbeb' }}><Mic size={18} color="#d97706" /></div>
             <span
               style={{
                 fontSize: 10.5,
@@ -709,7 +722,7 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
         {/* Offer Rate */}
         <motion.div className="stat" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div className="stat-icon" style={{ background: '#f0fdf4' }}>🏆</div>
+            <div className="stat-icon" style={{ background: '#f0fdf4' }}><Trophy size={18} color="#16a34a" /></div>
             <span
               style={{
                 fontSize: 10.5,
@@ -907,12 +920,13 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
       </motion.div>
 
       {/* ── Grid Row 1: Funnel Chart & Donut Chart ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 20 }}>
         {/* Funnel Chart */}
         <div className="card" style={{ padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-              🔻 Application Pipeline Funnel & Stage Drop-off
+            <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <TrendingDown size={16} color="var(--accent)" />
+              <span>Pipeline Funnel & Stage Drop-off</span>
             </h3>
             <span style={{ fontSize: 11, color: 'var(--t3)', fontWeight: 600 }}>Step-by-step conversion</span>
           </div>
@@ -942,8 +956,9 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
         {/* Status Distribution Donut Chart */}
         <div className="card" style={{ padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-              🍩 Status Distribution
+            <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <PieChartIcon size={16} color="var(--accent)" />
+              <span>Status Distribution</span>
             </h3>
             <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600 }}>Click slice to filter</span>
           </div>
@@ -1015,8 +1030,9 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
         <div className="card" style={{ padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
             <div>
-              <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-                🎯 Channel Conversion & Source ROI
+              <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Target size={16} color="var(--accent)" />
+                <span>Channel Conversion & Source ROI</span>
               </h3>
               <p style={{ fontSize: 11.5, color: 'var(--t2)', margin: '2px 0 0 0' }}>
                 Compare yields across job boards, referrals, and company portals
@@ -1043,7 +1059,7 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
                 }}
               >
                 <TableIcon style={{ width: 12, height: 12 }} />
-                <span>ROI Table</span>
+                Table
               </button>
               <button
                 onClick={() => setSourceViewMode('chart')}
@@ -1063,47 +1079,50 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
                 }}
               >
                 <BarChart2 style={{ width: 12, height: 12 }} />
-                <span>Bar Chart</span>
+                Chart
               </button>
             </div>
           </div>
 
           {sourceViewMode === 'table' ? (
-            <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+            <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--t3)', fontSize: 11 }}>
-                    <th style={{ padding: '6px 8px', fontWeight: 700 }}>Channel / Source</th>
-                    <th style={{ padding: '6px 8px', fontWeight: 700 }}>Applications</th>
-                    <th style={{ padding: '6px 8px', fontWeight: 700 }}>Interview Rate</th>
-                    <th style={{ padding: '6px 8px', fontWeight: 700 }}>Offers</th>
-                    <th style={{ padding: '6px 8px', fontWeight: 700 }}>Verdict</th>
+                  <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--t3)' }}>
+                    <th style={{ padding: '6px 8px', fontWeight: 600 }}>Source</th>
+                    <th style={{ padding: '6px 8px', fontWeight: 600 }}>Volume</th>
+                    <th style={{ padding: '6px 8px', fontWeight: 600 }}>Interview Rate</th>
+                    <th style={{ padding: '6px 8px', fontWeight: 600 }}>Offers</th>
+                    <th style={{ padding: '6px 8px', fontWeight: 600 }}>ROI Tier</th>
                   </tr>
                 </thead>
                 <tbody>
                   {sourceEffectiveness.length === 0 ? (
                     <tr>
-                      <td colSpan={5} style={{ padding: 16, textAlign: 'center', color: 'var(--t3)' }}>
-                        No sources recorded
+                      <td colSpan={5} style={{ padding: '24px 8px', textAlign: 'center', color: 'var(--t3)' }}>
+                        No sources tracked in this time period
                       </td>
                     </tr>
                   ) : (
                     sourceEffectiveness.map((s) => {
-                      const isHighROI = s.interviewRate >= 25;
-                      const isSolid = s.interviewRate >= 12;
-                      const isLowYield = s.total >= 4 && s.interviewRate < 10;
-
+                      const isHighROI = s.interviewRate >= 20 || s.offers > 0;
+                      const isSolid = s.interviewRate >= 10 && !isHighROI;
+                      const isLowYield = s.total >= 5 && s.interviewRate < 10;
                       return (
-                        <tr key={s.source} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                          <td style={{ padding: '8px 8px', fontWeight: 700, color: 'var(--t1)' }}>
-                            {s.source}
-                          </td>
-                          <td style={{ padding: '8px 8px', color: 'var(--t2)' }}>
-                            <strong>{s.total}</strong> ({s.sharePct}%)
-                          </td>
+                        <tr key={s.source} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                          <td style={{ padding: '8px 8px', fontWeight: 600, color: 'var(--t1)' }}>{s.source}</td>
+                          <td style={{ padding: '8px 8px', color: 'var(--t2)' }}>{s.total}</td>
                           <td style={{ padding: '8px 8px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <div style={{ width: 45, height: 6, borderRadius: 3, background: '#e2e8f0', overflow: 'hidden' }}>
+                              <div
+                                style={{
+                                  width: 48,
+                                  height: 6,
+                                  background: 'var(--border-light)',
+                                  borderRadius: 3,
+                                  overflow: 'hidden',
+                                }}
+                              >
                                 <div
                                   style={{
                                     width: `${Math.min(100, s.interviewRate)}%`,
@@ -1118,20 +1137,20 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
                             </div>
                           </td>
                           <td style={{ padding: '8px 8px', color: 'var(--t1)', fontWeight: 600 }}>
-                            {s.offers > 0 ? `🎉 ${s.offers}` : '—'}
+                            {s.offers > 0 ? s.offers : '—'}
                           </td>
                           <td style={{ padding: '8px 8px' }}>
                             {isHighROI ? (
                               <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 10, background: '#dcfce7', color: '#15803d' }}>
-                                ⭐ High ROI
+                                High ROI
                               </span>
                             ) : isSolid ? (
                               <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 10, background: '#e0e7ff', color: 'var(--accent)' }}>
-                                ✅ Solid Yield
+                                Solid Yield
                               </span>
                             ) : isLowYield ? (
                               <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 10, background: '#fee2e2', color: '#b91c1c' }}>
-                                ⚠️ Low Yield
+                                Low Yield
                               </span>
                             ) : (
                               <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 10, background: '#f1f5f9', color: '#64748b' }}>
@@ -1166,12 +1185,13 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
       </div>
 
       {/* ── Grid Row 3: 30-Day Rolling Trend Line & Weekly Heatmap ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 20 }}>
         {/* Rolling 30-Day Trend */}
         <div className="card" style={{ padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-              📈 Rolling 30-Day Activity Trend (Sent vs. Responses)
+            <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <LineChart size={16} color="var(--accent)" />
+              <span>Rolling 30-Day Activity Trend (Sent vs. Responses)</span>
             </h3>
             <span style={{ fontSize: 11, color: 'var(--t3)' }}>Daily velocity</span>
           </div>
@@ -1201,8 +1221,9 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
 
         {/* GitHub-style Contribution Heatmap */}
         <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column' }}>
-          <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', marginBottom: 6 }}>
-            🟩 Weekly Application Activity Heatmap
+          <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Grid size={16} color="var(--accent)" />
+            <span>Weekly Application Activity Heatmap</span>
           </h3>
           <p style={{ fontSize: 12, color: 'var(--t2)', marginBottom: 16 }}>
             Daily submission momentum over the past 16 weeks

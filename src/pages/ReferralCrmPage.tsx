@@ -16,34 +16,10 @@ interface Contact {
   notes: string;
 }
 
-const INITIAL_CONTACTS: Contact[] = [
-  {
-    id: '1',
-    name: 'Sarah Chen',
-    company: 'Stripe',
-    role: 'Staff Software Engineer',
-    email: 'sarah.c@stripe.com',
-    linkedIn: 'https://linkedin.com/in/sarahchen',
-    status: 'Referral Submitted',
-    notes: 'Connected via Stanford Alumni network. Submitted internal referral for Senior Fullstack Role.',
-  },
-  {
-    id: '2',
-    name: 'Alex Rivera',
-    company: 'Google',
-    role: 'Engineering Manager',
-    email: 'arivera@google.com',
-    linkedIn: 'https://linkedin.com/in/alexrivera',
-    status: 'Coffee Chat',
-    notes: 'Had 30-min virtual coffee chat discussing Cloud infrastructure team culture.',
-  },
-];
-
 export const ReferralCrmPage: React.FC = () => {
   const { addToast } = useToast();
-  const { contacts: firestoreContacts, loading, addContact, updateContact, deleteContact } = useContacts();
+  const { contacts, loading, addContact, updateContact, deleteContact } = useContacts();
 
-  const contacts = firestoreContacts.length === 0 && !loading ? INITIAL_CONTACTS : firestoreContacts;
   const [modal, setModal] = useState<{ open: boolean; editContact?: Contact }>({ open: false });
 
   // Form inputs
@@ -140,69 +116,111 @@ export const ReferralCrmPage: React.FC = () => {
       </div>
 
       <div className="pb">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: 16 }}>
-          {contacts.map((c) => (
-            <motion.div
-              key={c.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="card"
-              style={{ padding: 20 }}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--t2)' }}>
+            Loading contacts...
+          </div>
+        ) : contacts.length === 0 ? (
+          <div
+            className="card"
+            style={{
+              padding: '50px 24px',
+              textAlign: 'center',
+              maxWidth: 480,
+              margin: '30px auto',
+              border: '1px dashed var(--border)',
+            }}
+          >
+            <div
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 26,
+                background: 'var(--card-subtle, #f1f5f9)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+                color: 'var(--t2)',
+              }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                <div>
-                  <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>{c.name}</h3>
-                  <div style={{ fontSize: 12.5, color: 'var(--t2)', marginTop: 2 }}>
-                    {c.role} @ <strong>{c.company}</strong>
+              <Handshake style={{ width: 24, height: 24 }} />
+            </div>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', marginBottom: 8 }}>
+              No contacts or referrals yet
+            </h3>
+            <p style={{ fontSize: 13, color: 'var(--t2)', lineHeight: 1.5, margin: '0 auto 20px' }}>
+              Track recruiters, alumni connections, coffee chats, and internal employee referrals for your target companies.
+            </p>
+            <button onClick={openAddModal} className="btn btn-primary" style={{ borderRadius: 12, fontSize: 13 }}>
+              + Add First Contact
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: 16 }}>
+            {contacts.map((c) => (
+              <motion.div
+                key={c.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="card"
+                style={{ padding: 20 }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                  <div>
+                    <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>{c.name}</h3>
+                    <div style={{ fontSize: 12.5, color: 'var(--t2)', marginTop: 2 }}>
+                      {c.role} @ <strong>{c.company}</strong>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <button onClick={() => openEditModal(c)} className="btn btn-ghost btn-sm" style={{ fontSize: 12, padding: '4px 6px' }}>
+                      <Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
+                    </button>
+                    <button onClick={() => handleDeleteContact(c.id, c.name)} className="btn btn-ghost btn-sm" style={{ fontSize: 12, padding: '4px 6px' }}>
+                      <Trash2 className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
+                    </button>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <button onClick={() => openEditModal(c)} className="btn btn-ghost btn-sm" style={{ fontSize: 12, padding: '4px 6px' }}>
-                    <Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
-                  </button>
-                  <button onClick={() => handleDeleteContact(c.id, c.name)} className="btn btn-ghost btn-sm" style={{ fontSize: 12, padding: '4px 6px' }}>
-                    <Trash2 className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />
-                  </button>
-                </div>
-              </div>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: c.status === 'Referral Submitted' ? '#047857' : '#4338ca',
+                    background: c.status === 'Referral Submitted' ? '#ecfdf5' : '#e0e7ff',
+                    padding: '3px 8px',
+                    borderRadius: 10,
+                    display: 'inline-block',
+                    marginBottom: 12,
+                  }}
+                >
+                  ● {c.status}
+                </span>
 
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: c.status === 'Referral Submitted' ? '#047857' : '#4338ca',
-                  background: c.status === 'Referral Submitted' ? '#ecfdf5' : '#e0e7ff',
-                  padding: '3px 8px',
-                  borderRadius: 10,
-                  display: 'inline-block',
-                  marginBottom: 12,
-                }}
-              >
-                ● {c.status}
-              </span>
-
-              {c.notes && (
-                <div style={{ fontSize: 12, color: 'var(--t2)', background: '#f8fafc', padding: 10, borderRadius: 10, marginBottom: 12 }}>
-                  {c.notes}
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: 10, fontSize: 12 }}>
-                {c.email && (
-                  <a href={`mailto:${c.email}`} className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}>
-                    📧 Email
-                  </a>
+                {c.notes && (
+                  <div style={{ fontSize: 12, color: 'var(--t2)', background: '#f8fafc', padding: 10, borderRadius: 10, marginBottom: 12 }}>
+                    {c.notes}
+                  </div>
                 )}
-                {c.linkedIn && (
-                  <a href={c.linkedIn} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}>
-                    🔗 LinkedIn
-                  </a>
-                )}
-              </div>
-            </motion.div>
-          ))}
-        </div>
+
+                <div style={{ display: 'flex', gap: 10, fontSize: 12 }}>
+                  {c.email && (
+                    <a href={`mailto:${c.email}`} className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}>
+                      📧 Email
+                    </a>
+                  )}
+                  {c.linkedIn && (
+                    <a href={c.linkedIn} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}>
+                      🔗 LinkedIn
+                    </a>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Add / Edit Contact Modal */}

@@ -144,7 +144,7 @@ export const CompanyIntelPage: React.FC = () => {
       };
 
       setProfiles((prev) => [newProf, ...prev]);
-      addToast('Company Profile Created 🏢', nameInput, 'success');
+      addToast('Company Profile Created', nameInput, 'success');
     }
 
     setIntelModal({ open: false });
@@ -161,7 +161,7 @@ export const CompanyIntelPage: React.FC = () => {
       <div className="ph" style={{ paddingBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h1 className="page-title">🏢 Company Intelligence & Salary Benchmarks</h1>
+            <h1 className="page-title">Company Intelligence & Salary Benchmarks</h1>
             <p className="page-sub">
               Research, edit, and manage tech stacks, interview requirements, and compensation tiers
             </p>
@@ -295,17 +295,17 @@ export const CompanyIntelPage: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                 <div>
                   <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-                    🏢 {selectedProfile.name}
+                    {selectedProfile.name}
                   </h2>
                   <div style={{ fontSize: 13, color: 'var(--t2)', marginTop: 2 }}>{selectedProfile.industry}</div>
                 </div>
-                <button onClick={() => setSelectedProfile(null)} className="btn btn-ghost btn-sm">
+                <button onClick={() => setSelectedProfile(null)} className="btn btn-ghost btn-sm" aria-label="Close">
                   ✕
                 </button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div style={{ background: '#f8fafc', padding: 14, borderRadius: 14 }}>
+                <div style={{ background: 'var(--page)', padding: 14, borderRadius: 14, border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 4 }}>
                     Compensation Tier:
                   </div>
@@ -325,7 +325,7 @@ export const CompanyIntelPage: React.FC = () => {
                   <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--t2)', textTransform: 'uppercase', marginBottom: 6 }}>
                     Insider Research Notes:
                   </div>
-                  <div style={{ fontSize: 13, color: 'var(--t1)', background: '#fffbeb', padding: 12, borderRadius: 10, border: '1px solid #fef08a' }}>
+                  <div style={{ fontSize: 13, color: 'var(--t1)', background: 'var(--accent-bg)', padding: 12, borderRadius: 10, border: '1px solid var(--border)' }}>
                     {selectedProfile.notes}
                   </div>
                 </div>
@@ -348,7 +348,7 @@ export const CompanyIntelPage: React.FC = () => {
               exit={{ scale: 0.95, opacity: 0 }}
             >
               <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
-                {intelModal.editProf ? <><Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Edit Company Intel</> : '🏢 Log Company Intelligence'}
+                {intelModal.editProf ? <><Pencil className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Edit Company Intel</> : 'Log Company Intelligence'}
               </h2>
 
               <form onSubmit={handleSaveIntel} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

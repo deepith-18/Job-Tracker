@@ -29,7 +29,7 @@ Best,
 Candidate`;
 
     setGeneratedMessage(msg);
-    addToast('Alumni Outreach Drafted 🎓', `Target: ${alumniName} at ${targetCompany}`, 'success');
+    addToast('Alumni Outreach Drafted', `Target: ${alumniName} at ${targetCompany}`, 'success');
   };
 
   const handleCopyMessage = () => {
@@ -43,13 +43,13 @@ Candidate`;
     <AppShell>
       {/* Header */}
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title">🎓 Alumni & University Network Warm Outreach</h1>
+        <h1 className="page-title">Alumni & University Network Outreach</h1>
         <p className="page-sub">
           Connect with university alumni working at your target companies for internal referrals and coffee chats
         </p>
       </div>
 
-      <div className="pb" style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: 20 }}>
+      <div className="pb" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 20 }}>
         {/* Outreach Form */}
         <div className="card" style={{ padding: 22 }}>
           <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', marginBottom: 16 }}>
@@ -106,11 +106,11 @@ Candidate`;
         <div className="card" style={{ padding: 22, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-              ✉️ LinkedIn InMail / Message Preview
+              LinkedIn InMail / Message Preview
             </h3>
             {generatedMessage && (
               <button onClick={handleCopyMessage} className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>
-                {copied ? '✓ Copied' : <><Clipboard className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Copy Message</>}
+                {copied ? 'Copied' : <><Clipboard className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Copy Message</>}
               </button>
             )}
           </div>

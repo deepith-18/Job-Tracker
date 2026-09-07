@@ -1,4 +1,4 @@
-import { Clipboard, Zap, Mic, Trophy, X, AlertTriangle, Clock, PartyPopper } from 'lucide-react';
+import { Clipboard, Zap, Mic, Trophy, X, AlertTriangle, Clock, PartyPopper, Calendar, Flame, Target, BarChart3, BookOpen, Rocket, Plus } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { format, differenceInDays, isToday, isPast, isFuture } from 'date-fns';
@@ -105,19 +105,20 @@ export const MissionControlPage: React.FC = () => {
 
         <motion.div initial={{ opacity:0, y:-10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4 }}>
           <p style={{ fontSize:12.5, color:'#a5b4fc', fontWeight:600, marginBottom:4, display:'flex', alignItems:'center', gap:6 }}>
-            <span>📅</span> {format(new Date(), 'EEEE, MMMM d, yyyy')}
+            <Calendar size={14} />
+            <span>{format(new Date(), 'EEEE, MMMM d, yyyy')}</span>
           </p>
           <h1 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:26, fontWeight:800, color:'#fff', marginBottom:6, letterSpacing:'-0.02em' }}>
-            {greeting}, {name} 👋
+            {greeting}, {name}
           </h1>
           <p style={{ fontSize:14, color:'#818cf8' }}>
             {stats.total === 0
               ? "Start your job hunt — log your first application!"
               : stats.offers > 0
-              ? `You have ${stats.offers} offer${stats.offers > 1 ? 's' : ''}! <PartyPopper className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Keep the momentum going.`
+              ? `You have ${stats.offers} offer${stats.offers > 1 ? 's' : ''}! Keep the momentum going.`
               : stats.interviews > 0
-              ? `${stats.interviews} interview${stats.interviews > 1 ? 's' : ''} in progress — you're doing great!`
-              : `${stats.active} active application${stats.active !== 1 ? 's' : ''} — stay consistent!`}
+              ? `${stats.interviews} interview${stats.interviews > 1 ? 's' : ''} in progress — keep progressing!`
+              : `${stats.active} active application${stats.active !== 1 ? 's' : ''} — stay consistent.`}
           </p>
         </motion.div>
 
@@ -131,7 +132,9 @@ export const MissionControlPage: React.FC = () => {
               borderRadius:14, padding:'12px 16px', textAlign:'center',
             }}
           >
-            <div style={{ fontSize:26, marginBottom:2 }}>🔥</div>
+            <div style={{ display:'flex', justifyContent:'center', marginBottom:4 }}>
+              <Flame size={22} color="#fbbf24" />
+            </div>
             <div style={{ fontSize:22, fontWeight:800, color:'#fbbf24', lineHeight:1 }}>{streak}</div>
             <div style={{ fontSize:10.5, color:'#fcd34d', fontWeight:600 }}>day streak</div>
           </motion.div>
@@ -147,15 +150,19 @@ export const MissionControlPage: React.FC = () => {
         >
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:14, flexWrap:'wrap', gap:8 }}>
             <div>
-              <h3 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:16, fontWeight:800, color:'var(--t1)', marginBottom:3 }}>
-                🎯 Application Goal
+              <h3 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:16, fontWeight:800, color:'var(--t1)', marginBottom:3, display:'flex', alignItems:'center', gap:8 }}>
+                <Target size={18} color="var(--accent)" />
+                <span>Application Goal</span>
               </h3>
               {remaining > 0 ? (
                 <p style={{ fontSize:13, color:'var(--t2)' }}>
                   Only <strong style={{ color:'var(--accent)' }}>{remaining}</strong> more to reach your goal of {goal}!
                 </p>
               ) : (
-                <p style={{ fontSize:13, color:'var(--success)', fontWeight:700 }}><PartyPopper className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Goal reached! Set a new one?</p>
+                <p style={{ fontSize:13, color:'var(--success)', fontWeight:700, display:'flex', alignItems:'center', gap:6 }}>
+                  <PartyPopper size={16} />
+                  <span>Goal reached! Set a new one?</span>
+                </p>
               )}
             </div>
             {editGoal ? (
@@ -191,11 +198,11 @@ export const MissionControlPage: React.FC = () => {
 
         {/* ── Stat Cards ── */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))', gap:14, marginBottom:24 }}>
-          <Stat delay={0.1} icon={<Clipboard className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />} label="Total Applied" value={stats.total} bg="#eef2ff" />
-          <Stat delay={0.15} icon={<Zap className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />} label="Active" value={stats.active} sub="Applied + OA" bg="#f5f3ff" />
-          <Stat delay={0.2} icon={<Mic className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />} label="Interviews" value={stats.interviews} bg="#fffbeb" />
-          <Stat delay={0.25} icon={<Trophy className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />} label="Offers" value={stats.offers} sub={stats.total > 0 ? `${Math.round((stats.offers/stats.total)*100)}% rate` : ''} bg="#f0fdf4" />
-          <Stat delay={0.3} icon={<X className="inline-block w-4 h-4 mr-1.5 align-text-bottom" />} label="Rejections" value={stats.rejected} bg="#fff1f2" />
+          <Stat delay={0.1} icon={<Clipboard size={18} color="var(--accent)" />} label="Total Applied" value={stats.total} bg="#eef2ff" />
+          <Stat delay={0.15} icon={<Zap size={18} color="#8b5cf6" />} label="Active" value={stats.active} sub="Applied + OA" bg="#f5f3ff" />
+          <Stat delay={0.2} icon={<Mic size={18} color="#f59e0b" />} label="Interviews" value={stats.interviews} bg="#fffbeb" />
+          <Stat delay={0.25} icon={<Trophy size={18} color="#10b981" />} label="Offers" value={stats.offers} sub={stats.total > 0 ? `${Math.round((stats.offers/stats.total)*100)}% rate` : ''} bg="#f0fdf4" />
+          <Stat delay={0.3} icon={<X size={18} color="#ef4444" />} label="Rejections" value={stats.rejected} bg="#fff1f2" />
         </div>
 
         {/* ── Overdue alert ── */}
@@ -204,7 +211,7 @@ export const MissionControlPage: React.FC = () => {
             initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
             style={{ background:'#fff7ed', border:'1px solid #fed7aa', borderRadius:12, padding:'14px 18px', display:'flex', alignItems:'center', gap:12, marginBottom:24 }}
           >
-            <span style={{ fontSize:22 }}><AlertTriangle className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></span>
+            <span style={{ display:'flex', alignItems:'center' }}><AlertTriangle size={20} color="#c2410c" /></span>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:14, fontWeight:700, color:'#9a3412' }}>{stats.overdue.length} overdue deadline{stats.overdue.length > 1 ? 's' : ''} need attention</div>
               <div style={{ fontSize:12.5, color:'#c2410c', marginTop:2 }}>{stats.overdue.map(a => a.company).join(' · ')}</div>
@@ -213,15 +220,18 @@ export const MissionControlPage: React.FC = () => {
           </motion.div>
         )}
 
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap:20, marginBottom:24 }}>
           {/* ── Upcoming Deadlines ── */}
           <motion.div className="card" style={{ padding:'20px' }} initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.2, duration:0.35 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
-              <h3 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:14, fontWeight:800, color:'var(--t1)' }}><Clock className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> Upcoming Deadlines</h3>
+              <h3 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:14, fontWeight:800, color:'var(--t1)', display:'flex', alignItems:'center', gap:8 }}>
+                <Clock size={16} color="var(--t3)" />
+                <span>Upcoming Deadlines</span>
+              </h3>
               <Link to="/applications" style={{ fontSize:12, color:'var(--accent)', fontWeight:600 }}>All →</Link>
             </div>
             {stats.upcoming.length === 0 ? (
-              <div style={{ textAlign:'center', padding:'20px 0', fontSize:13, color:'var(--t3)' }}><PartyPopper className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> No upcoming deadlines</div>
+              <div style={{ textAlign:'center', padding:'20px 0', fontSize:13, color:'var(--t3)' }}>No upcoming deadlines</div>
             ) : (
               <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                 {stats.upcoming.map(app => {
@@ -231,8 +241,8 @@ export const MissionControlPage: React.FC = () => {
                   return (
                     <div key={app.id} style={{
                       display:'flex', alignItems:'center', gap:10, padding:'9px 12px', borderRadius:10,
-                      background: todayFlag ? '#fff7ed' : urgent ? '#fef3c7' : '#f8f9ff',
-                      border:`1px solid ${todayFlag ? '#fed7aa' : urgent ? '#fde68a' : 'var(--border-light)'}`,
+                      background: todayFlag ? '#fff7ed' : urgent ? '#fef3c7' : 'var(--page)',
+                      border:`1px solid ${todayFlag ? '#fed7aa' : urgent ? '#fde68a' : 'var(--border)'}`,
                     }}>
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{ fontSize:13, fontWeight:700, color:'var(--t1)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{app.company}</div>
@@ -240,7 +250,7 @@ export const MissionControlPage: React.FC = () => {
                       </div>
                       <div style={{ textAlign:'right', flexShrink:0 }}>
                         <div style={{ fontSize:12, fontWeight:800, color: todayFlag ? '#9a3412' : urgent ? '#92400e' : 'var(--t2)' }}>
-                          {todayFlag ? '🔥 Today' : `${dl}d`}
+                          {todayFlag ? 'Today' : `${dl}d`}
                         </div>
                         <div style={{ fontSize:10.5, color:'var(--t3)' }}>{format(app.deadline!, 'MMM d')}</div>
                       </div>
@@ -255,7 +265,10 @@ export const MissionControlPage: React.FC = () => {
           <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
             {/* Status breakdown */}
             <motion.div className="card" style={{ padding:'20px' }} initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.25, duration:0.35 }}>
-              <h3 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:14, fontWeight:800, color:'var(--t1)', marginBottom:14 }}>📊 Status Breakdown</h3>
+              <h3 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:14, fontWeight:800, color:'var(--t1)', marginBottom:14, display:'flex', alignItems:'center', gap:8 }}>
+                <BarChart3 size={16} color="var(--t3)" />
+                <span>Status Breakdown</span>
+              </h3>
               <div style={{ display:'flex', flexDirection:'column', gap:9 }}>
                 {(Object.entries(stats.byStatus) as [ApplicationStatus, number][]).sort((a,b) => b[1]-a[1]).map(([status, count]) => {
                   const pct = stats.total > 0 ? Math.round((count/stats.total)*100) : 0;
@@ -281,7 +294,10 @@ export const MissionControlPage: React.FC = () => {
             {/* Top rejection mistakes */}
             {stats.topReasons.length > 0 && (
               <motion.div className="card" style={{ padding:'20px' }} initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.3, duration:0.35 }}>
-                <h3 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:14, fontWeight:800, color:'var(--t1)', marginBottom:14 }}>📚 Top Mistakes to Fix</h3>
+                <h3 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:14, fontWeight:800, color:'var(--t1)', marginBottom:14, display:'flex', alignItems:'center', gap:8 }}>
+                  <BookOpen size={16} color="var(--t3)" />
+                  <span>Top Feedback Points</span>
+                </h3>
                 <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                   {stats.topReasons.map(([reason, count], i) => (
                     <div key={reason} style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -302,7 +318,10 @@ export const MissionControlPage: React.FC = () => {
         {stats.recent.length > 0 && (
           <motion.div className="tbl-wrap" initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.35, duration:0.35 }}>
             <div style={{ padding:'14px 18px', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-              <h3 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:14, fontWeight:800, color:'var(--t1)' }}>🕐 Recent Activity</h3>
+              <h3 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:14, fontWeight:800, color:'var(--t1)', display:'flex', alignItems:'center', gap:8 }}>
+                <Clock size={16} color="var(--t3)" />
+                <span>Recent Activity</span>
+              </h3>
               <Link to="/applications" style={{ fontSize:12, color:'var(--accent)', fontWeight:600 }}>All applications →</Link>
             </div>
             <table className="tbl">
@@ -328,7 +347,7 @@ export const MissionControlPage: React.FC = () => {
                       <td><Badge status={app.status} /></td>
                       <td style={{ fontSize:12, color:'var(--t3)' }}>{format(app.updatedAt, 'MMM d, HH:mm')}</td>
                       <td style={{ fontSize:12.5, fontWeight: past || near ? 700 : 400, color: past ? '#be123c' : near ? '#92400e' : 'var(--t2)' }}>
-                        {app.deadline ? `${past ? '⚠ ' : near ? '⏰ ' : ''}${format(app.deadline, 'MMM d, yyyy')}` : '—'}
+                        {app.deadline ? format(app.deadline, 'MMM d, yyyy') : '—'}
                       </td>
                     </tr>
                   );
@@ -342,18 +361,19 @@ export const MissionControlPage: React.FC = () => {
         {applications.length === 0 && (
           <div className="card" style={{ padding:0 }}>
             <div className="empty">
-              <div className="animate-float" style={{ width:72, height:72, borderRadius:22, background:'linear-gradient(135deg, #eef2ff, #e0e7ff)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:20, fontSize:32 }}>
-                🚀
+              <div className="animate-float" style={{ width:72, height:72, borderRadius:22, background:'linear-gradient(135deg, #eef2ff, #e0e7ff)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:20 }}>
+                <Rocket size={32} color="var(--accent)" />
               </div>
               <h3 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:20, fontWeight:800, color:'var(--t1)', marginBottom:8 }}>
                 Your Mission Starts Here
               </h3>
               <p style={{ fontSize:14, color:'var(--t2)', maxWidth:320, marginBottom:24, lineHeight:1.6 }}>
-                Log your first application and CareerOS will help you land your dream job.
+                Log your first application and CareerOS will help you track and optimize your job search pipeline.
               </p>
               <Link to="/applications">
-                <button className="btn btn-primary btn-lg">
-                  🎯 Log First Application
+                <button className="btn btn-primary btn-lg" style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
+                  <Plus size={18} />
+                  <span>Log First Application</span>
                 </button>
               </Link>
             </div>
