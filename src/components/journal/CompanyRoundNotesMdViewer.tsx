@@ -14,21 +14,30 @@ import {
   Check,
   Download,
   BookOpen,
-  ArrowRight,
   ChevronDown,
   ChevronUp,
   MessageSquare,
   Building2,
   Calendar,
-  FileSpreadsheet,
   Edit3,
   Trash2,
   Plus,
+  Compass,
+  ArrowUp,
+  ChevronLeft,
+  ChevronRight,
+  List,
+  LayoutGrid,
+  Maximize2,
+  Minimize2,
+  Clock,
+  Type,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseInterviewMarkdown } from '../../utils/parseInterviewMarkdown';
 import { PRESET_SAMPLE_FILES } from '../../data/sampleInterviewNotes';
 import { CodeInterpreterViewer } from '../common/CodeInterpreterViewer';
+import { MarkdownTextRenderer } from './MarkdownTextRenderer';
 import { useCodeQuestions } from '../../hooks/useCodeQuestions';
 import { useToast } from '../ui/ToastContext';
 import type {
@@ -41,10 +50,14 @@ import type {
 
 const STORAGE_KEY = 'jobtracker_company_rounds_md_doc';
 
+type ViewMode = 'reader' | 'cards' | 'stepper';
+type FontSize = 'sm' | 'md' | 'lg';
+
 export const CompanyRoundNotesMdViewer: React.FC = () => {
   const { addQuestion } = useCodeQuestions();
   const { addToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Document state
   const [doc, setDoc] = useState<CompanyRoundDocument>(() => {
@@ -59,14 +72,19 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
     return parseInterviewMarkdown(PRESET_SAMPLE_FILES[0].markdown, 'Google_L5_Interview_Notes.md');
   });
 
-  // UI state
+  // UI state & View Modes
+  const [viewMode, setViewMode] = useState<ViewMode>('reader'); // Default to clean Readme reader to prevent infinite card scroll
+  const [fontSize, setFontSize] = useState<FontSize>('md');
+  const [isCompact, setIsCompact] = useState<boolean>(false);
   const [selectedRound, setSelectedRound] = useState<number | 'all'>('all');
+  const [stepperRoundIndex, setStepperRoundIndex] = useState<number>(0);
   const [selectedType, setSelectedType] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [onlyRejectionLessons, setOnlyRejectionLessons] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [savedVaultIds, setSavedVaultIds] = useState<Set<string>>(new Set());
   const [copiedQId, setCopiedQId] = useState<string | null>(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   // Paste modal state
   const [pasteModalOpen, setPasteModalOpen] = useState(false);
@@ -116,6 +134,23 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
     }
   }, [doc]);
 
+  // Back to top scroll listener
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 400);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Compute Word Count & Estimated Read Time
+  const readingStats = useMemo(() => {
+    const raw = doc.rawMarkdown || '';
+    const words = raw.trim().split(/\s+/).filter(Boolean).length;
+    const minutes = Math.max(1, Math.ceil(words / 200));
+    return { words, minutes };
+  }, [doc.rawMarkdown]);
+
   // Handle file upload (.md or text)
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -132,10 +167,12 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
       const parsed = parseInterviewMarkdown(content, file.name);
       setDoc(parsed);
       setSelectedRound('all');
+      setStepperRoundIndex(0);
       setSelectedType('All');
+      setExpandedIds(new Set()); // Start collapsed to save vertical space
       addToast(
         'Markdown Parsed Successfully',
-        `Extracted ${parsed.totalRounds} rounds and ${parsed.totalQuestions} questions (${parsed.theoryQuestionsCount} theory) for ${parsed.company}`,
+        `Extracted ${parsed.totalRounds} rounds and ${parsed.totalQuestions} questions for ${parsed.company}`,
         'success'
       );
     };
@@ -143,8 +180,6 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
       addToast('Upload Error', 'Failed to read the file.', 'error');
     };
     reader.readAsText(file);
-
-    // Reset input
     e.target.value = '';
   };
 
@@ -161,6 +196,8 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
       const parsed = parseInterviewMarkdown(content, file.name);
       setDoc(parsed);
       setSelectedRound('all');
+      setStepperRoundIndex(0);
+      setExpandedIds(new Set());
       addToast('Markdown Loaded', `Loaded notes for ${parsed.company}`, 'success');
     };
     reader.readAsText(file);
@@ -172,7 +209,9 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
     const parsed = parseInterviewMarkdown(sample.markdown, `${sample.id}.md`);
     setDoc(parsed);
     setSelectedRound('all');
+    setStepperRoundIndex(0);
     setSelectedType('All');
+    setExpandedIds(new Set());
     addToast('Sample Loaded', `Loaded ${sample.title}`, 'info');
   };
 
@@ -194,11 +233,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
       });
 
       setSavedVaultIds((prev) => new Set(prev).add(q.id));
-      addToast(
-        'Saved to Question Vault',
-        `"${q.question.slice(0, 45)}..." stored in permanent Code Vault`,
-        'success'
-      );
+      addToast('Saved to Question Vault', `"${q.question.slice(0, 45)}..." stored in permanent Code Vault`, 'success');
     } catch {
       addToast('Save Failed', 'Could not save question to vault', 'error');
     }
@@ -236,6 +271,8 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
     setPasteContent('');
     setPasteDocTitle('');
     setSelectedRound('all');
+    setStepperRoundIndex(0);
+    setExpandedIds(new Set());
     addToast('Markdown Imported', `Parsed ${parsed.totalRounds} rounds and questions.`, 'success');
   };
 
@@ -369,7 +406,6 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
         if (r.roundNumber !== targetRoundNumber) return r;
 
         if (editingQuestionId) {
-          // Edit existing question
           const updatedQs = r.questions.map((q) => {
             if (q.id !== editingQuestionId) return q;
             return {
@@ -385,19 +421,19 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
               timeComplexity: editFormData.timeComplexity.trim() || undefined,
               spaceComplexity: editFormData.spaceComplexity.trim() || undefined,
               followUps: followUps.length > 0 ? followUps : undefined,
-              rejectionLearning: editFormData.identifiedMistake.trim() || editFormData.whatToLearn.trim()
-                ? {
-                    identifiedMistake: editFormData.identifiedMistake.trim() || 'Common conceptual pitfall during interview',
-                    whatToLearn: editFormData.whatToLearn.trim() || 'Master the core mechanism and explain trade-offs clearly',
-                    category: (editFormData.type === 'Theory & Concepts' ? 'Theory Gap' : 'Complexity Suboptimal') as RejectionCategory,
-                    correctiveAction: q.rejectionLearning?.correctiveAction || ['Practice explaining trade-offs before answering'],
-                  }
-                : q.rejectionLearning,
+              rejectionLearning:
+                editFormData.identifiedMistake.trim() || editFormData.whatToLearn.trim()
+                  ? {
+                      identifiedMistake: editFormData.identifiedMistake.trim() || 'Common conceptual pitfall during interview',
+                      whatToLearn: editFormData.whatToLearn.trim() || 'Master the core mechanism and explain trade-offs clearly',
+                      category: (editFormData.type === 'Theory & Concepts' ? 'Theory Gap' : 'Complexity Suboptimal') as RejectionCategory,
+                      correctiveAction: q.rejectionLearning?.correctiveAction || ['Practice explaining trade-offs before answering'],
+                    }
+                  : q.rejectionLearning,
             };
           });
           return { ...r, questions: updatedQs };
         } else {
-          // Add new question
           const newQ: ParsedRoundQuestion = {
             id: `q-user-${Date.now().toString(36)}`,
             questionNumber: r.questions.length + 1,
@@ -412,14 +448,15 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
             timeComplexity: editFormData.timeComplexity.trim() || undefined,
             spaceComplexity: editFormData.spaceComplexity.trim() || undefined,
             followUps: followUps.length > 0 ? followUps : undefined,
-            rejectionLearning: editFormData.identifiedMistake.trim() || editFormData.whatToLearn.trim()
-              ? {
-                  identifiedMistake: editFormData.identifiedMistake.trim() || 'Common conceptual trap',
-                  whatToLearn: editFormData.whatToLearn.trim() || 'Structure your answer with trade-offs and real-world examples',
-                  category: (editFormData.type === 'Theory & Concepts' ? 'Theory Gap' : 'Complexity Suboptimal') as RejectionCategory,
-                  correctiveAction: ['Structure answer in 3 parts: definition, mechanics, production trade-offs'],
-                }
-              : undefined,
+            rejectionLearning:
+              editFormData.identifiedMistake.trim() || editFormData.whatToLearn.trim()
+                ? {
+                    identifiedMistake: editFormData.identifiedMistake.trim() || 'Common conceptual trap',
+                    whatToLearn: editFormData.whatToLearn.trim() || 'Structure your answer with trade-offs and real-world examples',
+                    category: (editFormData.type === 'Theory & Concepts' ? 'Theory Gap' : 'Complexity Suboptimal') as RejectionCategory,
+                    correctiveAction: ['Structure answer in 3 parts: definition, mechanics, production trade-offs'],
+                  }
+                : undefined,
           };
           return { ...r, questions: [...r.questions, newQ] };
         }
@@ -454,6 +491,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
     setEditingModalOpen(false);
   };
 
+  // Toggle single item expand
   const toggleExpand = (id: string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
@@ -463,10 +501,27 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
     });
   };
 
+  // Expand All / Collapse All
+  const handleToggleExpandAll = () => {
+    const allIds = doc.rounds.flatMap((r) => r.questions.map((q) => q.id));
+    if (expandedIds.size === allIds.length) {
+      setExpandedIds(new Set());
+    } else {
+      setExpandedIds(new Set(allIds));
+    }
+  };
+
   // Filtered rounds and questions
   const filteredRounds = useMemo(() => {
     return doc.rounds
-      .filter((r) => selectedRound === 'all' || r.roundNumber === selectedRound)
+      .filter((r) => {
+        if (viewMode === 'stepper') {
+          // In stepper mode, show only active round index
+          const activeRound = doc.rounds[stepperRoundIndex];
+          return activeRound ? r.roundNumber === activeRound.roundNumber : true;
+        }
+        return selectedRound === 'all' || r.roundNumber === selectedRound;
+      })
       .map((r) => {
         const matchingQuestions = r.questions.filter((q) => {
           if (onlyRejectionLessons && !q.rejectionLearning) return false;
@@ -489,30 +544,69 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
         };
       })
       .filter((r) => r.questions.length > 0 || !searchQuery.trim());
-  }, [doc, selectedRound, selectedType, searchQuery, onlyRejectionLessons]);
+  }, [doc, selectedRound, selectedType, searchQuery, onlyRejectionLessons, viewMode, stepperRoundIndex]);
 
   const totalVisibleQuestions = useMemo(() => {
     return filteredRounds.reduce((acc, r) => acc + r.questions.length, 0);
   }, [filteredRounds]);
 
+  const allQuestionsCount = useMemo(() => {
+    return doc.rounds.flatMap((r) => r.questions).length;
+  }, [doc]);
+
+  const areAllExpanded = expandedIds.size > 0 && expandedIds.size >= allQuestionsCount;
+
+  // Jump to specific round
+  const handleJumpToRound = (roundNumber: number) => {
+    if (viewMode === 'stepper') {
+      const idx = doc.rounds.findIndex((r) => r.roundNumber === roundNumber);
+      if (idx !== -1) setStepperRoundIndex(idx);
+    } else {
+      setSelectedRound(roundNumber);
+      const el = document.getElementById(`round-section-${roundNumber}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
+
+  const getFontSizePixel = () => {
+    switch (fontSize) {
+      case 'sm':
+        return 13;
+      case 'lg':
+        return 16.5;
+      default:
+        return 14.5;
+    }
+  };
+
+  const fontPx = getFontSizePixel();
+
   return (
-    <div style={{ maxWidth: 1140, margin: '0 auto' }}>
-      {/* ── Top Header Bar & Upload Controls ── */}
+    <div
+      ref={containerRef}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={handleDrop}
+      style={{ maxWidth: 1160, margin: '0 auto', position: 'relative' }}
+    >
+      {/* ── Top Header Bar & Document Summary ── */}
       <div
         className="card"
         style={{
           padding: '20px 24px',
-          marginBottom: 20,
-          background: 'linear-gradient(135deg, var(--card) 0%, var(--card-hover) 100%)',
+          marginBottom: 16,
+          background: 'var(--card)',
           border: '1px solid var(--border)',
           display: 'flex',
           flexDirection: 'column',
           gap: 16,
+          boxShadow: 'var(--shadow)',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span
                 style={{
                   display: 'inline-flex',
@@ -522,8 +616,8 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                   borderRadius: 20,
                   background: 'var(--accent-bg)',
                   color: 'var(--accent)',
-                  fontSize: 13,
-                  fontWeight: 800,
+                  fontSize: 12.5,
+                  fontWeight: 700,
                   border: '1px solid var(--border)',
                 }}
               >
@@ -544,32 +638,34 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
 
               <span
                 style={{
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                  padding: '3px 9px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  fontSize: 12,
+                  color: 'var(--t3)',
+                  background: 'var(--card-hover)',
+                  padding: '3px 8px',
                   borderRadius: 12,
-                  background: 'rgba(239, 68, 68, 0.12)',
-                  color: '#ef4444',
-                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  border: '1px solid var(--border)',
                 }}
               >
-                Retrospective & Mistake Lessons Included
+                <Clock style={{ width: 12, height: 12 }} />
+                <span>~{readingStats.minutes} min read</span>
+                <span style={{ color: 'var(--t3)', opacity: 0.6 }}>•</span>
+                <span>{readingStats.words.toLocaleString()} words</span>
               </span>
             </div>
 
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--t1)', marginTop: 8, marginBottom: 4 }}>
-              Company Round Notes & MD Questions Viewer
+            <h2 style={{ fontSize: 21, fontWeight: 800, color: 'var(--t1)', marginTop: 8, marginBottom: 4 }}>
+              Company Round Notes & Readme Viewer
             </h2>
             <p style={{ fontSize: 13, color: 'var(--t2)', margin: 0, maxWidth: 680, lineHeight: 1.5 }}>
-              Upload any Markdown (<code style={{ color: 'var(--accent)' }}>.md</code>) file from your interviews. 
-              Organized round-by-round with full coverage of <strong>theory & conceptual questions</strong>, 
-              syntax-highlighted code, and actionable <strong>rejection post-mortem lessons</strong>.
+              Active debrief: <strong style={{ color: 'var(--t1)' }}>{doc.fileName}</strong> ({doc.totalRounds} rounds, {doc.totalQuestions} questions with {doc.theoryQuestionsCount} theory topics).
             </p>
           </div>
 
-          {/* Action Buttons */}
+          {/* Action Buttons (Upload / Paste / Export) */}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            {/* Hidden File Input */}
             <input
               ref={fileInputRef}
               type="file"
@@ -585,13 +681,13 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
-                padding: '8px 16px',
-                fontSize: 13,
+                padding: '7px 14px',
+                fontSize: 12.5,
                 fontWeight: 700,
               }}
             >
-              <UploadCloud style={{ width: 16, height: 16 }} />
-              <span>Upload .MD File</span>
+              <UploadCloud style={{ width: 15, height: 15 }} />
+              <span>Upload .MD</span>
             </button>
 
             <button
@@ -601,16 +697,16 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
-                padding: '8px 14px',
-                fontSize: 13,
+                padding: '7px 13px',
+                fontSize: 12.5,
                 fontWeight: 600,
                 background: 'var(--card-hover)',
                 border: '1px solid var(--border)',
                 color: 'var(--t1)',
               }}
             >
-              <FileText style={{ width: 15, height: 15, color: 'var(--accent)' }} />
-              <span>Paste Markdown</span>
+              <FileText style={{ width: 14, height: 14, color: 'var(--accent)' }} />
+              <span>Paste Notes</span>
             </button>
 
             <button
@@ -618,30 +714,30 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
               className="btn-ghost"
               title="Download clean Markdown"
               style={{
-                padding: 8,
+                padding: 7,
                 borderRadius: 8,
                 border: '1px solid var(--border)',
                 color: 'var(--t2)',
               }}
             >
-              <Download style={{ width: 16, height: 16 }} />
+              <Download style={{ width: 15, height: 15 }} />
             </button>
           </div>
         </div>
 
-        {/* ── Preset Sample Switchers ── */}
+        {/* Preset Sample Debrief Switchers */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Load Sample Debrief:
+          <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Load Sample:
           </span>
           {PRESET_SAMPLE_FILES.map((sample) => (
             <button
               key={sample.id}
               onClick={() => handleLoadSample(sample.id)}
               style={{
-                padding: '4px 12px',
-                borderRadius: 14,
-                fontSize: 12,
+                padding: '3px 10px',
+                borderRadius: 12,
+                fontSize: 11.5,
                 fontWeight: 600,
                 cursor: 'pointer',
                 background: doc.company.toLowerCase().includes(sample.company.toLowerCase()) ? 'var(--accent-bg)' : 'var(--card)',
@@ -656,259 +752,260 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Drag and Drop Area Dropzone (Collapsible or Compact) ── */}
+      {/* ── STICKY READING & VIEW CONTROL BAR ── */}
       <div
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={handleDrop}
         style={{
-          border: '1.5px dashed var(--border)',
+          position: 'sticky',
+          top: 70,
+          zIndex: 40,
+          background: 'var(--nav-bg)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
           borderRadius: 12,
-          padding: '12px 18px',
-          marginBottom: 20,
-          background: 'rgba(99, 102, 241, 0.02)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-          flexWrap: 'wrap',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 8,
-              background: 'var(--accent-bg)',
-              color: 'var(--accent)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <FileSpreadsheet style={{ width: 18, height: 18 }} />
-          </div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--t1)' }}>
-              Active Document: <span style={{ color: 'var(--accent)' }}>{doc.fileName}</span>
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--t3)' }}>
-              Drag & drop any <code style={{ color: 'var(--t2)' }}>.md</code> file anywhere on this box to parse questions instantaneously.
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-bg)', padding: '3px 10px', borderRadius: 10 }}>
-            {doc.totalRounds} Rounds Detected
-          </span>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#8b5cf6', background: 'rgba(139, 92, 246, 0.12)', padding: '3px 10px', borderRadius: 10 }}>
-            {doc.theoryQuestionsCount} Theory Questions Covered
-          </span>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#0ea5e9', background: 'rgba(14, 165, 233, 0.12)', padding: '3px 10px', borderRadius: 10 }}>
-            {doc.codingQuestionsCount} Coding Problems
-          </span>
-        </div>
-      </div>
-
-      {/* ── Rejection Mistake & Growth Retrospective Highlight Panel ── */}
-      <div
-        className="card"
-        style={{
-          padding: '16px 20px',
-          borderRadius: 12,
-          marginBottom: 20,
-          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(245, 158, 11, 0.05) 100%)',
-          border: '1px solid rgba(239, 68, 68, 0.2)',
+          padding: '10px 16px',
+          marginBottom: 16,
+          border: '1px solid var(--border)',
+          boxShadow: 'var(--shadow-md)',
           display: 'flex',
           flexDirection: 'column',
-          gap: 12,
+          gap: 10,
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div
+          {/* View Mode Switcher: Readme Reader | Card Studio | Round Stepper */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--card)', padding: 3, borderRadius: 10, border: '1px solid var(--border)' }}>
+            <button
+              onClick={() => setViewMode('reader')}
               style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                background: 'rgba(239, 68, 68, 0.12)',
-                color: '#ef4444',
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
-                justifyContent: 'center',
+                gap: 6,
+                padding: '5px 12px',
+                borderRadius: 8,
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                background: viewMode === 'reader' ? 'var(--accent)' : 'transparent',
+                color: viewMode === 'reader' ? '#fff' : 'var(--t2)',
+                border: 'none',
+                transition: 'all 0.15s ease',
               }}
+              title="Clean continuous article reading mode (like Notion or GitHub README)"
             >
-              <AlertTriangle style={{ width: 17, height: 17 }} />
-            </div>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)' }}>
-                Rejection Retrospective & Mistake Identifier
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--t2)' }}>
-                Every question includes actionable lessons detailing why candidates get rejected and how to master the answer.
-              </div>
-            </div>
-          </div>
+              <BookOpen style={{ width: 14, height: 14 }} />
+              <span>Readme Reader</span>
+            </button>
 
-          <button
-            onClick={() => setOnlyRejectionLessons(!onlyRejectionLessons)}
-            style={{
-              padding: '6px 14px',
-              borderRadius: 8,
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: 'pointer',
-              background: onlyRejectionLessons ? '#ef4444' : 'var(--card)',
-              color: onlyRejectionLessons ? '#fff' : 'var(--t2)',
-              border: onlyRejectionLessons ? '1px solid #ef4444' : '1px solid var(--border)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <Lightbulb style={{ width: 14, height: 14 }} />
-            <span>{onlyRejectionLessons ? 'Showing Lessons Only' : 'Filter Questions with Mistake Lessons'}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ── Search and Filter Controls ── */}
-      <div
-        className="card"
-        style={{
-          padding: 16,
-          marginBottom: 20,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 14,
-        }}
-      >
-        {/* Top: Search & Category Pills */}
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ position: 'relative', flex: '1 1 260px' }}>
-            <Search
+            <button
+              onClick={() => setViewMode('cards')}
               style={{
-                position: 'absolute',
-                left: 12,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: 15,
-                height: 15,
-                color: 'var(--t3)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '5px 12px',
+                borderRadius: 8,
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                background: viewMode === 'cards' ? 'var(--accent)' : 'transparent',
+                color: viewMode === 'cards' ? '#fff' : 'var(--t2)',
+                border: 'none',
+                transition: 'all 0.15s ease',
               }}
-            />
-            <input
-              type="text"
-              className="inp"
-              placeholder="Search theory concepts, questions, mistakes, or code..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ paddingLeft: 36, width: '100%' }}
-            />
+              title="Interactive cards view with question actions and collapse controls"
+            >
+              <LayoutGrid style={{ width: 14, height: 14 }} />
+              <span>Card Studio</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setViewMode('stepper');
+                setSelectedRound('all');
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '5px 12px',
+                borderRadius: 8,
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                background: viewMode === 'stepper' ? 'var(--accent)' : 'transparent',
+                color: viewMode === 'stepper' ? '#fff' : 'var(--t2)',
+                border: 'none',
+                transition: 'all 0.15s ease',
+              }}
+              title="Step through one round at a time — prevents long vertical scrolling"
+            >
+              <Compass style={{ width: 14, height: 14 }} />
+              <span>Round Stepper</span>
+            </button>
           </div>
 
-          {/* Type Filter Buttons */}
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {['All', 'Theory & Concepts', 'Coding & DSA', 'System Design', 'Behavioral & Leadership'].map((type) => {
-              const isSelected = selectedType === type;
-              return (
+          {/* Reading Comfort & Density Controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            {/* Font Size Selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--card)', padding: '3px 6px', borderRadius: 8, border: '1px solid var(--border)' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t3)', paddingRight: 4 }}>
+                <Type style={{ width: 13, height: 13, display: 'inline', verticalAlign: '-2px' }} />
+              </span>
+              {(['sm', 'md', 'lg'] as FontSize[]).map((size) => (
                 <button
-                  key={type}
-                  onClick={() => setSelectedType(type)}
+                  key={size}
+                  onClick={() => setFontSize(size)}
                   style={{
-                    padding: '5px 12px',
-                    borderRadius: 8,
-                    fontSize: 12,
-                    fontWeight: 700,
+                    padding: '2px 7px',
+                    borderRadius: 5,
+                    fontSize: size === 'sm' ? 11 : size === 'md' ? 12 : 13,
+                    fontWeight: fontSize === size ? 800 : 500,
+                    background: fontSize === size ? 'var(--accent-bg)' : 'transparent',
+                    color: fontSize === size ? 'var(--accent)' : 'var(--t3)',
+                    border: 'none',
                     cursor: 'pointer',
-                    background: isSelected
-                      ? type === 'Theory & Concepts'
-                        ? 'rgba(139, 92, 246, 0.2)'
-                        : 'var(--accent-bg)'
-                      : 'var(--card-hover)',
-                    color: isSelected
-                      ? type === 'Theory & Concepts'
-                        ? '#a855f7'
-                        : 'var(--accent)'
-                      : 'var(--t2)',
-                    border: isSelected
-                      ? type === 'Theory & Concepts'
-                        ? '1px solid #8b5cf6'
-                        : '1px solid var(--accent)'
-                      : '1px solid var(--border)',
+                  }}
+                  title={`Font size: ${size === 'sm' ? 'Compact (13px)' : size === 'md' ? 'Default (14.5px)' : 'Comfort (16.5px)'}`}
+                >
+                  {size.toUpperCase()}
+                </button>
+              ))}
+            </div>
+
+            {/* Cards Mode Specific: Density & Collapse All */}
+            {viewMode === 'cards' && (
+              <>
+                <button
+                  onClick={() => setIsCompact(!isCompact)}
+                  style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 5,
-                    transition: 'all 0.15s ease',
+                    padding: '4px 10px',
+                    borderRadius: 8,
+                    fontSize: 11.5,
+                    fontWeight: 600,
+                    background: isCompact ? 'var(--accent-bg)' : 'var(--card)',
+                    color: isCompact ? 'var(--accent)' : 'var(--t2)',
+                    border: '1px solid var(--border)',
+                    cursor: 'pointer',
                   }}
+                  title="Toggle compact list view vs detailed cards"
                 >
-                  {type === 'Theory & Concepts' && <Brain style={{ width: 13, height: 13 }} />}
-                  {type === 'Coding & DSA' && <Code2 style={{ width: 13, height: 13 }} />}
-                  {type === 'System Design' && <Layers style={{ width: 13, height: 13 }} />}
-                  <span>{type}</span>
+                  <List style={{ width: 13, height: 13 }} />
+                  <span>{isCompact ? 'Compact View' : 'Comfortable'}</span>
                 </button>
-              );
-            })}
+
+                <button
+                  onClick={handleToggleExpandAll}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    padding: '4px 10px',
+                    borderRadius: 8,
+                    fontSize: 11.5,
+                    fontWeight: 600,
+                    background: 'var(--card)',
+                    color: 'var(--t2)',
+                    border: '1px solid var(--border)',
+                    cursor: 'pointer',
+                  }}
+                  title={areAllExpanded ? 'Collapse all question details' : 'Expand all question details'}
+                >
+                  {areAllExpanded ? <Minimize2 style={{ width: 13, height: 13 }} /> : <Maximize2 style={{ width: 13, height: 13 }} />}
+                  <span>{areAllExpanded ? 'Collapse All' : 'Expand All'}</span>
+                </button>
+              </>
+            )}
+
+            {/* Mistake filter shortcut */}
+            <button
+              onClick={() => setOnlyRejectionLessons(!onlyRejectionLessons)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '4px 10px',
+                borderRadius: 8,
+                fontSize: 11.5,
+                fontWeight: 600,
+                background: onlyRejectionLessons ? 'rgba(245, 158, 11, 0.15)' : 'var(--card)',
+                color: onlyRejectionLessons ? 'var(--warn)' : 'var(--t2)',
+                border: onlyRejectionLessons ? '1px solid var(--warn)' : '1px solid var(--border)',
+                cursor: 'pointer',
+              }}
+              title="Show only questions that have rejection lessons"
+            >
+              <Lightbulb style={{ width: 13, height: 13 }} />
+              <span>{onlyRejectionLessons ? 'Lessons Only' : 'Filter Lessons'}</span>
+            </button>
           </div>
         </div>
 
-        {/* Bottom: Round Switcher Tabs (Round 1, Round 2, Round 3...) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
-          <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--t3)', textTransform: 'uppercase', marginRight: 4, whiteSpace: 'nowrap' }}>
-            Filter by Round:
+        {/* ── QUICK-JUMP TABLE OF CONTENTS (TOC) PILLS ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
+          <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--t3)', textTransform: 'uppercase', marginRight: 4, whiteSpace: 'nowrap' }}>
+            Jump to Round:
           </span>
 
-          <button
-            onClick={() => setSelectedRound('all')}
-            style={{
-              padding: '5px 14px',
-              borderRadius: 20,
-              fontSize: 12,
-              fontWeight: 700,
-              whiteSpace: 'nowrap',
-              cursor: 'pointer',
-              background: selectedRound === 'all' ? 'var(--accent)' : 'var(--card-hover)',
-              color: selectedRound === 'all' ? '#fff' : 'var(--t2)',
-              border: selectedRound === 'all' ? '1px solid var(--accent)' : '1px solid var(--border)',
-            }}
-          >
-            All Rounds ({doc.rounds.length})
-          </button>
+          {viewMode !== 'stepper' && (
+            <button
+              onClick={() => setSelectedRound('all')}
+              style={{
+                padding: '3px 10px',
+                borderRadius: 14,
+                fontSize: 11.5,
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
+                cursor: 'pointer',
+                background: selectedRound === 'all' ? 'var(--accent)' : 'var(--card)',
+                color: selectedRound === 'all' ? '#fff' : 'var(--t2)',
+                border: selectedRound === 'all' ? '1px solid var(--accent)' : '1px solid var(--border)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              All Rounds ({doc.rounds.length})
+            </button>
+          )}
 
-          {doc.rounds.map((round) => {
-            const isSelected = selectedRound === round.roundNumber;
+          {doc.rounds.map((round, idx) => {
+            const isRoundActive =
+              viewMode === 'stepper'
+                ? stepperRoundIndex === idx
+                : selectedRound === round.roundNumber;
+
             return (
               <button
                 key={round.roundNumber}
-                onClick={() => setSelectedRound(round.roundNumber)}
+                onClick={() => handleJumpToRound(round.roundNumber)}
                 style={{
-                  padding: '5px 14px',
-                  borderRadius: 20,
-                  fontSize: 12,
-                  fontWeight: 700,
+                  padding: '3px 10px',
+                  borderRadius: 14,
+                  fontSize: 11.5,
+                  fontWeight: 600,
                   whiteSpace: 'nowrap',
                   cursor: 'pointer',
-                  background: isSelected ? 'var(--accent)' : 'var(--card-hover)',
-                  color: isSelected ? '#fff' : 'var(--t2)',
-                  border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
+                  background: isRoundActive ? 'var(--accent)' : 'var(--card)',
+                  color: isRoundActive ? '#fff' : 'var(--t2)',
+                  border: isRoundActive ? '1px solid var(--accent)' : '1px solid var(--border)',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 6,
+                  gap: 5,
+                  transition: 'all 0.15s ease',
                 }}
               >
-                <span>Round {round.roundNumber}</span>
+                <span>R{round.roundNumber}: {round.roundTitle.length > 24 ? `${round.roundTitle.slice(0, 22)}...` : round.roundTitle}</span>
                 <span
                   style={{
-                    fontSize: 10.5,
-                    padding: '1px 6px',
-                    borderRadius: 10,
-                    background: isSelected ? 'rgba(255, 255, 255, 0.25)' : 'var(--card)',
-                    color: isSelected ? '#fff' : 'var(--t3)',
+                    fontSize: 10,
+                    padding: '0 5px',
+                    borderRadius: 8,
+                    background: isRoundActive ? 'rgba(255, 255, 255, 0.25)' : 'var(--card-hover)',
+                    color: isRoundActive ? '#fff' : 'var(--t3)',
                   }}
                 >
-                  {round.questions.length} Qs
+                  {round.questions.length}
                 </span>
               </button>
             );
@@ -916,15 +1013,148 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Questions List Organized Round by Round ── */}
+      {/* ── Search & Filter Pill Bar ── */}
+      <div
+        className="card"
+        style={{
+          padding: '12px 16px',
+          marginBottom: 20,
+          display: 'flex',
+          gap: 10,
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+        }}
+      >
+        <div style={{ position: 'relative', flex: '1 1 240px' }}>
+          <Search
+            style={{
+              position: 'absolute',
+              left: 11,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: 14,
+              height: 14,
+              color: 'var(--t3)',
+            }}
+          />
+          <input
+            type="text"
+            className="inp"
+            placeholder="Search concepts, questions, theory, mistakes, or code..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ paddingLeft: 34, width: '100%', fontSize: 13, height: 34 }}
+          />
+        </div>
+
+        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+          {['All', 'Theory & Concepts', 'Coding & DSA', 'System Design', 'Behavioral & Leadership'].map((type) => {
+            const isSelected = selectedType === type;
+            return (
+              <button
+                key={type}
+                onClick={() => setSelectedType(type)}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: 6,
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  background: isSelected ? 'var(--accent-bg)' : 'var(--card-hover)',
+                  color: isSelected ? 'var(--accent)' : 'var(--t2)',
+                  border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {type === 'Theory & Concepts' && <Brain style={{ width: 12, height: 12 }} />}
+                {type === 'Coding & DSA' && <Code2 style={{ width: 12, height: 12 }} />}
+                {type === 'System Design' && <Layers style={{ width: 12, height: 12 }} />}
+                <span>{type}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── STEPPER NAVIGATION (Active when viewMode === 'stepper') ── */}
+      {viewMode === 'stepper' && (
+        <div
+          className="card"
+          style={{
+            padding: '12px 18px',
+            marginBottom: 20,
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            boxShadow: 'var(--shadow)',
+          }}
+        >
+          <button
+            onClick={() => setStepperRoundIndex((prev) => Math.max(0, prev - 1))}
+            disabled={stepperRoundIndex === 0}
+            className="btn"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '6px 14px',
+              fontSize: 12.5,
+              fontWeight: 700,
+              opacity: stepperRoundIndex === 0 ? 0.4 : 1,
+              cursor: stepperRoundIndex === 0 ? 'not-allowed' : 'pointer',
+            }}
+          >
+            <ChevronLeft style={{ width: 15, height: 15 }} />
+            <span>Previous Round</span>
+          </button>
+
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Round {stepperRoundIndex + 1} of {doc.rounds.length}
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)' }}>
+              {doc.rounds[stepperRoundIndex]?.roundTitle || 'Round Notes'}
+            </div>
+          </div>
+
+          <button
+            onClick={() => setStepperRoundIndex((prev) => Math.min(doc.rounds.length - 1, prev + 1))}
+            disabled={stepperRoundIndex >= doc.rounds.length - 1}
+            className="btn"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '6px 14px',
+              fontSize: 12.5,
+              fontWeight: 700,
+              opacity: stepperRoundIndex >= doc.rounds.length - 1 ? 0.4 : 1,
+              cursor: stepperRoundIndex >= doc.rounds.length - 1 ? 'not-allowed' : 'pointer',
+            }}
+          >
+            <span>Next Round</span>
+            <ChevronRight style={{ width: 15, height: 15 }} />
+          </button>
+        </div>
+      )}
+
+      {/* ── MAIN CONTENT: RENDER ACCORDING TO VIEW MODE ── */}
       {filteredRounds.length === 0 || totalVisibleQuestions === 0 ? (
-        <div className="card" style={{ padding: 48, textAlign: 'center' }}>
-          <Brain style={{ width: 44, height: 44, margin: '0 auto 12px', color: 'var(--t3)' }} />
+        <div className="card" style={{ padding: 48, textAlign: 'center', background: 'var(--card)', border: '1px solid var(--border)' }}>
+          <Brain style={{ width: 40, height: 40, margin: '0 auto 12px', color: 'var(--t3)' }} />
           <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)' }}>
             No interview questions matched your current filter
           </div>
           <p style={{ fontSize: 13, color: 'var(--t2)', marginTop: 6 }}>
-            Try resetting the search query or selecting "All Rounds" and "All Question Types".
+            Try resetting your search query or selecting "All Rounds" and "All Question Types".
           </p>
           <button
             onClick={() => {
@@ -939,10 +1169,245 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
             Reset All Filters
           </button>
         </div>
+      ) : viewMode === 'reader' ? (
+        /* ══════════════════════════════════════════════════════════════
+           VIEW MODE 1: README / DOCUMENT READER (Clean Article Style)
+           Solves length, scrolling fatigue, and harsh colors.
+           ══════════════════════════════════════════════════════════════ */
+        <div
+          className="card"
+          style={{
+            maxWidth: 880,
+            margin: '0 auto',
+            padding: '36px 40px',
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            boxShadow: 'var(--shadow-md)',
+            borderRadius: 16,
+          }}
+        >
+          {/* Readme Document Header */}
+          <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: 24, marginBottom: 28 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+              {doc.company} • Interview Debrief Document
+            </div>
+            <h1 style={{ fontSize: 26, fontWeight: 800, color: 'var(--t1)', margin: 0, lineHeight: 1.3 }}>
+              {doc.role}
+            </h1>
+            {doc.overview && (
+              <p style={{ fontSize: fontPx, color: 'var(--t2)', marginTop: 12, lineHeight: 1.6 }}>
+                {doc.overview}
+              </p>
+            )}
+          </div>
+
+          {/* Rounds & Questions rendered in clean, flowing document format */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 36 }}>
+            {filteredRounds.map((round) => (
+              <section
+                key={round.roundNumber}
+                id={`round-section-${round.roundNumber}`}
+                style={{
+                  borderBottom: '1px solid var(--border-light)',
+                  paddingBottom: 32,
+                }}
+              >
+                {/* Round Section Header */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <div>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Round {round.roundNumber}
+                    </span>
+                    <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--t1)', margin: '4px 0 0' }}>
+                      {round.roundTitle}
+                    </h2>
+                    {round.roundNotes && (
+                      <div style={{ fontSize: 13, color: 'var(--t3)', marginTop: 4, fontStyle: 'italic' }}>
+                        {round.roundNotes}
+                      </div>
+                    )}
+                  </div>
+
+                  <span style={{ fontSize: 12, color: 'var(--t3)', fontWeight: 600 }}>
+                    {round.questions.length} Qs
+                  </span>
+                </div>
+
+                {/* Questions in this round */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                  {round.questions.map((q) => {
+                    const isSaved = savedVaultIds.has(q.id);
+
+                    return (
+                      <article
+                        key={q.id}
+                        style={{
+                          padding: '20px 22px',
+                          borderRadius: 12,
+                          background: 'var(--card-hover)',
+                          border: '1px solid var(--border)',
+                        }}
+                      >
+                        {/* Question Title & Badges */}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  padding: '2px 8px',
+                                  borderRadius: 6,
+                                  background: 'var(--accent-bg)',
+                                  color: 'var(--accent)',
+                                }}
+                              >
+                                {q.type}
+                              </span>
+
+                              <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--t3)', background: 'var(--card)', padding: '2px 7px', borderRadius: 4, border: '1px solid var(--border)' }}>
+                                {q.category}
+                              </span>
+
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  color: q.difficulty === 'Hard' ? 'var(--danger)' : q.difficulty === 'Medium' ? 'var(--warn)' : 'var(--success)',
+                                }}
+                              >
+                                • {q.difficulty}
+                              </span>
+
+                              {q.timeComplexity && (
+                                <span style={{ fontSize: 11, color: 'var(--t3)', marginLeft: 4 }}>
+                                  [Time: {q.timeComplexity}]
+                                </span>
+                              )}
+                            </div>
+
+                            <h3 style={{ fontSize: fontPx + 2, fontWeight: 800, color: 'var(--t1)', margin: 0, lineHeight: 1.4 }}>
+                              {q.question}
+                            </h3>
+                          </div>
+
+                          {/* Quick Actions (Vault & Copy) */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                            <button
+                              onClick={() => handleSaveToVault(q, round.roundTitle)}
+                              disabled={isSaved}
+                              title="Save to Code Vault"
+                              className="btn-ghost"
+                              style={{ padding: 6, borderRadius: 6, color: isSaved ? 'var(--success)' : 'var(--t3)' }}
+                            >
+                              {isSaved ? <CheckCircle2 style={{ width: 14, height: 14 }} /> : <Sparkles style={{ width: 14, height: 14 }} />}
+                            </button>
+
+                            <button
+                              onClick={() => handleCopyQuestion(q)}
+                              title="Copy Question & Answer"
+                              className="btn-ghost"
+                              style={{ padding: 6, borderRadius: 6, color: 'var(--t3)' }}
+                            >
+                              {copiedQId === q.id ? <Check style={{ width: 14, height: 14, color: 'var(--success)' }} /> : <Copy style={{ width: 14, height: 14 }} />}
+                            </button>
+
+                            <button
+                              onClick={() => handleOpenEditModal(round.roundNumber, q)}
+                              title="Edit Question"
+                              className="btn-ghost"
+                              style={{ padding: 6, borderRadius: 6, color: 'var(--t3)' }}
+                            >
+                              <Edit3 style={{ width: 14, height: 14 }} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Formatted Answer / Theory Explanation */}
+                        <div style={{ marginTop: 12 }}>
+                          <MarkdownTextRenderer content={q.answer} fontSize={fontPx} />
+                        </div>
+
+                        {/* Optional Code Snippet */}
+                        {q.codeSnippet && (
+                          <div style={{ marginTop: 14 }}>
+                            <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--t3)', textTransform: 'uppercase', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <Code2 style={{ width: 13, height: 13, color: 'var(--accent)' }} />
+                              <span>Implementation ({q.codeLanguage || 'code'})</span>
+                            </div>
+                            <CodeInterpreterViewer
+                              code={q.codeSnippet}
+                              language={q.codeLanguage || 'python'}
+                              title={q.question}
+                            />
+                          </div>
+                        )}
+
+                        {/* Rejection Retrospective Lesson Callout (Calm, legible contrast) */}
+                        {q.rejectionLearning && (
+                          <div
+                            style={{
+                              marginTop: 16,
+                              padding: '12px 16px',
+                              borderRadius: 8,
+                              background: 'var(--card)',
+                              border: '1px solid var(--border)',
+                              borderLeft: '3px solid var(--warn)',
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                              <AlertTriangle style={{ width: 14, height: 14, color: 'var(--warn)' }} />
+                              <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                                Common Pitfall & Rejection Trap:
+                              </span>
+                            </div>
+                            <p style={{ fontSize: fontPx - 0.5, color: 'var(--t2)', margin: '0 0 8px', lineHeight: 1.5 }}>
+                              {q.rejectionLearning.identifiedMistake}
+                            </p>
+
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, paddingTop: 6, borderTop: '1px solid var(--border-light)' }}>
+                              <Lightbulb style={{ width: 14, height: 14, color: 'var(--success)', flexShrink: 0, marginTop: 2 }} />
+                              <div>
+                                <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--success)' }}>
+                                  Key Learning:
+                                </span>
+                                <p style={{ fontSize: fontPx - 0.5, color: 'var(--t1)', margin: '2px 0 0', lineHeight: 1.5 }}>
+                                  {q.rejectionLearning.whatToLearn}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Follow-ups */}
+                        {q.followUps && q.followUps.length > 0 && (
+                          <div style={{ marginTop: 12, padding: '8px 12px', borderRadius: 6, background: 'var(--card)', border: '1px solid var(--border-light)' }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 4 }}>
+                              Interviewer Follow-ups:
+                            </div>
+                            <ul style={{ margin: 0, paddingLeft: 18, fontSize: fontPx - 1, color: 'var(--t2)', lineHeight: 1.5 }}>
+                              {q.followUps.map((f, fIdx) => (
+                                <li key={fIdx}>{f}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+          </div>
+        </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+        /* ══════════════════════════════════════════════════════════════
+           VIEW MODE 2 & 3: CARD STUDIO & ROUND STEPPER
+           Supports Compact Mode and Collapse/Expand All controls.
+           ══════════════════════════════════════════════════════════════ */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           {filteredRounds.map((round) => (
-            <div key={round.roundNumber} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div key={round.roundNumber} id={`round-section-${round.roundNumber}`} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {/* Round Header Bar */}
               <div
                 style={{
@@ -951,7 +1416,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                   justifyContent: 'space-between',
                   padding: '10px 16px',
                   borderRadius: 10,
-                  background: 'var(--card-hover)',
+                  background: 'var(--card)',
                   border: '1px solid var(--border)',
                   borderLeft: '4px solid var(--accent)',
                   flexWrap: 'wrap',
@@ -978,7 +1443,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                     </h3>
                   </div>
                   {round.roundNotes && (
-                    <div style={{ fontSize: 12.5, color: 'var(--t2)', marginTop: 4 }}>
+                    <div style={{ fontSize: 12.5, color: 'var(--t3)', marginTop: 3 }}>
                       {round.roundNotes}
                     </div>
                   )}
@@ -991,11 +1456,11 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: 5,
+                      gap: 4,
                       padding: '4px 10px',
                       fontSize: 11.5,
-                      fontWeight: 700,
-                      background: 'var(--card)',
+                      fontWeight: 600,
+                      background: 'var(--card-hover)',
                       border: '1px solid var(--border)',
                       color: 'var(--accent)',
                     }}
@@ -1008,7 +1473,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                     onClick={() => handleDeleteRound(round.roundNumber, round.roundTitle)}
                     className="btn-ghost"
                     title="Delete Round"
-                    style={{ padding: 6, borderRadius: 6, color: '#ef4444' }}
+                    style={{ padding: 6, borderRadius: 6, color: 'var(--danger)' }}
                   >
                     <Trash2 style={{ width: 13, height: 13 }} />
                   </button>
@@ -1019,13 +1484,87 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                 </div>
               </div>
 
-              {/* Questions Cards in this Round */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {/* Questions in this Round */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {round.questions.map((q) => {
-                  const isExpanded = !expandedIds.has(q.id); // Expanded by default for easy scanning
+                  const isExpanded = expandedIds.has(q.id);
                   const isSaved = savedVaultIds.has(q.id);
-                  const isTheory = q.type === 'Theory & Concepts';
 
+                  // COMPACT LIST ACCORDION VIEW
+                  if (isCompact) {
+                    return (
+                      <div
+                        key={q.id}
+                        className="card"
+                        style={{
+                          padding: '10px 16px',
+                          background: 'var(--card)',
+                          border: '1px solid var(--border)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 8,
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                          <div
+                            onClick={() => toggleExpand(q.id)}
+                            style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, cursor: 'pointer' }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                padding: '2px 7px',
+                                borderRadius: 4,
+                                background: 'var(--accent-bg)',
+                                color: 'var(--accent)',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {q.type === 'Theory & Concepts' ? 'Theory' : q.type === 'Coding & DSA' ? 'Coding' : q.type}
+                            </span>
+                            <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--t1)', flex: 1 }}>
+                              {q.question}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                color: q.difficulty === 'Hard' ? 'var(--danger)' : q.difficulty === 'Medium' ? 'var(--warn)' : 'var(--success)',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {q.difficulty}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <button
+                              onClick={() => toggleExpand(q.id)}
+                              className="btn-ghost"
+                              style={{ padding: 5, borderRadius: 6, color: 'var(--t3)' }}
+                            >
+                              {isExpanded ? <ChevronUp style={{ width: 14, height: 14 }} /> : <ChevronDown style={{ width: 14, height: 14 }} />}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Expanded details inside compact mode */}
+                        {isExpanded && (
+                          <div style={{ paddingTop: 10, borderTop: '1px solid var(--border-light)' }}>
+                            <MarkdownTextRenderer content={q.answer} fontSize={fontPx} />
+                            {q.codeSnippet && (
+                              <div style={{ marginTop: 10 }}>
+                                <CodeInterpreterViewer code={q.codeSnippet} language={q.codeLanguage || 'python'} title={q.question} />
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  // COMFORTABLE DETAILED CARD VIEW
                   return (
                     <motion.div
                       key={q.id}
@@ -1034,7 +1573,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                       style={{
                         padding: 0,
                         overflow: 'hidden',
-                        border: isTheory ? '1.5px solid rgba(139, 92, 246, 0.35)' : '1px solid var(--border)',
+                        border: '1px solid var(--border)',
                         background: 'var(--card)',
                         boxShadow: 'var(--shadow)',
                       }}
@@ -1042,94 +1581,74 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                       {/* Card Header */}
                       <div
                         style={{
-                          padding: '16px 20px',
+                          padding: '14px 18px',
                           display: 'flex',
                           alignItems: 'flex-start',
                           justifyContent: 'space-between',
-                          gap: 14,
-                          background: isTheory
-                            ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, var(--card) 100%)'
-                            : 'var(--card)',
+                          gap: 12,
+                          background: 'var(--card)',
                           borderBottom: isExpanded ? '1px solid var(--border)' : 'none',
                         }}
                       >
                         <div style={{ flex: 1 }}>
                           {/* Tags & Badges */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-                            {/* Distinct Theory / Coding Badge */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
                             <span
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: 5,
-                                fontSize: 11.5,
-                                fontWeight: 800,
-                                padding: '3px 10px',
-                                borderRadius: 12,
-                                background: isTheory ? 'rgba(139, 92, 246, 0.15)' : 'rgba(14, 165, 233, 0.15)',
-                                color: isTheory ? '#8b5cf6' : '#0ea5e9',
-                                border: isTheory ? '1px solid rgba(139, 92, 246, 0.3)' : '1px solid rgba(14, 165, 233, 0.3)',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.03em',
-                              }}
-                            >
-                              {isTheory ? (
-                                <>
-                                  <Brain style={{ width: 12, height: 12 }} />
-                                  <span>Theory & Core Concept</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Code2 style={{ width: 12, height: 12 }} />
-                                  <span>{q.type}</span>
-                                </>
-                              )}
-                            </span>
-
-                            {/* Category */}
-                            <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--t2)', background: 'var(--card-hover)', padding: '3px 8px', borderRadius: 6, border: '1px solid var(--border)' }}>
-                              {q.category}
-                            </span>
-
-                            {/* Difficulty */}
-                            <span
-                              style={{
+                                gap: 4,
                                 fontSize: 11,
                                 fontWeight: 700,
                                 padding: '2px 8px',
                                 borderRadius: 6,
-                                background: q.difficulty === 'Hard' ? 'rgba(239, 68, 68, 0.12)' : q.difficulty === 'Medium' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(16, 185, 129, 0.12)',
-                                color: q.difficulty === 'Hard' ? '#ef4444' : q.difficulty === 'Medium' ? '#f59e0b' : '#10b981',
+                                background: 'var(--accent-bg)',
+                                color: 'var(--accent)',
+                                textTransform: 'uppercase',
                               }}
                             >
-                              {q.difficulty}
+                              {q.type === 'Theory & Concepts' ? <Brain style={{ width: 11, height: 11 }} /> : <Code2 style={{ width: 11, height: 11 }} />}
+                              <span>{q.type}</span>
                             </span>
 
-                            {/* Complexities */}
+                            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--t3)', background: 'var(--card-hover)', padding: '2px 7px', borderRadius: 4, border: '1px solid var(--border)' }}>
+                              {q.category}
+                            </span>
+
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: q.difficulty === 'Hard' ? 'var(--danger)' : q.difficulty === 'Medium' ? 'var(--warn)' : 'var(--success)',
+                              }}
+                            >
+                              • {q.difficulty}
+                            </span>
+
                             {q.timeComplexity && (
-                              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-bg)', padding: '2px 8px', borderRadius: 6 }}>
-                                Time: {q.timeComplexity}
+                              <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--t3)' }}>
+                                [Time: {q.timeComplexity}]
                               </span>
                             )}
                           </div>
 
                           {/* Question Text */}
-                          <h4 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', margin: 0, lineHeight: 1.4 }}>
+                          <h4 style={{ fontSize: 15.5, fontWeight: 800, color: 'var(--t1)', margin: 0, lineHeight: 1.4 }}>
                             {q.question}
                           </h4>
 
                           {/* Key Concepts Pills */}
                           {q.keyConcepts.length > 0 && (
-                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 6 }}>
                               {q.keyConcepts.map((concept, cIdx) => (
                                 <span
                                   key={cIdx}
                                   style={{
-                                    fontSize: 11,
+                                    fontSize: 10.5,
                                     fontWeight: 600,
                                     color: 'var(--t3)',
                                     background: 'var(--card-hover)',
-                                    padding: '2px 7px',
+                                    padding: '1px 6px',
                                     borderRadius: 4,
                                   }}
                                 >
@@ -1142,7 +1661,6 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
 
                         {/* Actions Top Right */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                          {/* Save to Code Vault */}
                           <button
                             onClick={() => handleSaveToVault(q, round.roundTitle)}
                             disabled={isSaved}
@@ -1150,84 +1668,68 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
-                              gap: 6,
-                              padding: '5px 12px',
-                              borderRadius: 8,
-                              fontSize: 12,
+                              gap: 5,
+                              padding: '4px 10px',
+                              borderRadius: 6,
+                              fontSize: 11.5,
                               fontWeight: 700,
                               cursor: isSaved ? 'default' : 'pointer',
-                              background: isSaved ? 'rgba(16, 185, 129, 0.15)' : 'var(--accent-bg)',
-                              color: isSaved ? '#10b981' : 'var(--accent)',
-                              border: isSaved ? '1px solid #10b981' : '1px solid var(--accent)',
+                              background: isSaved ? 'var(--success-bg)' : 'var(--accent-bg)',
+                              color: isSaved ? 'var(--success)' : 'var(--accent)',
+                              border: isSaved ? '1px solid var(--success)' : '1px solid var(--accent)',
                             }}
                           >
-                            {isSaved ? (
-                              <>
-                                <CheckCircle2 style={{ width: 13, height: 13 }} />
-                                <span>Saved in Vault</span>
-                              </>
-                            ) : (
-                              <>
-                                <Sparkles style={{ width: 13, height: 13 }} />
-                                <span>Save to Vault</span>
-                              </>
-                            )}
+                            {isSaved ? <CheckCircle2 style={{ width: 12, height: 12 }} /> : <Sparkles style={{ width: 12, height: 12 }} />}
+                            <span>{isSaved ? 'In Vault' : 'Vault'}</span>
                           </button>
 
-                          {/* Copy */}
                           <button
                             onClick={() => handleCopyQuestion(q)}
                             title="Copy Question & Notes"
                             className="btn-ghost"
-                            style={{ padding: 7, borderRadius: 8, border: '1px solid var(--border)', color: 'var(--t2)' }}
+                            style={{ padding: 6, borderRadius: 6, border: '1px solid var(--border)', color: 'var(--t2)' }}
                           >
-                            {copiedQId === q.id ? <Check style={{ width: 14, height: 14, color: '#10b981' }} /> : <Copy style={{ width: 14, height: 14 }} />}
+                            {copiedQId === q.id ? <Check style={{ width: 13, height: 13, color: 'var(--success)' }} /> : <Copy style={{ width: 13, height: 13 }} />}
                           </button>
 
-                          {/* Edit Question */}
                           <button
                             onClick={() => handleOpenEditModal(round.roundNumber, q)}
-                            title="Edit Question & Notes"
+                            title="Edit Question"
                             className="btn-ghost"
-                            style={{ padding: 7, borderRadius: 8, border: '1px solid var(--border)', color: 'var(--t2)' }}
+                            style={{ padding: 6, borderRadius: 6, border: '1px solid var(--border)', color: 'var(--t2)' }}
                           >
-                            <Edit3 style={{ width: 14, height: 14 }} />
+                            <Edit3 style={{ width: 13, height: 13 }} />
                           </button>
 
-                          {/* Delete Question */}
                           <button
                             onClick={() => handleDeleteQuestion(round.roundNumber, q.id, q.question)}
                             title="Delete Question"
                             className="btn-ghost"
-                            style={{ padding: 7, borderRadius: 8, border: '1px solid var(--border)', color: '#ef4444' }}
+                            style={{ padding: 6, borderRadius: 6, border: '1px solid var(--border)', color: 'var(--danger)' }}
                           >
-                            <Trash2 style={{ width: 14, height: 14 }} />
+                            <Trash2 style={{ width: 13, height: 13 }} />
                           </button>
 
-                          {/* Collapse / Expand */}
                           <button
                             onClick={() => toggleExpand(q.id)}
                             className="btn-ghost"
-                            style={{ padding: 7, borderRadius: 8, border: '1px solid var(--border)', color: 'var(--t3)' }}
+                            style={{ padding: 6, borderRadius: 6, border: '1px solid var(--border)', color: 'var(--t3)' }}
                           >
                             {isExpanded ? <ChevronUp style={{ width: 14, height: 14 }} /> : <ChevronDown style={{ width: 14, height: 14 }} />}
                           </button>
                         </div>
                       </div>
 
-                      {/* Card Body */}
+                      {/* Card Body (when expanded) */}
                       {isExpanded && (
-                        <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
-                          {/* Answer / Theory Explanation Box */}
+                        <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                          {/* Answer Box */}
                           <div
                             style={{
                               background: 'var(--card-hover)',
-                              borderRadius: 10,
-                              padding: '14px 16px',
+                              borderRadius: 8,
+                              padding: '12px 16px',
                               border: '1px solid var(--border)',
-                              fontSize: 13.5,
-                              lineHeight: 1.65,
-                              color: 'var(--t1)',
                             }}
                           >
                             <div
@@ -1235,120 +1737,100 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 6,
-                                fontSize: 12,
+                                fontSize: 11.5,
                                 fontWeight: 800,
-                                color: isTheory ? '#8b5cf6' : 'var(--accent)',
+                                color: 'var(--accent)',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.04em',
                                 marginBottom: 6,
                               }}
                             >
-                              <BookOpen style={{ width: 14, height: 14 }} />
-                              <span>{isTheory ? 'Theory Notes & Model Explanation' : 'Approach & Solution Walkthrough'}</span>
+                              <BookOpen style={{ width: 13, height: 13 }} />
+                              <span>Model Answer / Explanation</span>
                             </div>
-                            <div style={{ whiteSpace: 'pre-line' }}>{q.answer}</div>
+                            <MarkdownTextRenderer content={q.answer} fontSize={fontPx} />
                           </div>
 
-                          {/* Code Interpreter View (if question has code) */}
+                          {/* Code Interpreter View */}
                           {q.codeSnippet && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                              <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--t2)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <Code2 style={{ width: 14, height: 14, color: 'var(--accent)' }} />
-                                <span>Code Implementation (Interpreter View)</span>
+                              <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--t2)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <Code2 style={{ width: 13, height: 13, color: 'var(--accent)' }} />
+                                <span>Code Implementation ({q.codeLanguage || 'code'})</span>
                               </div>
                               <CodeInterpreterViewer
                                 code={q.codeSnippet}
                                 language={q.codeLanguage || 'python'}
-                                title={`${q.question.slice(0, 35)}...`}
+                                title={q.question}
                               />
                             </div>
                           )}
 
-                          {/* Rejection Retrospective & Mistake Lessons Box */}
+                          {/* Rejection Retrospective Callout (Soft, eye-friendly contrast) */}
                           {q.rejectionLearning && (
                             <div
                               style={{
-                                borderRadius: 10,
-                                padding: '14px 16px',
-                                background: 'rgba(239, 68, 68, 0.04)',
-                                border: '1px solid rgba(239, 68, 68, 0.2)',
+                                borderRadius: 8,
+                                padding: '12px 14px',
+                                background: 'var(--card)',
+                                border: '1px solid var(--border)',
+                                borderLeft: '3px solid var(--warn)',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: 10,
+                                gap: 8,
                               }}
                             >
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <AlertTriangle style={{ width: 15, height: 15, color: '#ef4444' }} />
-                                <span style={{ fontSize: 12, fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                                  Identified Trap / Common Mistake:
+                                <AlertTriangle style={{ width: 14, height: 14, color: 'var(--warn)' }} />
+                                <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                                  Identified Mistake / Rejection Trap:
                                 </span>
-                                <span
-                                  style={{
-                                    fontSize: 10.5,
-                                    fontWeight: 700,
-                                    padding: '1px 6px',
-                                    borderRadius: 6,
-                                    background: 'rgba(239, 68, 68, 0.12)',
-                                    color: '#ef4444',
-                                    marginLeft: 'auto',
-                                  }}
-                                >
+                                <span style={{ fontSize: 10.5, color: 'var(--t3)', marginLeft: 'auto' }}>
                                   {q.rejectionLearning.category}
                                 </span>
                               </div>
 
-                              <div style={{ fontSize: 13, color: 'var(--t1)', lineHeight: 1.5, fontWeight: 500 }}>
+                              <div style={{ fontSize: fontPx - 0.5, color: 'var(--t1)', lineHeight: 1.5 }}>
                                 {q.rejectionLearning.identifiedMistake}
                               </div>
 
                               <div
                                 style={{
-                                  padding: '10px 12px',
-                                  borderRadius: 8,
-                                  background: 'rgba(16, 185, 129, 0.06)',
-                                  border: '1px solid rgba(16, 185, 129, 0.2)',
+                                  padding: '8px 10px',
+                                  borderRadius: 6,
+                                  background: 'var(--card-hover)',
+                                  border: '1px solid var(--border-light)',
                                   display: 'flex',
                                   flexDirection: 'column',
-                                  gap: 6,
+                                  gap: 4,
                                 }}
                               >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 800, color: '#10b981', textTransform: 'uppercase' }}>
-                                  <Lightbulb style={{ width: 13, height: 13 }} />
-                                  <span>What to Learn from this Rejection:</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 800, color: 'var(--success)', textTransform: 'uppercase' }}>
+                                  <Lightbulb style={{ width: 12, height: 12 }} />
+                                  <span>What to Learn:</span>
                                 </div>
-                                <div style={{ fontSize: 12.5, color: 'var(--t1)', lineHeight: 1.5 }}>
+                                <div style={{ fontSize: fontPx - 1, color: 'var(--t1)', lineHeight: 1.5 }}>
                                   {q.rejectionLearning.whatToLearn}
                                 </div>
-
-                                {q.rejectionLearning.correctiveAction.length > 0 && (
-                                  <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                                    {q.rejectionLearning.correctiveAction.map((action, aIdx) => (
-                                      <div key={aIdx} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: 'var(--t2)' }}>
-                                        <ArrowRight style={{ width: 11, height: 11, color: '#10b981', flexShrink: 0 }} />
-                                        <span>{action}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
                               </div>
                             </div>
                           )}
 
-                          {/* Follow-up Questions Box */}
+                          {/* Follow-ups */}
                           {q.followUps && q.followUps.length > 0 && (
                             <div
                               style={{
-                                background: 'rgba(99, 102, 241, 0.05)',
-                                borderRadius: 8,
-                                padding: '10px 14px',
-                                border: '1px solid rgba(99, 102, 241, 0.18)',
+                                background: 'var(--card-hover)',
+                                borderRadius: 6,
+                                padding: '8px 12px',
+                                border: '1px solid var(--border-light)',
                               }}
                             >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 800, color: 'var(--accent)', marginBottom: 6 }}>
-                                <MessageSquare style={{ width: 13, height: 13 }} />
-                                <span>Interviewer Follow-ups & Deep Dive Variations:</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 800, color: 'var(--accent)', marginBottom: 4 }}>
+                                <MessageSquare style={{ width: 12, height: 12 }} />
+                                <span>Follow-up Variations:</span>
                               </div>
-                              <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: 'var(--t1)', lineHeight: 1.5 }}>
+                              <ul style={{ margin: 0, paddingLeft: 18, fontSize: fontPx - 1, color: 'var(--t1)', lineHeight: 1.5 }}>
                                 {q.followUps.map((f, fIdx) => (
                                   <li key={fIdx}>{f}</li>
                                 ))}
@@ -1366,7 +1848,40 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
         </div>
       )}
 
-      {/* ── Paste Markdown Modal ── */}
+      {/* ── FLOATING BACK TO TOP BUTTON ── */}
+      <AnimatePresence>
+        {showBackToTop && (
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            style={{
+              position: 'fixed',
+              bottom: 24,
+              right: 24,
+              zIndex: 50,
+              padding: '8px 14px',
+              borderRadius: 20,
+              background: 'var(--card)',
+              color: 'var(--t1)',
+              border: '1px solid var(--border)',
+              boxShadow: 'var(--shadow-lg)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            <ArrowUp style={{ width: 14, height: 14, color: 'var(--accent)' }} />
+            <span>Top</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* ── PASTE MARKDOWN MODAL ── */}
       <AnimatePresence>
         {pasteModalOpen && (
           <motion.div
@@ -1466,7 +1981,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* ── Edit / Add Question Modal ── */}
+      {/* ── EDIT / ADD QUESTION MODAL ── */}
       <AnimatePresence>
         {editingModalOpen && (
           <motion.div
@@ -1653,14 +2168,15 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                   style={{
                     padding: 14,
                     borderRadius: 10,
-                    background: 'rgba(239, 68, 68, 0.04)',
-                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    background: 'var(--card-hover)',
+                    border: '1px solid var(--border)',
+                    borderLeft: '3px solid var(--warn)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 10,
                   }}
                 >
-                  <div style={{ fontSize: 12, fontWeight: 800, color: '#ef4444', textTransform: 'uppercase' }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--warn)', textTransform: 'uppercase' }}>
                     Rejection Retrospective & Mistake Lessons
                   </div>
                   <div>
