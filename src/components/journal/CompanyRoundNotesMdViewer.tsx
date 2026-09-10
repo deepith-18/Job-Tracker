@@ -35,7 +35,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseInterviewMarkdown } from '../../utils/parseInterviewMarkdown';
-import { PRESET_SAMPLE_FILES } from '../../data/sampleInterviewNotes';
 import { CodeInterpreterViewer } from '../common/CodeInterpreterViewer';
 import { MarkdownTextRenderer } from './MarkdownTextRenderer';
 import { useCodeQuestions } from '../../hooks/useCodeQuestions';
@@ -340,18 +339,6 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
       addToast('Markdown Loaded', `Loaded debrief for ${parsed.company}`, 'success');
     };
     reader.readAsText(file);
-  };
-
-  const handleLoadSample = (sampleId: string) => {
-    const sample = PRESET_SAMPLE_FILES.find((s) => s.id === sampleId);
-    if (!sample) return;
-    const parsed = parseInterviewMarkdown(sample.markdown, `${sample.id}.md`);
-    setDoc(parsed);
-    setSelectedRound('all');
-    setStepperRoundIndex(0);
-    setSelectedType('All');
-    setExpandedIds(new Set());
-    addToast('Sample Loaded', `Loaded ${sample.title}`, 'info');
   };
 
   // Delete a single company's debrief notes from library
@@ -969,57 +956,61 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
               <span>Paste Notes</span>
             </button>
 
-            <button
-              onClick={handleCopyRawMarkdown}
-              className="btn-ghost"
-              title="Copy entire raw Markdown to clipboard"
-              style={{
-                padding: 7,
-                borderRadius: 8,
-                border: '1px solid var(--border)',
-                color: copiedRaw ? 'var(--success)' : 'var(--t2)',
-                background: 'var(--card)',
-              }}
-            >
-              {copiedRaw ? <Check style={{ width: 15, height: 15 }} /> : <Copy style={{ width: 15, height: 15 }} />}
-            </button>
+            {!doc.isEmpty && Boolean(doc.rawMarkdown) && (
+              <>
+                <button
+                  onClick={handleCopyRawMarkdown}
+                  className="btn-ghost"
+                  title="Copy entire raw Markdown to clipboard"
+                  style={{
+                    padding: 7,
+                    borderRadius: 8,
+                    border: '1px solid var(--border)',
+                    color: copiedRaw ? 'var(--success)' : 'var(--t2)',
+                    background: 'var(--card)',
+                  }}
+                >
+                  {copiedRaw ? <Check style={{ width: 15, height: 15 }} /> : <Copy style={{ width: 15, height: 15 }} />}
+                </button>
 
-            <button
-              onClick={handleExportMarkdown}
-              className="btn-ghost"
-              title="Download clean Markdown file"
-              style={{
-                padding: 7,
-                borderRadius: 8,
-                border: '1px solid var(--border)',
-                color: 'var(--t2)',
-                background: 'var(--card)',
-              }}
-            >
-              <Download style={{ width: 15, height: 15 }} />
-            </button>
+                <button
+                  onClick={handleExportMarkdown}
+                  className="btn-ghost"
+                  title="Download clean Markdown file"
+                  style={{
+                    padding: 7,
+                    borderRadius: 8,
+                    border: '1px solid var(--border)',
+                    color: 'var(--t2)',
+                    background: 'var(--card)',
+                  }}
+                >
+                  <Download style={{ width: 15, height: 15 }} />
+                </button>
 
-            <button
-              onClick={handleDeleteAll}
-              className="btn-ghost"
-              title="Delete entire document and clear all notes"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                padding: '6px 12px',
-                borderRadius: 8,
-                border: '1px solid rgba(239, 68, 68, 0.35)',
-                color: 'var(--danger)',
-                background: 'rgba(239, 68, 68, 0.08)',
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              <Trash2 style={{ width: 14, height: 14 }} />
-              <span>Delete All</span>
-            </button>
+                <button
+                  onClick={handleDeleteAll}
+                  className="btn-ghost"
+                  title="Delete entire document and clear all notes"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    padding: '6px 12px',
+                    borderRadius: 8,
+                    border: '1px solid rgba(239, 68, 68, 0.35)',
+                    color: 'var(--danger)',
+                    background: 'rgba(239, 68, 68, 0.08)',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Trash2 style={{ width: 14, height: 14 }} />
+                  <span>Delete All</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -1093,292 +1084,275 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
             })}
           </div>
         )}
-
-        {/* Preset Sample Debrief Switchers (Only show when empty so user's workspace stays completely clean) */}
-        {doc.isEmpty && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingTop: 10, borderTop: '1px solid var(--border-light)' }}>
-            <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Or explore with a sample debrief:
-            </span>
-            {PRESET_SAMPLE_FILES.map((sample) => (
-              <button
-                key={sample.id}
-                onClick={() => handleLoadSample(sample.id)}
-                style={{
-                  padding: '3px 11px',
-                  borderRadius: 12,
-                  fontSize: 11.5,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  background: doc.company.toLowerCase().includes(sample.company.toLowerCase()) ? 'var(--accent-bg)' : 'var(--card)',
-                  color: doc.company.toLowerCase().includes(sample.company.toLowerCase()) ? 'var(--accent)' : 'var(--t2)',
-                  border: doc.company.toLowerCase().includes(sample.company.toLowerCase()) ? '1px solid var(--accent)' : '1px solid var(--border)',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                {sample.title}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
-      {/* ── STICKY READING & VIEW CONTROL BAR (Glassmorphic) ── */}
-      <div
-        style={{
-          position: 'sticky',
-          top: 70,
-          zIndex: 40,
-          background: 'var(--nav-bg)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          borderRadius: 14,
-          padding: '10px 18px',
-          marginBottom: 16,
-          border: '1px solid var(--border)',
-          boxShadow: 'var(--shadow-md)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 10,
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-          {/* View Mode Switcher: Readme Reader | Card Studio | Round Stepper */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--card)', padding: 3, borderRadius: 10, border: '1px solid var(--border)' }}>
-            <button
-              onClick={() => setViewMode('reader')}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 14px',
-                borderRadius: 8,
-                fontSize: 12.5,
-                fontWeight: 700,
-                cursor: 'pointer',
-                background: viewMode === 'reader' ? 'var(--accent)' : 'transparent',
-                color: viewMode === 'reader' ? '#fff' : 'var(--t2)',
-                border: 'none',
-                transition: 'all 0.15s ease',
-              }}
-              title="Clean continuous article reading mode (like Notion or GitHub README)"
-            >
-              <BookOpen style={{ width: 14, height: 14 }} />
-              <span>Readme Reader</span>
-            </button>
-
-            <button
-              onClick={() => setViewMode('cards')}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 14px',
-                borderRadius: 8,
-                fontSize: 12.5,
-                fontWeight: 700,
-                cursor: 'pointer',
-                background: viewMode === 'cards' ? 'var(--accent)' : 'transparent',
-                color: viewMode === 'cards' ? '#fff' : 'var(--t2)',
-                border: 'none',
-                transition: 'all 0.15s ease',
-              }}
-              title="Interactive cards view with question actions and collapse controls"
-            >
-              <LayoutGrid style={{ width: 14, height: 14 }} />
-              <span>Card Studio</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setViewMode('stepper');
-                setSelectedRound('all');
-              }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 14px',
-                borderRadius: 8,
-                fontSize: 12.5,
-                fontWeight: 700,
-                cursor: 'pointer',
-                background: viewMode === 'stepper' ? 'var(--accent)' : 'transparent',
-                color: viewMode === 'stepper' ? '#fff' : 'var(--t2)',
-                border: 'none',
-                transition: 'all 0.15s ease',
-              }}
-              title="Step through one round at a time — prevents long vertical scrolling"
-            >
-              <Compass style={{ width: 14, height: 14 }} />
-              <span>Round Stepper</span>
-            </button>
-          </div>
-
-          {/* Reader Sub-Mode (When in Reader Mode) */}
-          {viewMode === 'reader' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'var(--card)', padding: 2, borderRadius: 8, border: '1px solid var(--border)' }}>
-              <button
-                onClick={() => setReaderSubMode('structured')}
-                style={{
-                  padding: '3px 10px',
-                  borderRadius: 6,
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                  background: readerSubMode === 'structured' ? 'var(--accent-bg)' : 'transparent',
-                  color: readerSubMode === 'structured' ? 'var(--accent)' : 'var(--t3)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 5,
-                }}
-                title="Interactive Document with questions, answers, code runner, vault saving, and edit controls"
-              >
-                <Sparkles style={{ width: 12, height: 12 }} />
-                <span>Interactive Article</span>
-              </button>
-              <button
-                onClick={() => setReaderSubMode('formatted')}
-                style={{
-                  padding: '3px 10px',
-                  borderRadius: 6,
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                  background: readerSubMode === 'formatted' ? 'var(--accent-bg)' : 'transparent',
-                  color: readerSubMode === 'formatted' ? 'var(--accent)' : 'var(--t3)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 5,
-                }}
-                title="Continuous Plain Markdown Text"
-              >
-                <FileText style={{ width: 12, height: 12 }} />
-                <span>Plain Text</span>
-              </button>
-              <button
-                onClick={() => setReaderSubMode('raw')}
-                style={{
-                  padding: '3px 10px',
-                  borderRadius: 6,
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                  background: readerSubMode === 'raw' ? 'var(--accent-bg)' : 'transparent',
-                  color: readerSubMode === 'raw' ? 'var(--accent)' : 'var(--t3)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 5,
-                }}
-                title="Raw Markdown Source"
-              >
-                <Code2 style={{ width: 12, height: 12 }} />
-                <span>Raw MD</span>
-              </button>
-            </div>
-          )}
-
-          {/* Reading Comfort & Density Controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            {/* Font Size Selector */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'var(--card)', padding: '3px 6px', borderRadius: 8, border: '1px solid var(--border)' }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t3)', paddingRight: 2 }}>
-                <Type style={{ width: 13, height: 13, display: 'inline', verticalAlign: '-2px' }} />
-              </span>
-              {(['sm', 'md', 'lg'] as FontSize[]).map((size) => (
+      {/* ── TOOLBARS & VIEW CONTROLS (Only visible when document is loaded) ── */}
+      {!doc.isEmpty && Boolean(doc.rawMarkdown) && (
+        <>
+          {/* ── STICKY READING & VIEW CONTROL BAR (Glassmorphic) ── */}
+          <div
+            style={{
+              position: 'sticky',
+              top: 70,
+              zIndex: 40,
+              background: 'var(--nav-bg)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              borderRadius: 14,
+              padding: '10px 18px',
+              marginBottom: 16,
+              border: '1px solid var(--border)',
+              boxShadow: 'var(--shadow-md)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+              {/* View Mode Switcher: Readme Reader | Card Studio | Round Stepper */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--card)', padding: 3, borderRadius: 10, border: '1px solid var(--border)' }}>
                 <button
-                  key={size}
-                  onClick={() => setFontSize(size)}
+                  onClick={() => setViewMode('reader')}
                   style={{
-                    padding: '2px 7px',
-                    borderRadius: 5,
-                    fontSize: size === 'sm' ? 11 : size === 'md' ? 12 : 13,
-                    fontWeight: fontSize === size ? 800 : 500,
-                    background: fontSize === size ? 'var(--accent-bg)' : 'transparent',
-                    color: fontSize === size ? 'var(--accent)' : 'var(--t3)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 14px',
+                    borderRadius: 8,
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: viewMode === 'reader' ? 'var(--accent)' : 'transparent',
+                    color: viewMode === 'reader' ? '#fff' : 'var(--t2)',
                     border: 'none',
-                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
                   }}
-                  title={`Font size: ${size === 'sm' ? 'Compact' : size === 'md' ? 'Default' : 'Comfort'}`}
+                  title="Clean continuous article reading mode (like Notion or GitHub README)"
                 >
-                  {size.toUpperCase()}
+                  <BookOpen style={{ width: 14, height: 14 }} />
+                  <span>Readme Reader</span>
                 </button>
-              ))}
+
+                <button
+                  onClick={() => setViewMode('cards')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 14px',
+                    borderRadius: 8,
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: viewMode === 'cards' ? 'var(--accent)' : 'transparent',
+                    color: viewMode === 'cards' ? '#fff' : 'var(--t2)',
+                    border: 'none',
+                    transition: 'all 0.15s ease',
+                  }}
+                  title="Interactive cards view with question actions and collapse controls"
+                >
+                  <LayoutGrid style={{ width: 14, height: 14 }} />
+                  <span>Card Studio</span>
+                </button>
+
+                <button
+                  onClick={() => setViewMode('stepper')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 14px',
+                    borderRadius: 8,
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: viewMode === 'stepper' ? 'var(--accent)' : 'transparent',
+                    color: viewMode === 'stepper' ? '#fff' : 'var(--t2)',
+                    border: 'none',
+                    transition: 'all 0.15s ease',
+                  }}
+                  title="Step through one round/section at a time with previous/next controls"
+                >
+                  <Compass style={{ width: 14, height: 14 }} />
+                  <span>Round Stepper</span>
+                </button>
+              </div>
+
+              {/* Reader Sub-Mode: Formatted Article | Plain Markdown | Raw Source */}
+              {viewMode === 'reader' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--card)', padding: '3px 6px', borderRadius: 8, border: '1px solid var(--border)' }}>
+                  <button
+                    onClick={() => setReaderSubMode('structured')}
+                    style={{
+                      padding: '3px 10px',
+                      borderRadius: 6,
+                      fontSize: 11.5,
+                      fontWeight: 700,
+                      background: readerSubMode === 'structured' ? 'var(--accent-bg)' : 'transparent',
+                      color: readerSubMode === 'structured' ? 'var(--accent)' : 'var(--t3)',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                    }}
+                    title="Interactive Article with Question Cards, collapsible notes, and badges"
+                  >
+                    <Sparkles style={{ width: 12, height: 12 }} />
+                    <span>Interactive Article</span>
+                  </button>
+                  <button
+                    onClick={() => setReaderSubMode('formatted')}
+                    style={{
+                      padding: '3px 10px',
+                      borderRadius: 6,
+                      fontSize: 11.5,
+                      fontWeight: 700,
+                      background: readerSubMode === 'formatted' ? 'var(--accent-bg)' : 'transparent',
+                      color: readerSubMode === 'formatted' ? 'var(--accent)' : 'var(--t3)',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                    }}
+                    title="Continuous Plain Markdown Text"
+                  >
+                    <FileText style={{ width: 12, height: 12 }} />
+                    <span>Plain Text</span>
+                  </button>
+                  <button
+                    onClick={() => setReaderSubMode('raw')}
+                    style={{
+                      padding: '3px 10px',
+                      borderRadius: 6,
+                      fontSize: 11.5,
+                      fontWeight: 700,
+                      background: readerSubMode === 'raw' ? 'var(--accent-bg)' : 'transparent',
+                      color: readerSubMode === 'raw' ? 'var(--accent)' : 'var(--t3)',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                    }}
+                    title="Raw Markdown Source"
+                  >
+                    <Code2 style={{ width: 12, height: 12 }} />
+                    <span>Raw MD</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Reading Comfort & Density Controls */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                {/* Font Size Selector */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'var(--card)', padding: '3px 6px', borderRadius: 8, border: '1px solid var(--border)' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t3)', paddingRight: 2 }}>
+                    <Type style={{ width: 13, height: 13, display: 'inline', verticalAlign: '-2px' }} />
+                  </span>
+                  {(['sm', 'md', 'lg'] as FontSize[]).map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => setFontSize(size)}
+                      style={{
+                        padding: '2px 7px',
+                        borderRadius: 5,
+                        fontSize: size === 'sm' ? 11 : size === 'md' ? 12 : 13,
+                        fontWeight: fontSize === size ? 800 : 500,
+                        background: fontSize === size ? 'var(--accent-bg)' : 'transparent',
+                        color: fontSize === size ? 'var(--accent)' : 'var(--t3)',
+                        border: 'none',
+                        cursor: 'pointer',
+                      }}
+                      title={`Font size: ${size === 'sm' ? 'Compact' : size === 'md' ? 'Default' : 'Comfort'}`}
+                    >
+                      {size.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Cards Mode Specific: Density & Collapse All */}
+                {viewMode === 'cards' && (
+                  <>
+                    <button
+                      onClick={() => setIsCompact(!isCompact)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        padding: '4px 10px',
+                        borderRadius: 8,
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        background: isCompact ? 'var(--accent-bg)' : 'var(--card)',
+                        color: isCompact ? 'var(--accent)' : 'var(--t2)',
+                        border: '1px solid var(--border)',
+                        cursor: 'pointer',
+                      }}
+                      title="Toggle compact list view vs detailed cards"
+                    >
+                      <List style={{ width: 13, height: 13 }} />
+                      <span>{isCompact ? 'Compact View' : 'Detailed'}</span>
+                    </button>
+
+                    <button
+                      onClick={handleToggleExpandAll}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        padding: '4px 10px',
+                        borderRadius: 8,
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        background: 'var(--card)',
+                        color: 'var(--t2)',
+                        border: '1px solid var(--border)',
+                        cursor: 'pointer',
+                      }}
+                      title={areAllExpanded ? 'Collapse all question answers' : 'Expand all question answers'}
+                    >
+                      {areAllExpanded ? (
+                        <>
+                          <Minimize2 style={{ width: 13, height: 13 }} />
+                          <span>Collapse All</span>
+                        </>
+                      ) : (
+                        <>
+                          <Maximize2 style={{ width: 13, height: 13 }} />
+                          <span>Expand All</span>
+                        </>
+                      )}
+                    </button>
+                  </>
+                )}
+
+                {/* Rejection / Mistake Highlight Filter */}
+                <button
+                  onClick={() => setOnlyRejectionLessons(!onlyRejectionLessons)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    padding: '4px 11px',
+                    borderRadius: 8,
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: onlyRejectionLessons ? 'var(--warn-bg)' : 'var(--card)',
+                    color: onlyRejectionLessons ? 'var(--warn)' : 'var(--t3)',
+                    border: onlyRejectionLessons ? '1px solid var(--warn)' : '1px solid var(--border)',
+                    transition: 'all 0.15s ease',
+                  }}
+                  title="Filter only questions with identified mistakes and rejection learnings"
+                >
+                  <AlertTriangle style={{ width: 12, height: 12 }} />
+                  <span>Filter Lessons</span>
+                </button>
+              </div>
             </div>
-
-            {/* Cards Mode Specific: Density & Collapse All */}
-            {viewMode === 'cards' && (
-              <>
-                <button
-                  onClick={() => setIsCompact(!isCompact)}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    padding: '4px 10px',
-                    borderRadius: 8,
-                    fontSize: 11.5,
-                    fontWeight: 600,
-                    background: isCompact ? 'var(--accent-bg)' : 'var(--card)',
-                    color: isCompact ? 'var(--accent)' : 'var(--t2)',
-                    border: '1px solid var(--border)',
-                    cursor: 'pointer',
-                  }}
-                  title="Toggle compact list view vs detailed cards"
-                >
-                  <List style={{ width: 13, height: 13 }} />
-                  <span>{isCompact ? 'Compact View' : 'Detailed'}</span>
-                </button>
-
-                <button
-                  onClick={handleToggleExpandAll}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    padding: '4px 10px',
-                    borderRadius: 8,
-                    fontSize: 11.5,
-                    fontWeight: 600,
-                    background: 'var(--card)',
-                    color: 'var(--t2)',
-                    border: '1px solid var(--border)',
-                    cursor: 'pointer',
-                  }}
-                  title={areAllExpanded ? 'Collapse all question details' : 'Expand all question details'}
-                >
-                  {areAllExpanded ? <Minimize2 style={{ width: 13, height: 13 }} /> : <Maximize2 style={{ width: 13, height: 13 }} />}
-                  <span>{areAllExpanded ? 'Collapse All' : 'Expand All'}</span>
-                </button>
-              </>
-            )}
-
-            {/* Mistake filter shortcut */}
-            <button
-              onClick={() => setOnlyRejectionLessons(!onlyRejectionLessons)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                padding: '4px 10px',
-                borderRadius: 8,
-                fontSize: 11.5,
-                fontWeight: 600,
-                background: onlyRejectionLessons ? 'var(--streak-bg)' : 'var(--card)',
-                color: onlyRejectionLessons ? 'var(--streak)' : 'var(--t2)',
-                border: onlyRejectionLessons ? '1px solid var(--streak)' : '1px solid var(--border)',
-                cursor: 'pointer',
-              }}
-              title="Show only questions that have rejection lessons"
-            >
-              <Lightbulb style={{ width: 13, height: 13 }} />
-              <span>{onlyRejectionLessons ? 'Lessons Only' : 'Filter Lessons'}</span>
-            </button>
           </div>
-        </div>
 
         {/* ── QUICK-JUMP TABLE OF CONTENTS (TOC) PILLS ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
@@ -1448,7 +1422,6 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
             );
           })}
         </div>
-      </div>
 
       {/* ── Search & Filter Pill Bar ── */}
       <div
@@ -1618,6 +1591,8 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
           </button>
         </div>
       )}
+        </>
+      )}
 
       {/* ── MAIN CONTENT: RENDER ACCORDING TO VIEW MODE ── */}
       {((!doc.rawMarkdown && doc.rounds.length === 0) || doc.isEmpty) ? (
@@ -1657,11 +1632,11 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
             No Interview Notes Loaded
           </h2>
           <p style={{ fontSize: 13.5, color: 'var(--t2)', maxWidth: 500, margin: '0 auto 24px', lineHeight: 1.6 }}>
-            All debrief notes have been cleared. Upload your own Markdown (.md) notes file, paste raw notes, or load a pre-built sample below.
+            Upload your Markdown (.md) interview debrief notes or click Paste Notes to begin.
           </p>
 
           {/* Primary Action Buttons */}
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 28 }}>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
               onClick={() => fileInputRef.current?.click()}
               className="btn btn-primary"
@@ -1697,34 +1672,6 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
               <FileText style={{ width: 15, height: 15, color: 'var(--accent)' }} />
               <span>Paste Notes</span>
             </button>
-          </div>
-
-          {/* Quick Sample Links */}
-          <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: 20 }}>
-            <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
-              Or explore with a pre-formatted debrief:
-            </div>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-              {PRESET_SAMPLE_FILES.map((sample) => (
-                <button
-                  key={sample.id}
-                  onClick={() => handleLoadSample(sample.id)}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: 16,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    border: '1px solid var(--border)',
-                    background: 'var(--page)',
-                    color: 'var(--t1)',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  {sample.title}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
       ) : viewMode === 'reader' && readerSubMode === 'raw' ? (
