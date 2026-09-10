@@ -175,6 +175,7 @@ export interface CompanyRoundDocument {
     growthAreas: string[];
     actionableRoadmap: string[];
   };
+  isEmpty?: boolean;
 }
 
 

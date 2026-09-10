@@ -71,6 +71,10 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsedSaved = JSON.parse(saved);
+        // If user explicitly deleted/cleared the document, respect the empty state
+        if (parsedSaved.isEmpty) {
+          return parsedSaved;
+        }
         // If saved doc has 0 rounds or bad company name, re-parse if rawMarkdown exists
         if (parsedSaved.rawMarkdown && (parsedSaved.totalRounds === 0 || !parsedSaved.rounds || parsedSaved.rounds.length === 0 || parsedSaved.company?.includes('— Intervie'))) {
           return parseInterviewMarkdown(parsedSaved.rawMarkdown, parsedSaved.fileName || 'interview_notes.md');
@@ -85,7 +89,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
 
   // UI state & View Modes
   const [viewMode, setViewMode] = useState<ViewMode>('reader'); // Default to clean Readme reader
-  const [readerSubMode, setReaderSubMode] = useState<ReaderSubMode>('formatted');
+  const [readerSubMode, setReaderSubMode] = useState<ReaderSubMode>('structured'); // Default to rich interactive document
   const [fontSize, setFontSize] = useState<FontSize>('md');
   const [isCompact, setIsCompact] = useState<boolean>(false);
   const [selectedRound, setSelectedRound] = useState<number | 'all'>('all');
@@ -139,9 +143,9 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
     followUps: '',
   });
 
-  // Automatically heal and re-parse stale or empty-round cached documents
+  // Automatically heal and re-parse stale or empty-round cached documents (skip if cleared)
   useEffect(() => {
-    if (doc.rawMarkdown && (doc.rounds.length === 0 || doc.totalQuestions === 0 || doc.company.includes('— Intervie'))) {
+    if (!doc.isEmpty && doc.rawMarkdown && (doc.rounds.length === 0 || doc.totalQuestions === 0 || doc.company.includes('— Intervie'))) {
       const reParsed = parseInterviewMarkdown(doc.rawMarkdown, doc.fileName);
       if (reParsed.rounds.length > 0 || reParsed.company !== doc.company) {
         setDoc(reParsed);
@@ -282,6 +286,40 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
     setSelectedType('All');
     setExpandedIds(new Set());
     addToast('Sample Loaded', `Loaded ${sample.title}`, 'info');
+  };
+
+  // Delete entire document and reset viewer
+  const handleDeleteAll = () => {
+    const docName = doc.fileName || doc.company || 'interview notes';
+    if (!window.confirm(`Are you sure you want to delete all notes and questions for "${docName}"? This will clear the entire document.`)) {
+      return;
+    }
+    const emptyDoc: CompanyRoundDocument & { isEmpty?: boolean } = {
+      id: `doc-empty-${Date.now()}`,
+      fileName: '',
+      company: '',
+      role: '',
+      interviewDate: '',
+      overview: '',
+      status: 'Debrief',
+      totalRounds: 0,
+      totalQuestions: 0,
+      theoryQuestionsCount: 0,
+      codingQuestionsCount: 0,
+      rawMarkdown: '',
+      rounds: [],
+      isEmpty: true,
+    };
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(emptyDoc));
+    } catch {
+      // ignore
+    }
+    setDoc(emptyDoc);
+    setSelectedRound('all');
+    setStepperRoundIndex(0);
+    setExpandedIds(new Set());
+    addToast('All Notes Deleted', 'Document cleared. You can upload a new file or start fresh.', 'info');
   };
 
   const handleSaveToVault = async (q: ParsedRoundQuestion, roundTitle: string) => {
@@ -683,107 +721,115 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              {/* Company Badge with Track Status */}
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '5px 14px',
-                  borderRadius: 20,
-                  background: 'var(--accent-bg)',
-                  color: 'var(--accent)',
-                  fontSize: 13,
-                  fontWeight: 800,
-                  border: '1px solid var(--accent)',
-                  boxShadow: '0 0 12px var(--accent-glow)',
-                }}
-              >
-                <Building2 style={{ width: 14, height: 14 }} />
-                <span>{doc.company}</span>
-              </span>
-
-              {/* Add Company to Applications Button if not already tracked */}
-              {!isCompanyTracked && (
-                <button
-                  onClick={handleAddToApplications}
-                  disabled={isAddingApp}
-                  className="btn btn-primary"
+            {doc.company && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                {/* Company Badge with Track Status */}
+                <span
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: 5,
-                    padding: '4px 12px',
-                    borderRadius: 16,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-h) 100%)',
-                    boxShadow: '0 2px 8px var(--accent-glow)',
+                    gap: 6,
+                    padding: '5px 14px',
+                    borderRadius: 20,
+                    background: 'var(--accent-bg)',
+                    color: 'var(--accent)',
+                    fontSize: 13,
+                    fontWeight: 800,
+                    border: '1px solid var(--accent)',
+                    boxShadow: '0 0 12px var(--accent-glow)',
                   }}
-                  title="Add this company and role into your active Applications Pipeline"
                 >
-                  <Plus style={{ width: 13, height: 13 }} />
-                  <span>{isAddingApp ? 'Adding...' : `Add "${doc.company}" to Applications`}</span>
-                </button>
-              )}
+                  <Building2 style={{ width: 14, height: 14 }} />
+                  <span>{doc.company}</span>
+                </span>
 
-              {isCompanyTracked && (
+                {/* Add Company to Applications Button if not already tracked */}
+                {!isCompanyTracked && (
+                  <button
+                    onClick={handleAddToApplications}
+                    disabled={isAddingApp}
+                    className="btn btn-primary"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      padding: '4px 12px',
+                      borderRadius: 16,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-h) 100%)',
+                      boxShadow: '0 2px 8px var(--accent-glow)',
+                    }}
+                    title="Add this company and role into your active Applications Pipeline"
+                  >
+                    <Plus style={{ width: 13, height: 13 }} />
+                    <span>{isAddingApp ? 'Adding...' : `Add "${doc.company}" to Applications`}</span>
+                  </button>
+                )}
+
+                {isCompanyTracked && (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      fontSize: 11.5,
+                      fontWeight: 700,
+                      color: 'var(--success)',
+                      background: 'var(--success-bg)',
+                      padding: '3px 9px',
+                      borderRadius: 12,
+                      border: '1px solid var(--success)',
+                    }}
+                  >
+                    <CheckCircle2 style={{ width: 12, height: 12 }} />
+                    <span>Tracked in Applications</span>
+                  </span>
+                )}
+
+                {doc.role && (
+                  <span style={{ fontSize: 13, color: 'var(--t2)', fontWeight: 600 }}>
+                    {doc.role}
+                  </span>
+                )}
+
+                {doc.interviewDate && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--t3)' }}>
+                    <Calendar style={{ width: 13, height: 13 }} />
+                    <span>{doc.interviewDate}</span>
+                  </span>
+                )}
+
                 <span
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 5,
-                    fontSize: 11.5,
-                    fontWeight: 700,
-                    color: 'var(--success)',
-                    background: 'var(--success-bg)',
+                    fontSize: 12,
+                    color: 'var(--t3)',
+                    background: 'var(--card)',
                     padding: '3px 9px',
                     borderRadius: 12,
-                    border: '1px solid var(--success)',
+                    border: '1px solid var(--border)',
                   }}
                 >
-                  <CheckCircle2 style={{ width: 12, height: 12 }} />
-                  <span>Tracked in Applications</span>
+                  <Clock style={{ width: 12, height: 12 }} />
+                  <span>~{readingStats.minutes} min read</span>
+                  <span style={{ color: 'var(--t3)', opacity: 0.6 }}>•</span>
+                  <span>{readingStats.words.toLocaleString()} words</span>
                 </span>
-              )}
-
-              <span style={{ fontSize: 13, color: 'var(--t2)', fontWeight: 600 }}>
-                {doc.role}
-              </span>
-
-              {doc.interviewDate && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--t3)' }}>
-                  <Calendar style={{ width: 13, height: 13 }} />
-                  <span>{doc.interviewDate}</span>
-                </span>
-              )}
-
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  fontSize: 12,
-                  color: 'var(--t3)',
-                  background: 'var(--card)',
-                  padding: '3px 9px',
-                  borderRadius: 12,
-                  border: '1px solid var(--border)',
-                }}
-              >
-                <Clock style={{ width: 12, height: 12 }} />
-                <span>~{readingStats.minutes} min read</span>
-                <span style={{ color: 'var(--t3)', opacity: 0.6 }}>•</span>
-                <span>{readingStats.words.toLocaleString()} words</span>
-              </span>
-            </div>
+              </div>
+            )}
 
             <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--t1)', marginTop: 10, marginBottom: 4 }}>
               Company Round Notes & Readme Viewer
             </h2>
             <p style={{ fontSize: 13, color: 'var(--t2)', margin: 0, maxWidth: 720, lineHeight: 1.5 }}>
-              Active debrief: <strong style={{ color: 'var(--t1)' }}>{doc.fileName}</strong> ({doc.totalRounds} rounds, {doc.totalQuestions} questions with {doc.theoryQuestionsCount} theory topics).
+              {doc.fileName ? (
+                <>Active debrief: <strong style={{ color: 'var(--t1)' }}>{doc.fileName}</strong> ({doc.totalRounds} rounds, {doc.totalQuestions} questions with {doc.theoryQuestionsCount} theory topics).</>
+              ) : (
+                <>No debrief notes loaded. Upload your .MD notes, paste debrief text, or choose a sample below.</>
+              )}
             </p>
           </div>
 
@@ -861,6 +907,28 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
               }}
             >
               <Download style={{ width: 15, height: 15 }} />
+            </button>
+
+            <button
+              onClick={handleDeleteAll}
+              className="btn-ghost"
+              title="Delete entire document and clear all notes"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '6px 12px',
+                borderRadius: 8,
+                border: '1px solid rgba(239, 68, 68, 0.35)',
+                color: 'var(--danger)',
+                background: 'rgba(239, 68, 68, 0.08)',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              <Trash2 style={{ width: 14, height: 14 }} />
+              <span>Delete All</span>
             </button>
           </div>
         </div>
@@ -988,24 +1056,9 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
           {viewMode === 'reader' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'var(--card)', padding: 2, borderRadius: 8, border: '1px solid var(--border)' }}>
               <button
-                onClick={() => setReaderSubMode('formatted')}
-                style={{
-                  padding: '3px 9px',
-                  borderRadius: 6,
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                  background: readerSubMode === 'formatted' ? 'var(--accent-bg)' : 'transparent',
-                  color: readerSubMode === 'formatted' ? 'var(--accent)' : 'var(--t3)',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                Article
-              </button>
-              <button
                 onClick={() => setReaderSubMode('structured')}
                 style={{
-                  padding: '3px 9px',
+                  padding: '3px 10px',
                   borderRadius: 6,
                   fontSize: 11.5,
                   fontWeight: 700,
@@ -1013,14 +1066,39 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                   color: readerSubMode === 'structured' ? 'var(--accent)' : 'var(--t3)',
                   border: 'none',
                   cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
                 }}
+                title="Interactive Document with questions, answers, code runner, vault saving, and edit controls"
               >
-                Structured Q&A
+                <Sparkles style={{ width: 12, height: 12 }} />
+                <span>Interactive Article</span>
+              </button>
+              <button
+                onClick={() => setReaderSubMode('formatted')}
+                style={{
+                  padding: '3px 10px',
+                  borderRadius: 6,
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  background: readerSubMode === 'formatted' ? 'var(--accent-bg)' : 'transparent',
+                  color: readerSubMode === 'formatted' ? 'var(--accent)' : 'var(--t3)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                }}
+                title="Continuous Plain Markdown Text"
+              >
+                <FileText style={{ width: 12, height: 12 }} />
+                <span>Plain Text</span>
               </button>
               <button
                 onClick={() => setReaderSubMode('raw')}
                 style={{
-                  padding: '3px 9px',
+                  padding: '3px 10px',
                   borderRadius: 6,
                   fontSize: 11.5,
                   fontWeight: 700,
@@ -1028,9 +1106,14 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                   color: readerSubMode === 'raw' ? 'var(--accent)' : 'var(--t3)',
                   border: 'none',
                   cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
                 }}
+                title="Raw Markdown Source"
               >
-                Raw MD
+                <Code2 style={{ width: 12, height: 12 }} />
+                <span>Raw MD</span>
               </button>
             </div>
           )}
@@ -1341,7 +1424,114 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
       )}
 
       {/* ── MAIN CONTENT: RENDER ACCORDING TO VIEW MODE ── */}
-      {viewMode === 'reader' && readerSubMode === 'raw' ? (
+      {((!doc.rawMarkdown && doc.rounds.length === 0) || doc.isEmpty) ? (
+        /* ══════════════════════════════════════════════════════════════
+           EMPTY STATE: DOCUMENT IS CLEARED / DELETED
+           ══════════════════════════════════════════════════════════════ */
+        <div
+          className="card"
+          style={{
+            maxWidth: 760,
+            margin: '30px auto',
+            padding: '48px 36px',
+            textAlign: 'center',
+            background: 'var(--card)',
+            border: '2px dashed var(--border)',
+            borderRadius: 20,
+            boxShadow: 'var(--shadow-md)',
+          }}
+        >
+          <div
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: '50%',
+              background: 'var(--accent-bg)',
+              color: 'var(--accent)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 18px',
+            }}
+          >
+            <FileText style={{ width: 30, height: 30 }} />
+          </div>
+
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--t1)', margin: '0 0 8px' }}>
+            No Interview Notes Loaded
+          </h2>
+          <p style={{ fontSize: 13.5, color: 'var(--t2)', maxWidth: 500, margin: '0 auto 24px', lineHeight: 1.6 }}>
+            All debrief notes have been cleared. Upload your own Markdown (.md) notes file, paste raw notes, or load a pre-built sample below.
+          </p>
+
+          {/* Primary Action Buttons */}
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 28 }}>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="btn btn-primary"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 7,
+                padding: '9px 20px',
+                fontSize: 13,
+                fontWeight: 700,
+                boxShadow: '0 2px 8px var(--accent-glow)',
+              }}
+            >
+              <UploadCloud style={{ width: 16, height: 16 }} />
+              <span>Upload .MD File</span>
+            </button>
+
+            <button
+              onClick={() => setPasteModalOpen(true)}
+              className="btn"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 7,
+                padding: '9px 18px',
+                fontSize: 13,
+                fontWeight: 600,
+                background: 'var(--card)',
+                border: '1px solid var(--border)',
+                color: 'var(--t1)',
+              }}
+            >
+              <FileText style={{ width: 15, height: 15, color: 'var(--accent)' }} />
+              <span>Paste Notes</span>
+            </button>
+          </div>
+
+          {/* Quick Sample Links */}
+          <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: 20 }}>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+              Or explore with a pre-formatted debrief:
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {PRESET_SAMPLE_FILES.map((sample) => (
+                <button
+                  key={sample.id}
+                  onClick={() => handleLoadSample(sample.id)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: 16,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    border: '1px solid var(--border)',
+                    background: 'var(--page)',
+                    color: 'var(--t1)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {sample.title}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : viewMode === 'reader' && readerSubMode === 'raw' ? (
         /* ══════════════════════════════════════════════════════════════
            RAW MARKDOWN VIEW
            ══════════════════════════════════════════════════════════════ */
@@ -1408,10 +1598,10 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
           {/* Readme Document Header */}
           <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: 24, marginBottom: 28 }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-              {doc.company} • Interview Debrief & Notes
+              {doc.company || 'Interview Debrief'} • Notes
             </div>
             <h1 style={{ fontSize: 27, fontWeight: 800, color: 'var(--t1)', margin: 0, lineHeight: 1.3 }}>
-              {doc.role}
+              {doc.role || 'Software Engineer Notes'}
             </h1>
             {doc.overview && (
               <p style={{ fontSize: fontPx, color: 'var(--t2)', marginTop: 12, lineHeight: 1.65 }}>
@@ -1465,7 +1655,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
         </div>
       ) : viewMode === 'reader' && readerSubMode === 'structured' ? (
         /* ══════════════════════════════════════════════════════════════
-           VIEW MODE 1B: STRUCTURED ARTICLE Q&A
+           VIEW MODE 1B: STRUCTURED ARTICLE Q&A (Interactive Readme)
            ══════════════════════════════════════════════════════════════ */
         <div
           className="card"
@@ -1480,18 +1670,101 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
             borderRadius: 16,
           }}
         >
-          {/* Readme Document Header */}
+          {/* Readme Document Header with interactive actions & Table of Contents */}
           <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: 24, marginBottom: 28 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-              {doc.company} • Interview Debrief Document
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+                  {doc.company || 'Interview Debrief'} • Interactive Document
+                </div>
+                <h1 style={{ fontSize: 27, fontWeight: 800, color: 'var(--t1)', margin: 0, lineHeight: 1.3 }}>
+                  {doc.role || 'Interview Notes'}
+                </h1>
+                {doc.overview && (
+                  <p style={{ fontSize: fontPx, color: 'var(--t2)', marginTop: 12, lineHeight: 1.65, maxWidth: 760 }}>
+                    {doc.overview}
+                  </p>
+                )}
+              </div>
+
+              {/* Action Toolbar on Document Header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => handleOpenAddModal(doc.rounds[0]?.roundNumber || 1)}
+                  className="btn btn-primary"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 14px',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    boxShadow: '0 2px 8px var(--accent-glow)',
+                  }}
+                  title="Add a new question into this debrief"
+                >
+                  <Plus style={{ width: 14, height: 14 }} />
+                  <span>Add Question</span>
+                </button>
+
+                <button
+                  onClick={handleDeleteAll}
+                  className="btn-ghost"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    padding: '6px 12px',
+                    borderRadius: 8,
+                    border: '1px solid rgba(239, 68, 68, 0.35)',
+                    color: 'var(--danger)',
+                    background: 'rgba(239, 68, 68, 0.08)',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                  title="Delete all notes, questions, and rounds"
+                >
+                  <Trash2 style={{ width: 13, height: 13 }} />
+                  <span>Delete All</span>
+                </button>
+              </div>
             </div>
-            <h1 style={{ fontSize: 27, fontWeight: 800, color: 'var(--t1)', margin: 0, lineHeight: 1.3 }}>
-              {doc.role}
-            </h1>
-            {doc.overview && (
-              <p style={{ fontSize: fontPx, color: 'var(--t2)', marginTop: 12, lineHeight: 1.65 }}>
-                {doc.overview}
-              </p>
+
+            {/* Jump to Section (TOC Navigation Pills) */}
+            {doc.rounds.length > 1 && (
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border-light)' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                  Jump to Section:
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {doc.rounds.map((r) => (
+                    <button
+                      key={r.roundNumber}
+                      onClick={() => {
+                        const el = document.getElementById(`round-section-${r.roundNumber}`);
+                        if (el) {
+                          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                      }}
+                      className="btn-ghost"
+                      style={{
+                        padding: '4px 11px',
+                        borderRadius: 8,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        border: '1px solid var(--border)',
+                        background: 'var(--page)',
+                        color: 'var(--t2)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      Section {r.roundNumber}: {r.roundTitle} ({r.questions.length})
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
 
@@ -1506,8 +1779,8 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                   paddingBottom: 32,
                 }}
               >
-                {/* Round Section Header */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                {/* Round Section Header with Add Question button */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
                   <div>
                     <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                       Section {round.roundNumber}
@@ -1522,9 +1795,32 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                     )}
                   </div>
 
-                  <span style={{ fontSize: 12, color: 'var(--t3)', fontWeight: 600 }}>
-                    {round.questions.length} Items
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 12, color: 'var(--t3)', fontWeight: 600 }}>
+                      {round.questions.length} Items
+                    </span>
+                    <button
+                      onClick={() => handleOpenAddModal(round.roundNumber)}
+                      className="btn-ghost"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        padding: '4px 9px',
+                        borderRadius: 6,
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        border: '1px solid var(--border)',
+                        color: 'var(--accent)',
+                        background: 'var(--card)',
+                        cursor: 'pointer',
+                      }}
+                      title="Add a question into this round"
+                    >
+                      <Plus style={{ width: 12, height: 12 }} />
+                      <span>Add Question</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Questions in this round */}
@@ -1585,7 +1881,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                             </h3>
                           </div>
 
-                          {/* Quick Actions (Vault & Copy) */}
+                          {/* Quick Actions (Vault, Copy, Edit, Delete) */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                             <button
                               onClick={() => handleSaveToVault(q, round.roundTitle)}
@@ -1613,6 +1909,15 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                               style={{ padding: 6, borderRadius: 6, color: 'var(--t3)' }}
                             >
                               <Edit3 style={{ width: 14, height: 14 }} />
+                            </button>
+
+                            <button
+                              onClick={() => handleDeleteQuestion(round.roundNumber, q.id, q.question)}
+                              title="Delete Question"
+                              className="btn-ghost"
+                              style={{ padding: 6, borderRadius: 6, color: 'var(--danger)' }}
+                            >
+                              <Trash2 style={{ width: 14, height: 14 }} />
                             </button>
                           </div>
                         </div>
