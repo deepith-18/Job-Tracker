@@ -52,6 +52,25 @@ import type {
 } from '../../types';
 
 const STORAGE_KEY = 'jobtracker_company_rounds_md_doc';
+const LIBRARY_STORAGE_KEY = 'jobtracker_company_rounds_library';
+
+export const createEmptyDoc = (): CompanyRoundDocument & { isEmpty?: boolean } => ({
+  id: `doc-empty-${Date.now()}`,
+  fileName: '',
+  company: '',
+  role: '',
+  interviewDate: '',
+  overview: '',
+  status: 'Debrief',
+  totalRounds: 0,
+  totalQuestions: 0,
+  theoryQuestionsCount: 0,
+  codingQuestionsCount: 0,
+  rawMarkdown: '',
+  rounds: [],
+  companies: [],
+  isEmpty: true,
+});
 
 type ViewMode = 'reader' | 'cards' | 'stepper';
 type ReaderSubMode = 'formatted' | 'structured' | 'raw';
@@ -65,15 +84,15 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Document state
+  // Document state - strictly user data, never auto-injecting fake data
   const [doc, setDoc] = useState<CompanyRoundDocument>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsedSaved = JSON.parse(saved);
         // If user explicitly deleted/cleared the document, respect the empty state
-        if (parsedSaved.isEmpty) {
-          return parsedSaved;
+        if (parsedSaved.isEmpty || (!parsedSaved.rawMarkdown && (!parsedSaved.rounds || parsedSaved.rounds.length === 0))) {
+          return createEmptyDoc();
         }
         // If saved doc has 0 rounds or bad company name, re-parse if rawMarkdown exists
         if (parsedSaved.rawMarkdown && (parsedSaved.totalRounds === 0 || !parsedSaved.rounds || parsedSaved.rounds.length === 0 || parsedSaved.company?.includes('— Intervie'))) {
@@ -84,7 +103,19 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
     } catch {
       // Fallback
     }
-    return parseInterviewMarkdown(PRESET_SAMPLE_FILES[0].markdown, 'Google_L5_Interview_Notes.md');
+    // Clean initial state: start empty so no unadded fake data appears
+    return createEmptyDoc();
+  });
+
+  // Multi-Company Library state
+  const [library, setLibrary] = useState<Record<string, CompanyRoundDocument>>(() => {
+    try {
+      const saved = localStorage.getItem(LIBRARY_STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // ignore
+    }
+    return {};
   });
 
   // UI state & View Modes
@@ -93,6 +124,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
   const [fontSize, setFontSize] = useState<FontSize>('md');
   const [isCompact, setIsCompact] = useState<boolean>(false);
   const [selectedRound, setSelectedRound] = useState<number | 'all'>('all');
+  const [selectedCompany, setSelectedCompany] = useState<string>('All'); // Company isolation filter
   const [stepperRoundIndex, setStepperRoundIndex] = useState<number>(0);
   const [selectedType, setSelectedType] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -153,14 +185,48 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
     }
   }, [doc]);
 
-  // Persist current doc to localStorage
+  // Persist current doc to localStorage and update library
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(doc));
+      if (doc.company && !doc.isEmpty && doc.company !== 'Target Company') {
+        setLibrary((prev) => {
+          const updated = { ...prev, [doc.company]: doc };
+          try {
+            localStorage.setItem(LIBRARY_STORAGE_KEY, JSON.stringify(updated));
+          } catch {
+            // ignore
+          }
+          return updated;
+        });
+      }
     } catch {
       // ignore
     }
   }, [doc]);
+
+  // Distinct companies represented in the active document (for isolation filter)
+  const availableCompanies = useMemo(() => {
+    const set = new Set<string>();
+    if (doc.company && doc.company !== 'Target Company') set.add(doc.company);
+    if (doc.companies) {
+      doc.companies.forEach((c) => {
+        if (c && c !== 'Target Company') set.add(c);
+      });
+    }
+    doc.rounds.forEach((r) => {
+      if (r.company && r.company !== 'Target Company') set.add(r.company);
+      r.questions.forEach((q) => {
+        if (q.company && q.company !== 'Target Company') set.add(q.company);
+      });
+    });
+    return Array.from(set);
+  }, [doc]);
+
+  // All companies tracked in the user's debrief library
+  const libraryCompanies = useMemo(() => {
+    return Object.keys(library).filter((k) => k && !library[k]?.isEmpty && k !== 'Target Company');
+  }, [library]);
 
   // Back to top scroll listener
   useEffect(() => {
@@ -288,45 +354,63 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
     addToast('Sample Loaded', `Loaded ${sample.title}`, 'info');
   };
 
-  // Delete entire document and reset viewer
-  const handleDeleteAll = () => {
-    const docName = doc.fileName || doc.company || 'interview notes';
-    if (!window.confirm(`Are you sure you want to delete all notes and questions for "${docName}"? This will clear the entire document.`)) {
-      return;
-    }
-    const emptyDoc: CompanyRoundDocument & { isEmpty?: boolean } = {
-      id: `doc-empty-${Date.now()}`,
-      fileName: '',
-      company: '',
-      role: '',
-      interviewDate: '',
-      overview: '',
-      status: 'Debrief',
-      totalRounds: 0,
-      totalQuestions: 0,
-      theoryQuestionsCount: 0,
-      codingQuestionsCount: 0,
-      rawMarkdown: '',
-      rounds: [],
-      isEmpty: true,
-    };
+  // Delete a single company's debrief notes from library
+  const handleDeleteCompany = (compToDelete: string) => {
+    if (!window.confirm(`Delete debrief notes for "${compToDelete}" from your library?`)) return;
+    const nextLib = { ...library };
+    delete nextLib[compToDelete];
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(emptyDoc));
+      localStorage.setItem(LIBRARY_STORAGE_KEY, JSON.stringify(nextLib));
     } catch {
       // ignore
     }
+    setLibrary(nextLib);
+
+    // If currently viewing this company, switch to another available company or clear
+    if (doc.company.toLowerCase() === compToDelete.toLowerCase()) {
+      const remaining = Object.keys(nextLib).filter((c) => c && c !== 'Target Company');
+      if (remaining.length > 0 && nextLib[remaining[0]]) {
+        setDoc(nextLib[remaining[0]]);
+        setSelectedCompany('All');
+        setSelectedRound('all');
+        setStepperRoundIndex(0);
+        addToast('Company Notes Removed', `Switched to ${remaining[0]}`, 'info');
+      } else {
+        handleDeleteAll();
+      }
+    } else {
+      addToast('Company Removed', `Removed ${compToDelete} from library`, 'info');
+    }
+  };
+
+  // Delete entire document library and reset viewer
+  const handleDeleteAll = () => {
+    const docName = doc.fileName || doc.company || 'all interview debriefs';
+    if (!window.confirm(`Are you sure you want to delete all notes and questions for "${docName}"? This will clear all debriefs.`)) {
+      return;
+    }
+    const emptyDoc = createEmptyDoc();
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(emptyDoc));
+      localStorage.removeItem(LIBRARY_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+    setLibrary({});
     setDoc(emptyDoc);
+    setSelectedCompany('All');
     setSelectedRound('all');
     setStepperRoundIndex(0);
     setExpandedIds(new Set());
-    addToast('All Notes Deleted', 'Document cleared. You can upload a new file or start fresh.', 'info');
+    addToast('All Notes Deleted', 'Debrief notes cleared. You can upload your own markdown file or paste notes.', 'info');
   };
 
   const handleSaveToVault = async (q: ParsedRoundQuestion, roundTitle: string) => {
+    const qCompany = q.company || doc.company || 'Target Company';
     try {
       await addQuestion({
         title: q.question,
-        company: doc.company,
+        company: qCompany,
         round: roundTitle,
         difficulty: q.difficulty,
         topic: q.category,
@@ -340,7 +424,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
       });
 
       setSavedVaultIds((prev) => new Set(prev).add(q.id));
-      addToast('Saved to Question Vault', `"${q.question.slice(0, 45)}..." stored in permanent Code Vault`, 'success');
+      addToast('Saved to Question Vault', `[${qCompany}] "${q.question.slice(0, 38)}..." stored in Code Vault`, 'success');
     } catch {
       addToast('Save Failed', 'Could not save question to vault', 'error');
     }
@@ -637,6 +721,11 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
       })
       .map((r) => {
         const matchingQuestions = r.questions.filter((q) => {
+          if (selectedCompany !== 'All') {
+            const qComp = (q.company || r.company || doc.company || '').toLowerCase().trim();
+            const targetComp = selectedCompany.toLowerCase().trim();
+            if (!qComp.includes(targetComp) && !targetComp.includes(qComp)) return false;
+          }
           if (onlyRejectionLessons && !q.rejectionLearning) return false;
           if (selectedType !== 'All' && q.type !== selectedType) return false;
           if (searchQuery.trim()) {
@@ -646,7 +735,8 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
             const matchesConcepts = q.keyConcepts.some((c) => c.toLowerCase().includes(query));
             const matchesMistake = q.rejectionLearning?.identifiedMistake.toLowerCase().includes(query);
             const matchesLearn = q.rejectionLearning?.whatToLearn.toLowerCase().includes(query);
-            return matchesQ || matchesAns || matchesConcepts || matchesMistake || matchesLearn;
+            const matchesCompany = (q.company || r.company || doc.company || '').toLowerCase().includes(query);
+            return matchesQ || matchesAns || matchesConcepts || matchesMistake || matchesLearn || matchesCompany;
           }
           return true;
         });
@@ -656,8 +746,8 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
           questions: matchingQuestions,
         };
       })
-      .filter((r) => r.questions.length > 0 || !searchQuery.trim());
-  }, [doc, selectedRound, selectedType, searchQuery, onlyRejectionLessons, viewMode, stepperRoundIndex]);
+      .filter((r) => r.questions.length > 0 || (!searchQuery.trim() && selectedCompany === 'All'));
+  }, [doc, selectedRound, selectedType, searchQuery, onlyRejectionLessons, viewMode, stepperRoundIndex, selectedCompany]);
 
   const totalVisibleQuestions = useMemo(() => {
     return filteredRounds.reduce((acc, r) => acc + r.questions.length, 0);
@@ -933,31 +1023,104 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
           </div>
         </div>
 
-        {/* Preset Sample Debrief Switchers */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingTop: 10, borderTop: '1px solid var(--border-light)' }}>
-          <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Load Sample:
-          </span>
-          {PRESET_SAMPLE_FILES.map((sample) => (
-            <button
-              key={sample.id}
-              onClick={() => handleLoadSample(sample.id)}
-              style={{
-                padding: '3px 11px',
-                borderRadius: 12,
-                fontSize: 11.5,
-                fontWeight: 600,
-                cursor: 'pointer',
-                background: doc.company.toLowerCase().includes(sample.company.toLowerCase()) ? 'var(--accent-bg)' : 'var(--card)',
-                color: doc.company.toLowerCase().includes(sample.company.toLowerCase()) ? 'var(--accent)' : 'var(--t2)',
-                border: doc.company.toLowerCase().includes(sample.company.toLowerCase()) ? '1px solid var(--accent)' : '1px solid var(--border)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              {sample.title}
-            </button>
-          ))}
-        </div>
+        {/* Your Tracked Company Debriefs */}
+        {libraryCompanies.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingTop: 12, borderTop: '1px solid var(--border-light)' }}>
+            <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <Building2 style={{ width: 13, height: 13 }} />
+              <span>Your Company Debriefs:</span>
+            </span>
+            {libraryCompanies.map((cName) => {
+              const isCurrent = doc.company.toLowerCase() === cName.toLowerCase();
+              const compDoc = library[cName];
+              return (
+                <div key={cName} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                  <button
+                    onClick={() => {
+                      if (compDoc) {
+                        setDoc(compDoc);
+                        setSelectedCompany('All');
+                        setSelectedRound('all');
+                        setStepperRoundIndex(0);
+                        addToast('Switched Company', `Loaded debrief notes for ${cName}`, 'info');
+                      }
+                    }}
+                    style={{
+                      padding: '4px 12px',
+                      borderRadius: isCurrent ? '14px 0 0 14px' : 14,
+                      fontSize: 12,
+                      fontWeight: isCurrent ? 800 : 600,
+                      cursor: 'pointer',
+                      background: isCurrent ? 'var(--accent-bg)' : 'var(--card)',
+                      color: isCurrent ? 'var(--accent)' : 'var(--t2)',
+                      border: isCurrent ? '1.5px solid var(--accent)' : '1px solid var(--border)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      boxShadow: isCurrent ? '0 0 10px var(--accent-glow)' : 'none',
+                      transition: 'all 0.15s ease',
+                    }}
+                    title={`Switch to ${cName} debrief notes`}
+                  >
+                    <span>{cName}</span>
+                    {compDoc?.totalQuestions ? (
+                      <span style={{ fontSize: 10.5, padding: '1px 5px', borderRadius: 8, background: isCurrent ? 'var(--accent)' : 'var(--card-hover)', color: isCurrent ? '#fff' : 'var(--t3)' }}>
+                        {compDoc.totalQuestions} Qs
+                      </span>
+                    ) : null}
+                  </button>
+                  {isCurrent && libraryCompanies.length > 1 && (
+                    <button
+                      onClick={() => handleDeleteCompany(cName)}
+                      title={`Remove ${cName} from library`}
+                      style={{
+                        padding: '4px 6px',
+                        borderRadius: '0 14px 14px 0',
+                        border: '1.5px solid var(--accent)',
+                        borderLeft: 'none',
+                        background: 'var(--accent-bg)',
+                        color: 'var(--danger)',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Trash2 style={{ width: 11, height: 11 }} />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Preset Sample Debrief Switchers (Only show when empty so user's workspace stays completely clean) */}
+        {doc.isEmpty && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingTop: 10, borderTop: '1px solid var(--border-light)' }}>
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Or explore with a sample debrief:
+            </span>
+            {PRESET_SAMPLE_FILES.map((sample) => (
+              <button
+                key={sample.id}
+                onClick={() => handleLoadSample(sample.id)}
+                style={{
+                  padding: '3px 11px',
+                  borderRadius: 12,
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  background: doc.company.toLowerCase().includes(sample.company.toLowerCase()) ? 'var(--accent-bg)' : 'var(--card)',
+                  color: doc.company.toLowerCase().includes(sample.company.toLowerCase()) ? 'var(--accent)' : 'var(--t2)',
+                  border: doc.company.toLowerCase().includes(sample.company.toLowerCase()) ? '1px solid var(--accent)' : '1px solid var(--border)',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {sample.title}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── STICKY READING & VIEW CONTROL BAR (Glassmorphic) ── */}
@@ -1354,6 +1517,39 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
             );
           })}
         </div>
+
+        {/* Company Isolation Filter */}
+        {availableCompanies.length > 1 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap', borderLeft: '1px solid var(--border)', paddingLeft: 10 }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <Building2 style={{ width: 12, height: 12 }} />
+              <span>Isolate Company:</span>
+            </span>
+            {['All', ...availableCompanies].map((comp) => {
+              const isSelected = selectedCompany === comp;
+              return (
+                <button
+                  key={comp}
+                  onClick={() => setSelectedCompany(comp)}
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: 6,
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: isSelected ? 'var(--accent-bg)' : 'var(--card-hover)',
+                    color: isSelected ? 'var(--accent)' : 'var(--t2)',
+                    border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
+                    transition: 'all 0.15s ease',
+                  }}
+                  title={`Show only questions asked by ${comp === 'All' ? 'any company' : comp}`}
+                >
+                  {comp === 'All' ? 'All Companies' : comp}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ── STEPPER NAVIGATION (Active when viewMode === 'stepper') ── */}
@@ -1842,6 +2038,26 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
                           <div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
+                              {/* Dedicated Company Badge so user immediately knows which company asked this */}
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 800,
+                                  padding: '2px 9px',
+                                  borderRadius: 6,
+                                  background: 'rgba(99, 102, 241, 0.12)',
+                                  color: 'var(--accent)',
+                                  border: '1px solid rgba(99, 102, 241, 0.28)',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                }}
+                                title={`Question asked in interview by ${q.company || round.company || doc.company}`}
+                              >
+                                <Building2 style={{ width: 11, height: 11 }} />
+                                <span>{q.company || round.company || doc.company}</span>
+                              </span>
+
                               <span
                                 style={{
                                   fontSize: 11,
@@ -2110,8 +2326,31 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                           <div
                             onClick={() => toggleExpand(q.id)}
-                            style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, cursor: 'pointer' }}
+                            style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, cursor: 'pointer', flexWrap: 'wrap' }}
                           >
+                            {/* Company Identifier */}
+                            {(q.company || round.company || (doc.company && doc.company !== 'Target Company')) && (
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 800,
+                                  padding: '2px 8px',
+                                  borderRadius: 4,
+                                  background: 'rgba(99, 102, 241, 0.12)',
+                                  color: 'var(--accent)',
+                                  border: '1px solid rgba(99, 102, 241, 0.28)',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 3.5,
+                                  whiteSpace: 'nowrap',
+                                }}
+                                title={`Company: ${q.company || round.company || doc.company}`}
+                              >
+                                <Building2 style={{ width: 11, height: 11 }} />
+                                <span>{q.company || round.company || doc.company}</span>
+                              </span>
+                            )}
+
                             <span
                               style={{
                                 fontSize: 11,
@@ -2196,6 +2435,28 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                         <div style={{ flex: 1 }}>
                           {/* Tags & Badges */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
+                            {/* Dedicated Company Badge */}
+                            {(q.company || round.company || (doc.company && doc.company !== 'Target Company')) && (
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                  fontSize: 11,
+                                  fontWeight: 800,
+                                  padding: '2px 9px',
+                                  borderRadius: 6,
+                                  background: 'rgba(99, 102, 241, 0.12)',
+                                  color: 'var(--accent)',
+                                  border: '1px solid rgba(99, 102, 241, 0.28)',
+                                }}
+                                title={`Asked in interview by ${q.company || round.company || doc.company}`}
+                              >
+                                <Building2 style={{ width: 12, height: 12 }} />
+                                <span>{q.company || round.company || doc.company}</span>
+                              </span>
+                            )}
+
                             <span
                               style={{
                                 display: 'inline-flex',

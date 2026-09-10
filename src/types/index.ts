@@ -131,6 +131,7 @@ export interface ParsedRoundQuestion {
   id: string;
   questionNumber: number;
   question: string;
+  company?: string;
   type: QuestionCategoryType;
   difficulty: 'Easy' | 'Medium' | 'Hard';
   category: string;
@@ -148,6 +149,7 @@ export interface ParsedRoundQuestion {
 export interface InterviewRoundSection {
   roundNumber: number;
   roundTitle: string;
+  company?: string;
   roundType: 'Screening' | 'Technical / DSA' | 'Theory & Core CS' | 'System Design' | 'Behavioral / HR';
   roundNotes: string;
   interviewerRole?: string;
@@ -160,6 +162,7 @@ export interface CompanyRoundDocument {
   id: string;
   fileName: string;
   company: string;
+  companies?: string[];
   role: string;
   interviewDate?: string;
   overview: string;

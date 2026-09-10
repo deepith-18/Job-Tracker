@@ -164,7 +164,11 @@ function detectCategory(title: string, content: string, type: QuestionCategoryTy
 /**
  * Parses individual question block
  */
-function parseQuestionBlock(rawBlock: string, questionIndex: number): ParsedRoundQuestion | null {
+function parseQuestionBlock(
+  rawBlock: string,
+  questionIndex: number,
+  inheritedCompany?: string
+): ParsedRoundQuestion | null {
   const lines = rawBlock.split('\n');
   if (lines.length === 0) return null;
 
@@ -174,6 +178,42 @@ function parseQuestionBlock(rawBlock: string, questionIndex: number): ParsedRoun
   titleLine = titleLine.replace(/\*\*/g, '').trim();
 
   if (!titleLine) return null;
+
+  // Detect specific company if specified in question title or tags
+  let detectedCompany = inheritedCompany;
+  const bracketCompanyMatch = titleLine.match(/^\[([a-zA-Z0-9\s&.–—]+)\]\s*[:|-]?\s*/);
+  if (bracketCompanyMatch) {
+    const candidate = bracketCompanyMatch[1].trim();
+    const lower = candidate.toLowerCase();
+    if (
+      candidate.length > 1 &&
+      candidate.length < 35 &&
+      !lower.includes('coding') &&
+      !lower.includes('theory') &&
+      !lower.includes('easy') &&
+      !lower.includes('medium') &&
+      !lower.includes('hard')
+    ) {
+      detectedCompany = candidate;
+      titleLine = titleLine.slice(bracketCompanyMatch[0].length).trim();
+    }
+  } else {
+    const parenCompanyMatch = titleLine.match(/^\(([a-zA-Z0-9\s&.–—]+)\)\s*[:|-]?\s*/);
+    if (parenCompanyMatch) {
+      const candidate = parenCompanyMatch[1].trim();
+      const lower = candidate.toLowerCase();
+      if (candidate.length > 1 && candidate.length < 35 && !lower.includes('coding') && !lower.includes('theory')) {
+        detectedCompany = candidate;
+        titleLine = titleLine.slice(parenCompanyMatch[0].length).trim();
+      }
+    }
+  }
+
+  // Also check for explicit metadata inside block: **Company:** Google or *Asked at:* SecPod
+  const blockCompanyMatch = rawBlock.match(/(?:\*\*Company:\*\*|\*Company:\*|Company:|Asked at:|Asked by:)\s*([^\n,]+)/i);
+  if (blockCompanyMatch) {
+    detectedCompany = blockCompanyMatch[1].replace(/\*\*/g, '').trim();
+  }
 
   // Extract Code Blocks
   let codeSnippet: string | undefined;
@@ -343,6 +383,7 @@ function deriveRejectionLearning(
     id: `q-${questionIndex}-${Date.now().toString(36)}`,
     questionNumber: questionIndex,
     question: titleLine,
+    company: detectedCompany,
     type,
     difficulty,
     category,
@@ -364,11 +405,32 @@ export function parseInterviewMarkdown(
   markdownText: string,
   fileName: string = 'interview_notes.md'
 ): CompanyRoundDocument {
-  const cleanText = markdownText.replace(/\r\n/g, '\n').trim();
+  const cleanText = (markdownText || '').replace(/\r\n/g, '\n').trim();
+
+  // If no content, return clean empty document without injecting fake data
+  if (!cleanText) {
+    return {
+      id: `doc-empty-${Date.now()}`,
+      fileName: fileName || '',
+      company: '',
+      role: '',
+      interviewDate: '',
+      overview: '',
+      status: 'Debrief',
+      totalRounds: 0,
+      totalQuestions: 0,
+      theoryQuestionsCount: 0,
+      codingQuestionsCount: 0,
+      rawMarkdown: '',
+      rounds: [],
+      companies: [],
+      isEmpty: true,
+    };
+  }
 
   // 1. Detect Company Name & Role
-  let company = 'Target Company';
-  let role = 'Software Engineer';
+  let company = '';
+  let role = '';
   let interviewDate = new Date().toISOString().split('T')[0];
 
   const firstHeaderMatch = cleanText.match(/^#\s+(.*?)$/m);
@@ -459,6 +521,32 @@ export function parseInterviewMarkdown(
       roundTitle = `Round ${roundNum}: Technical & Theory Assessment`;
     }
 
+    // Determine specific company for this round if mentioned in heading
+    let roundCompany = company;
+    const sectionSepMatch = roundTitle.match(/^([a-zA-Z0-9\s&.–—]+?)\s*([—–|:-])\s*(.*)$/);
+    if (sectionSepMatch) {
+      const candidate = sectionSepMatch[1].trim();
+      const lower = candidate.toLowerCase();
+      if (!lower.startsWith('round') && !lower.startsWith('section') && candidate.length > 1 && candidate.length < 35) {
+        roundCompany = candidate;
+      }
+    } else {
+      const cleanHeading = roundTitle.replace(/Interview.*$/i, '').trim();
+      const lower = cleanHeading.toLowerCase();
+      if (
+        !lower.startsWith('round') &&
+        !lower.startsWith('section') &&
+        cleanHeading.length > 2 &&
+        cleanHeading.length < 35 &&
+        !lower.includes('technical') &&
+        !lower.includes('behavioral') &&
+        !lower.includes('screening') &&
+        !lower.includes('system design')
+      ) {
+        roundCompany = cleanHeading;
+      }
+    }
+
     // Determine Round Type
     let roundType: InterviewRoundSection['roundType'] = 'Technical / DSA';
     const lowerTitle = roundTitle.toLowerCase();
@@ -491,7 +579,7 @@ export function parseInterviewMarkdown(
       }
 
       globalQuestionCount++;
-      const parsedQ = parseQuestionBlock(bTrimmed, globalQuestionCount);
+      const parsedQ = parseQuestionBlock(bTrimmed, globalQuestionCount, roundCompany);
       if (parsedQ) {
         roundQuestions.push(parsedQ);
       }
@@ -509,6 +597,7 @@ export function parseInterviewMarkdown(
               id: `q-${globalQuestionCount}-${Date.now().toString(36)}`,
               questionNumber: globalQuestionCount,
               question: qText,
+              company: roundCompany,
               type: detectQuestionType(qText, '', false),
               difficulty: detectDifficulty(qText),
               category: detectCategory(qText, '', 'Theory & Concepts'),
@@ -527,6 +616,7 @@ export function parseInterviewMarkdown(
         id: `q-${globalQuestionCount}-${Date.now().toString(36)}`,
         questionNumber: globalQuestionCount,
         question: roundTitle,
+        company: roundCompany,
         type: roundType === 'Theory & Core CS' ? 'Theory & Concepts' : 'General',
         difficulty: 'Medium',
         category: 'Core Engineering',
@@ -538,29 +628,32 @@ export function parseInterviewMarkdown(
     parsedRounds.push({
       roundNumber: roundNum,
       roundTitle,
+      company: roundCompany,
       roundType,
-      roundNotes: roundNotes || 'Comprehensive evaluation covering conceptual depth, problem solving, and trade-offs.',
+      roundNotes: roundNotes || '',
       questions: roundQuestions,
     });
   });
 
-  // Ultimate guarantee: parsedRounds is NEVER empty
-  if (parsedRounds.length === 0) {
+  // If no sections were parsed and text exists
+  if (parsedRounds.length === 0 && cleanText.length > 0) {
     parsedRounds.push({
       roundNumber: 1,
-      roundTitle: 'Round 1: Technical & Engineering Assessment',
+      roundTitle: 'Debrief Notes',
+      company: company || '',
       roundType: 'Technical / DSA',
-      roundNotes: 'Interview debrief and evaluation notes.',
+      roundNotes: '',
       questions: [
         {
           id: `q-1-${Date.now().toString(36)}`,
           questionNumber: 1,
-          question: `${company} Technical Interview Debrief`,
+          question: company ? `${company} Interview Notes` : 'Interview Notes',
+          company: company || '',
           type: 'Theory & Concepts',
           difficulty: 'Medium',
-          category: 'Core CS Fundamentals',
-          keyConcepts: ['Interview Debrief', company],
-          answer: cleanText.slice(0, 800) || 'Detailed interview notes and debrief.',
+          category: 'Interview Notes',
+          keyConcepts: ['Debrief'],
+          answer: cleanText.slice(0, 800),
         },
       ],
     });
@@ -579,13 +672,26 @@ export function parseInterviewMarkdown(
     });
   });
 
+  // Collect all distinct companies across sections & questions
+  const companySet = new Set<string>();
+  if (company && company !== 'Target Company') companySet.add(company);
+  parsedRounds.forEach((r) => {
+    if (r.company && r.company !== 'Target Company') companySet.add(r.company);
+    r.questions.forEach((q) => {
+      if (q.company && q.company !== 'Target Company') companySet.add(q.company);
+    });
+  });
+  const allCompanies = Array.from(companySet);
+  const primaryCompany = (company && company !== 'Target Company') ? company : (allCompanies[0] || '');
+
   return {
     id: `doc-${Date.now().toString(36)}`,
     fileName,
-    company,
+    company: primaryCompany,
+    companies: allCompanies.length > 0 ? allCompanies : (primaryCompany ? [primaryCompany] : []),
     role,
     interviewDate,
-    overview: overallOverview || `Interview notes covering ${parsedRounds.length} consecutive rounds and ${totalQuestions} technical & theory questions.`,
+    overview: overallOverview || '',
     totalRounds: parsedRounds.length,
     totalQuestions,
     theoryQuestionsCount,
