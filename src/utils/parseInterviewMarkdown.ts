@@ -373,64 +373,81 @@ export function parseInterviewMarkdown(
 
   const firstHeaderMatch = cleanText.match(/^#\s+(.*?)$/m);
   if (firstHeaderMatch) {
-    const headerTitle = firstHeaderMatch[1].replace(/🎯|🔥|📌|💼/g, '').trim();
-    if (headerTitle.includes(' - ')) {
-      const parts = headerTitle.split(' - ');
-      company = parts[0].trim();
-      role = parts[1].replace(/Interview.*$/i, '').trim() || role;
-    } else if (headerTitle.toLowerCase().includes('google')) {
-      company = 'Google';
-    } else if (headerTitle.toLowerCase().includes('meta')) {
-      company = 'Meta';
-    } else if (headerTitle.toLowerCase().includes('stripe')) {
-      company = 'Stripe';
-    } else if (headerTitle.toLowerCase().includes('amazon')) {
-      company = 'Amazon';
-    } else if (headerTitle.toLowerCase().includes('microsoft')) {
-      company = 'Microsoft';
-    } else if (headerTitle.toLowerCase().includes('jobtracker')) {
-      company = 'JobTracker';
-      role = 'Full-Stack Software Engineer';
+    const rawHeader = firstHeaderMatch[1].replace(/[🎯🔥📌💼🚀✨]/g, '').trim();
+
+    // Check for separators: em-dash (—), en-dash (–), hyphen (-), colon (:), pipe (|)
+    const sepMatch = rawHeader.match(/\s*([—–|:-])\s*/);
+    if (sepMatch && sepMatch.index !== undefined && sepMatch.index > 0) {
+      const part1 = rawHeader.slice(0, sepMatch.index).trim();
+      const part2 = rawHeader.slice(sepMatch.index + sepMatch[0].length).trim();
+
+      // If part1 looks like company name
+      company = part1.replace(/Interview.*$/i, '').trim() || part1;
+
+      // Check if part2 is a role or generic "Interview Questions"
+      if (
+        part2.toLowerCase().includes('interview question') ||
+        part2.toLowerCase().includes('interview notes') ||
+        part2.toLowerCase().includes('debrief')
+      ) {
+        role = 'Software Engineer';
+      } else {
+        role = part2.replace(/Interview.*$/i, '').trim() || role;
+      }
     } else {
-      company = headerTitle.slice(0, 30);
+      // Clean company from title without separator
+      company = rawHeader
+        .replace(/\s*Interview\s*(Questions|Debrief|Notes).*$/i, '')
+        .trim();
     }
   }
 
-  // Look for metadata fields in markdown
-  const companyFieldMatch = cleanText.match(/(?:Company|Employer):\s*([^\n]+)/i);
+  // Look for metadata fields in markdown (e.g. **Company:** SecPod)
+  const companyFieldMatch = cleanText.match(/(?:Company|Employer|Organization):\s*([^\n]+)/i);
   if (companyFieldMatch) company = companyFieldMatch[1].replace(/\*\*/g, '').trim();
 
-  const roleFieldMatch = cleanText.match(/(?:Role|Position|Level):\s*([^\n]+)/i);
+  const roleFieldMatch = cleanText.match(/(?:Role|Position|Level|Job Title):\s*([^\n]+)/i);
   if (roleFieldMatch) role = roleFieldMatch[1].replace(/\*\*/g, '').trim();
 
   const dateFieldMatch = cleanText.match(/(?:Date|Interview Date):\s*([^\n]+)/i);
   if (dateFieldMatch) interviewDate = dateFieldMatch[1].replace(/\*\*/g, '').trim();
 
-  // 2. Split into Round Sections
-  // Matches: "## Round 1...", "## 1st Round...", "## Technical Round 1...", "## System Design Round..."
-  const roundSplitRegex = /(?=(?:^|\n)##+\s+(?:Round\s+\d+|[0-9]+(?:st|nd|rd|th)?\s+Round|Screening|Onsite\s+Round|System\s+Design|Technical\s+Round|Behavioral|Hiring\s+Manager|HR\s+Round|Core\s+Feature|\d+\.\s+Top\s+\d+))/i;
+  // 2. Split into Sections / Rounds
+  // Support ANY markdown level-2 heading (## ...) as a section/round
+  // If no ## exists, split by level-3 (### ...) or treat entire doc as a comprehensive section
+  let rawSections: string[] = [];
+  const hasH2 = /(?:^|\n)##\s+/.test(cleanText);
 
-  const rawSections = cleanText.split(roundSplitRegex).filter((s) => s.trim().length > 0);
+  if (hasH2) {
+    rawSections = cleanText.split(/(?=(?:^|\n)##\s+)/).filter((s) => s.trim().length > 0);
+  } else {
+    const hasH3 = /(?:^|\n)###\s+/.test(cleanText);
+    if (hasH3) {
+      rawSections = cleanText.split(/(?=(?:^|\n)###\s+)/).filter((s) => s.trim().length > 0);
+    } else {
+      rawSections = [cleanText];
+    }
+  }
 
   const parsedRounds: InterviewRoundSection[] = [];
   let overallOverview = '';
   let globalQuestionCount = 0;
 
-  // Process sections
+  // Process each section
   rawSections.forEach((section, index) => {
     const trimmed = section.trim();
     const lines = trimmed.split('\n');
     const firstLine = lines[0] || '';
 
-    // Check if this is the preamble/overview before rounds
-    if (index === 0 && !firstLine.toLowerCase().includes('round') && !firstLine.match(/^##+\s*\d/)) {
-      overallOverview = trimmed.replace(/^#\s+[^\n]+\n/, '').slice(0, 400).trim();
+    // If section 0 starts with # (doc title) and contains preamble text before ## sections
+    if (index === 0 && rawSections.length > 1 && !firstLine.startsWith('##') && !firstLine.toLowerCase().includes('round')) {
+      overallOverview = trimmed.replace(/^#\s+[^\n]+\n?/, '').slice(0, 500).trim();
       return;
     }
 
-    // Determine round number and title
+    // Determine round number and clean title
     let roundNum = parsedRounds.length + 1;
-    let roundTitle = firstLine.replace(/^##+\s*/, '').replace(/\*\*/g, '').trim();
+    let roundTitle = firstLine.replace(/^#+\s*/, '').replace(/\*\*/g, '').trim();
 
     const numMatch = roundTitle.match(/(?:Round\s*(\d+)|(\d+)(?:st|nd|rd|th)\s*Round)/i);
     if (numMatch) {
@@ -438,7 +455,7 @@ export function parseInterviewMarkdown(
       if (!isNaN(parsedNum)) roundNum = parsedNum;
     }
 
-    if (!roundTitle) {
+    if (!roundTitle || roundTitle.length < 3) {
       roundTitle = `Round ${roundNum}: Technical & Theory Assessment`;
     }
 
@@ -449,15 +466,15 @@ export function parseInterviewMarkdown(
       roundType = 'Screening';
     } else if (lowerTitle.includes('system design') || lowerTitle.includes('architecture') || lowerTitle.includes('scaling')) {
       roundType = 'System Design';
-    } else if (lowerTitle.includes('behavioral') || lowerTitle.includes('manager') || lowerTitle.includes('culture') || lowerTitle.includes('hr')) {
+    } else if (lowerTitle.includes('behavioral') || lowerTitle.includes('manager') || lowerTitle.includes('culture') || lowerTitle.includes('hr') || lowerTitle.includes('leadership')) {
       roundType = 'Behavioral / HR';
-    } else if (lowerTitle.includes('theory') || lowerTitle.includes('concept') || lowerTitle.includes('fundamental') || lowerTitle.includes('react') || lowerTitle.includes('database')) {
+    } else if (lowerTitle.includes('theory') || lowerTitle.includes('concept') || lowerTitle.includes('fundamental') || lowerTitle.includes('react') || lowerTitle.includes('database') || lowerTitle.includes('os') || lowerTitle.includes('linux')) {
       roundType = 'Theory & Core CS';
     }
 
-    // Extract questions inside this round
-    // Questions are typically separated by `###`, `####`, `**Q...**`, `### Q...`
-    const questionSplitRegex = /(?=(?:^|\n)(?:###+\s+|(?:\*\*Q\d*[:.]?\s*)|(?:\d+\.\s+\*\*Q)))/i;
+    // Extract questions inside this section
+    // Split by ###, ####, **Q..., or numbered items (1. , 2. )
+    const questionSplitRegex = /(?=(?:^|\n)(?:###+\s+|(?:\*\*Q\d*[:.]?\s*)|(?:\d+\.\s+(?:\*\*|Q|\w))|(?:Question\s+\d+[:.])))/i;
     const rawQuestionBlocks = trimmed.replace(firstLine, '').split(questionSplitRegex);
 
     let roundNotes = '';
@@ -467,8 +484,8 @@ export function parseInterviewMarkdown(
       const bTrimmed = block.trim();
       if (!bTrimmed) return;
 
-      // If the first block doesn't start with a question indicator, treat as Round Notes / Interviewer tips
-      if (qIdx === 0 && !bTrimmed.startsWith('###') && !bTrimmed.match(/^\*\*Q/i) && !bTrimmed.match(/^\d+\.\s*\*\*Q/i)) {
+      // If the first block doesn't start with a question indicator, treat as Round Notes / Intro
+      if (qIdx === 0 && !bTrimmed.startsWith('###') && !bTrimmed.match(/^\*\*Q/i) && !bTrimmed.match(/^\d+\.\s/i) && !bTrimmed.match(/^Question/i)) {
         roundNotes = bTrimmed;
         return;
       }
@@ -480,94 +497,73 @@ export function parseInterviewMarkdown(
       }
     });
 
-    // Fallback: If no sub-question blocks were split, check for bullet questions or generate from paragraphs
-    if (roundQuestions.length === 0 && trimmed.length > 50) {
-      // Check for bullet-point questions "- Question:" or "- **Q:**"
-      const bulletMatches = trimmed.match(/(?:^|\n)[-*•]\s+([^\n]+)/g);
-      if (bulletMatches && bulletMatches.length > 0) {
-        bulletMatches.forEach((bullet) => {
-          const qText = bullet.replace(/^[-*•\s]+/, '').replace(/\*\*/g, '').trim();
-          if (qText.length > 10) {
+    // Fallback: If no sub-question blocks were split, check for bullet points or numbered lines
+    if (roundQuestions.length === 0 && trimmed.length > 30) {
+      const itemMatches = trimmed.match(/(?:^|\n)(?:[-*•]|\d+\.)\s+([^\n]+)/g);
+      if (itemMatches && itemMatches.length > 0) {
+        itemMatches.forEach((item) => {
+          const qText = item.replace(/^(?:[-*•]|\d+\.)\s+/, '').replace(/\*\*/g, '').trim();
+          if (qText.length > 8) {
             globalQuestionCount++;
             roundQuestions.push({
               id: `q-${globalQuestionCount}-${Date.now().toString(36)}`,
               questionNumber: globalQuestionCount,
               question: qText,
               type: detectQuestionType(qText, '', false),
-              difficulty: 'Medium',
-              category: 'General Technical',
-              keyConcepts: ['Round Notes', 'Interview Discussion'],
-              answer: 'Discussed key approaches, pros/cons, and core concepts with the interviewer.',
+              difficulty: detectDifficulty(qText),
+              category: detectCategory(qText, '', 'Theory & Concepts'),
+              keyConcepts: ['Interview Question', 'Discussion'],
+              answer: 'Discussed architectural trade-offs, implementation details, and core mechanics with the interviewer.',
             });
           }
         });
       }
     }
 
+    // If still no questions, create a representative card for the section
+    if (roundQuestions.length === 0) {
+      globalQuestionCount++;
+      roundQuestions.push({
+        id: `q-${globalQuestionCount}-${Date.now().toString(36)}`,
+        questionNumber: globalQuestionCount,
+        question: roundTitle,
+        type: roundType === 'Theory & Core CS' ? 'Theory & Concepts' : 'General',
+        difficulty: 'Medium',
+        category: 'Core Engineering',
+        keyConcepts: ['Interview Assessment'],
+        answer: trimmed.slice(0, 600) || 'Interview evaluation and questions covered in this round.',
+      });
+    }
+
     parsedRounds.push({
       roundNumber: roundNum,
       roundTitle,
       roundType,
-      roundNotes: roundNotes || 'Standard evaluation round assessing engineering depth, trade-offs, and conceptual clarity.',
+      roundNotes: roundNotes || 'Comprehensive evaluation covering conceptual depth, problem solving, and trade-offs.',
       questions: roundQuestions,
     });
   });
 
-  // Fallback: If no rounds were parsed, group all questions into logical rounds
+  // Ultimate guarantee: parsedRounds is NEVER empty
   if (parsedRounds.length === 0) {
-    const questionBlocks = cleanText.split(/(?=(?:^|\n)###+\s+)/).filter((b) => b.trim().length > 0);
-    const questionsList: ParsedRoundQuestion[] = [];
-
-    questionBlocks.forEach((block, idx) => {
-      const q = parseQuestionBlock(block.trim(), idx + 1);
-      if (q) questionsList.push(q);
+    parsedRounds.push({
+      roundNumber: 1,
+      roundTitle: 'Round 1: Technical & Engineering Assessment',
+      roundType: 'Technical / DSA',
+      roundNotes: 'Interview debrief and evaluation notes.',
+      questions: [
+        {
+          id: `q-1-${Date.now().toString(36)}`,
+          questionNumber: 1,
+          question: `${company} Technical Interview Debrief`,
+          type: 'Theory & Concepts',
+          difficulty: 'Medium',
+          category: 'Core CS Fundamentals',
+          keyConcepts: ['Interview Debrief', company],
+          answer: cleanText.slice(0, 800) || 'Detailed interview notes and debrief.',
+        },
+      ],
     });
-
-    if (questionsList.length > 0) {
-      // Split into Round 1 (Theory & Fundamentals) and Round 2 (Technical & Coding)
-      const theoryQs = questionsList.filter((q) => q.type === 'Theory & Concepts' || q.type === 'General');
-      const codingQs = questionsList.filter((q) => q.type !== 'Theory & Concepts' && q.type !== 'General');
-
-      if (theoryQs.length > 0) {
-        parsedRounds.push({
-          roundNumber: 1,
-          roundTitle: 'Round 1: Core Fundamentals & Theory Questions',
-          roundType: 'Theory & Core CS',
-          roundNotes: 'Initial technical screen covering core language mechanisms, architectural trade-offs, and theory.',
-          questions: theoryQs,
-        });
-      }
-
-      if (codingQs.length > 0 || theoryQs.length === 0) {
-        parsedRounds.push({
-          roundNumber: parsedRounds.length + 1,
-          roundTitle: `Round ${parsedRounds.length + 1}: Deep Dive, System Design & Implementation`,
-          roundType: 'Technical / DSA',
-          roundNotes: 'In-depth problem solving, algorithms, data structures, and edge-case execution.',
-          questions: codingQs.length > 0 ? codingQs : questionsList,
-        });
-      }
-    } else {
-      // Minimal placeholder round so the user sees structured output
-      parsedRounds.push({
-        roundNumber: 1,
-        roundTitle: 'Round 1: Screening & Interview Questions',
-        roundType: 'Screening',
-        roundNotes: 'Parsed notes from markdown document.',
-        questions: [
-          {
-            id: 'q-sample-1',
-            questionNumber: 1,
-            question: 'Core Architectural and Conceptual Overview',
-            type: 'Theory & Concepts',
-            difficulty: 'Medium',
-            category: 'Architecture',
-            keyConcepts: ['System Design', 'Core Fundamentals'],
-            answer: cleanText.slice(0, 300) || 'Review the notes and questions discussed during this interview round.',
-          },
-        ],
-      });
-    }
   }
 
   // Compute question metrics

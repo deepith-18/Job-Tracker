@@ -39,6 +39,9 @@ import { PRESET_SAMPLE_FILES } from '../../data/sampleInterviewNotes';
 import { CodeInterpreterViewer } from '../common/CodeInterpreterViewer';
 import { MarkdownTextRenderer } from './MarkdownTextRenderer';
 import { useCodeQuestions } from '../../hooks/useCodeQuestions';
+import { useApplications } from '../../hooks/useApplications';
+import { useAuthStore } from '../../store/authStore';
+import { addApplication } from '../../firebase/firestore';
 import { useToast } from '../ui/ToastContext';
 import type {
   CompanyRoundDocument,
@@ -51,10 +54,13 @@ import type {
 const STORAGE_KEY = 'jobtracker_company_rounds_md_doc';
 
 type ViewMode = 'reader' | 'cards' | 'stepper';
+type ReaderSubMode = 'formatted' | 'structured' | 'raw';
 type FontSize = 'sm' | 'md' | 'lg';
 
 export const CompanyRoundNotesMdViewer: React.FC = () => {
   const { addQuestion } = useCodeQuestions();
+  const { applications } = useApplications();
+  const user = useAuthStore((s) => s.user);
   const { addToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -64,7 +70,12 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        return JSON.parse(saved);
+        const parsedSaved = JSON.parse(saved);
+        // If saved doc has 0 rounds or bad company name, re-parse if rawMarkdown exists
+        if (parsedSaved.rawMarkdown && (parsedSaved.totalRounds === 0 || !parsedSaved.rounds || parsedSaved.rounds.length === 0 || parsedSaved.company?.includes('— Intervie'))) {
+          return parseInterviewMarkdown(parsedSaved.rawMarkdown, parsedSaved.fileName || 'interview_notes.md');
+        }
+        return parsedSaved;
       }
     } catch {
       // Fallback
@@ -73,7 +84,8 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
   });
 
   // UI state & View Modes
-  const [viewMode, setViewMode] = useState<ViewMode>('reader'); // Default to clean Readme reader to prevent infinite card scroll
+  const [viewMode, setViewMode] = useState<ViewMode>('reader'); // Default to clean Readme reader
+  const [readerSubMode, setReaderSubMode] = useState<ReaderSubMode>('formatted');
   const [fontSize, setFontSize] = useState<FontSize>('md');
   const [isCompact, setIsCompact] = useState<boolean>(false);
   const [selectedRound, setSelectedRound] = useState<number | 'all'>('all');
@@ -84,7 +96,9 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [savedVaultIds, setSavedVaultIds] = useState<Set<string>>(new Set());
   const [copiedQId, setCopiedQId] = useState<string | null>(null);
+  const [copiedRaw, setCopiedRaw] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [isAddingApp, setIsAddingApp] = useState(false);
 
   // Paste modal state
   const [pasteModalOpen, setPasteModalOpen] = useState(false);
@@ -125,6 +139,16 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
     followUps: '',
   });
 
+  // Automatically heal and re-parse stale or empty-round cached documents
+  useEffect(() => {
+    if (doc.rawMarkdown && (doc.rounds.length === 0 || doc.totalQuestions === 0 || doc.company.includes('— Intervie'))) {
+      const reParsed = parseInterviewMarkdown(doc.rawMarkdown, doc.fileName);
+      if (reParsed.rounds.length > 0 || reParsed.company !== doc.company) {
+        setDoc(reParsed);
+      }
+    }
+  }, [doc]);
+
   // Persist current doc to localStorage
   useEffect(() => {
     try {
@@ -142,6 +166,51 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Check if company is already tracked in user's applications
+  const isCompanyTracked = useMemo(() => {
+    if (!doc.company || doc.company === 'Target Company') return false;
+    const clean = doc.company.toLowerCase().trim();
+    return applications.some((a) => {
+      const appComp = a.company.toLowerCase().trim();
+      return appComp === clean || clean.includes(appComp) || appComp.includes(clean);
+    });
+  }, [applications, doc.company]);
+
+  // Add Company to Applications Pipeline
+  const handleAddToApplications = async () => {
+    if (!user?.uid) {
+      addToast('Authentication Required', 'Please log in to add this company to your pipeline', 'error');
+      return;
+    }
+    try {
+      setIsAddingApp(true);
+      await addApplication(user.uid, {
+        company: doc.company,
+        role: doc.role || 'Software Engineer',
+        status: 'Interview',
+        appliedDate: new Date(),
+        deadline: null,
+        jobLink: '',
+        notes: `Imported from debrief notes: ${doc.fileName}`,
+        interviewNotes: `Interview Debrief (${doc.rounds.length} rounds, ${doc.totalQuestions} questions):\n${doc.overview || ''}`,
+        source: 'Interview Notes',
+        rating: 4,
+        rejectionReasons: [],
+        interviewDates: [doc.interviewDate || new Date().toISOString().split('T')[0]],
+      });
+      addToast(
+        'Company Added to Applications',
+        `"${doc.company}" is now tracked under Interview stage in your pipeline!`,
+        'success'
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to add application';
+      addToast('Error', msg, 'error');
+    } finally {
+      setIsAddingApp(false);
+    }
+  };
 
   // Compute Word Count & Estimated Read Time
   const readingStats = useMemo(() => {
@@ -169,7 +238,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
       setSelectedRound('all');
       setStepperRoundIndex(0);
       setSelectedType('All');
-      setExpandedIds(new Set()); // Start collapsed to save vertical space
+      setExpandedIds(new Set());
       addToast(
         'Markdown Parsed Successfully',
         `Extracted ${parsed.totalRounds} rounds and ${parsed.totalQuestions} questions for ${parsed.company}`,
@@ -198,7 +267,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
       setSelectedRound('all');
       setStepperRoundIndex(0);
       setExpandedIds(new Set());
-      addToast('Markdown Loaded', `Loaded notes for ${parsed.company}`, 'success');
+      addToast('Markdown Loaded', `Loaded debrief for ${parsed.company}`, 'success');
     };
     reader.readAsText(file);
   };
@@ -247,6 +316,13 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
     addToast('Copied to Clipboard', 'Question, notes, and lessons copied.', 'info');
   };
 
+  const handleCopyRawMarkdown = () => {
+    navigator.clipboard.writeText(doc.rawMarkdown);
+    setCopiedRaw(true);
+    setTimeout(() => setCopiedRaw(false), 2000);
+    addToast('Markdown Copied', 'Full document markdown copied to clipboard', 'info');
+  };
+
   const handleExportMarkdown = () => {
     const blob = new Blob([doc.rawMarkdown], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -273,7 +349,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
     setSelectedRound('all');
     setStepperRoundIndex(0);
     setExpandedIds(new Set());
-    addToast('Markdown Imported', `Parsed ${parsed.totalRounds} rounds and questions.`, 'success');
+    addToast('Markdown Imported', `Parsed ${parsed.totalRounds} rounds and ${parsed.totalQuestions} questions for ${parsed.company}.`, 'success');
   };
 
   const handleOpenEditModal = (roundNumber: number, q: ParsedRoundQuestion) => {
@@ -516,7 +592,6 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
     return doc.rounds
       .filter((r) => {
         if (viewMode === 'stepper') {
-          // In stepper mode, show only active round index
           const activeRound = doc.rounds[stepperRoundIndex];
           return activeRound ? r.roundNumber === activeRound.roundNumber : true;
         }
@@ -588,42 +663,90 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
       ref={containerRef}
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
-      style={{ maxWidth: 1160, margin: '0 auto', position: 'relative' }}
+      style={{ maxWidth: 1180, margin: '0 auto', position: 'relative' }}
     >
-      {/* ── Top Header Bar & Document Summary ── */}
+      {/* ── Top Header Bar & Document Summary (Celestial Glass Card) ── */}
       <div
         className="card"
         style={{
-          padding: '20px 24px',
+          padding: '24px 26px',
           marginBottom: 16,
-          background: 'var(--card)',
+          background: 'linear-gradient(135deg, var(--card) 0%, var(--card-hover) 100%)',
           border: '1px solid var(--border)',
+          borderTop: '3px solid var(--accent)',
+          borderRadius: 16,
           display: 'flex',
           flexDirection: 'column',
           gap: 16,
-          boxShadow: 'var(--shadow)',
+          boxShadow: 'var(--shadow-md)',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              {/* Company Badge with Track Status */}
               <span
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 6,
-                  padding: '4px 12px',
+                  padding: '5px 14px',
                   borderRadius: 20,
                   background: 'var(--accent-bg)',
                   color: 'var(--accent)',
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  border: '1px solid var(--border)',
+                  fontSize: 13,
+                  fontWeight: 800,
+                  border: '1px solid var(--accent)',
+                  boxShadow: '0 0 12px var(--accent-glow)',
                 }}
               >
                 <Building2 style={{ width: 14, height: 14 }} />
                 <span>{doc.company}</span>
               </span>
+
+              {/* Add Company to Applications Button if not already tracked */}
+              {!isCompanyTracked && (
+                <button
+                  onClick={handleAddToApplications}
+                  disabled={isAddingApp}
+                  className="btn btn-primary"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    padding: '4px 12px',
+                    borderRadius: 16,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-h) 100%)',
+                    boxShadow: '0 2px 8px var(--accent-glow)',
+                  }}
+                  title="Add this company and role into your active Applications Pipeline"
+                >
+                  <Plus style={{ width: 13, height: 13 }} />
+                  <span>{isAddingApp ? 'Adding...' : `Add "${doc.company}" to Applications`}</span>
+                </button>
+              )}
+
+              {isCompanyTracked && (
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    color: 'var(--success)',
+                    background: 'var(--success-bg)',
+                    padding: '3px 9px',
+                    borderRadius: 12,
+                    border: '1px solid var(--success)',
+                  }}
+                >
+                  <CheckCircle2 style={{ width: 12, height: 12 }} />
+                  <span>Tracked in Applications</span>
+                </span>
+              )}
 
               <span style={{ fontSize: 13, color: 'var(--t2)', fontWeight: 600 }}>
                 {doc.role}
@@ -643,8 +766,8 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                   gap: 5,
                   fontSize: 12,
                   color: 'var(--t3)',
-                  background: 'var(--card-hover)',
-                  padding: '3px 8px',
+                  background: 'var(--card)',
+                  padding: '3px 9px',
                   borderRadius: 12,
                   border: '1px solid var(--border)',
                 }}
@@ -656,15 +779,15 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
               </span>
             </div>
 
-            <h2 style={{ fontSize: 21, fontWeight: 800, color: 'var(--t1)', marginTop: 8, marginBottom: 4 }}>
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--t1)', marginTop: 10, marginBottom: 4 }}>
               Company Round Notes & Readme Viewer
             </h2>
-            <p style={{ fontSize: 13, color: 'var(--t2)', margin: 0, maxWidth: 680, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 13, color: 'var(--t2)', margin: 0, maxWidth: 720, lineHeight: 1.5 }}>
               Active debrief: <strong style={{ color: 'var(--t1)' }}>{doc.fileName}</strong> ({doc.totalRounds} rounds, {doc.totalQuestions} questions with {doc.theoryQuestionsCount} theory topics).
             </p>
           </div>
 
-          {/* Action Buttons (Upload / Paste / Export) */}
+          {/* Action Buttons (Upload / Paste / Export / Copy) */}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <input
               ref={fileInputRef}
@@ -681,9 +804,10 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
-                padding: '7px 14px',
+                padding: '7px 15px',
                 fontSize: 12.5,
                 fontWeight: 700,
+                boxShadow: '0 2px 8px var(--accent-glow)',
               }}
             >
               <UploadCloud style={{ width: 15, height: 15 }} />
@@ -697,10 +821,10 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
-                padding: '7px 13px',
+                padding: '7px 14px',
                 fontSize: 12.5,
                 fontWeight: 600,
-                background: 'var(--card-hover)',
+                background: 'var(--card)',
                 border: '1px solid var(--border)',
                 color: 'var(--t1)',
               }}
@@ -710,14 +834,30 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
             </button>
 
             <button
+              onClick={handleCopyRawMarkdown}
+              className="btn-ghost"
+              title="Copy entire raw Markdown to clipboard"
+              style={{
+                padding: 7,
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+                color: copiedRaw ? 'var(--success)' : 'var(--t2)',
+                background: 'var(--card)',
+              }}
+            >
+              {copiedRaw ? <Check style={{ width: 15, height: 15 }} /> : <Copy style={{ width: 15, height: 15 }} />}
+            </button>
+
+            <button
               onClick={handleExportMarkdown}
               className="btn-ghost"
-              title="Download clean Markdown"
+              title="Download clean Markdown file"
               style={{
                 padding: 7,
                 borderRadius: 8,
                 border: '1px solid var(--border)',
                 color: 'var(--t2)',
+                background: 'var(--card)',
               }}
             >
               <Download style={{ width: 15, height: 15 }} />
@@ -726,7 +866,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
         </div>
 
         {/* Preset Sample Debrief Switchers */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingTop: 10, borderTop: '1px solid var(--border-light)' }}>
           <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Load Sample:
           </span>
@@ -735,7 +875,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
               key={sample.id}
               onClick={() => handleLoadSample(sample.id)}
               style={{
-                padding: '3px 10px',
+                padding: '3px 11px',
                 borderRadius: 12,
                 fontSize: 11.5,
                 fontWeight: 600,
@@ -752,17 +892,17 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
         </div>
       </div>
 
-      {/* ── STICKY READING & VIEW CONTROL BAR ── */}
+      {/* ── STICKY READING & VIEW CONTROL BAR (Glassmorphic) ── */}
       <div
         style={{
           position: 'sticky',
           top: 70,
           zIndex: 40,
           background: 'var(--nav-bg)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          borderRadius: 12,
-          padding: '10px 16px',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          borderRadius: 14,
+          padding: '10px 18px',
           marginBottom: 16,
           border: '1px solid var(--border)',
           boxShadow: 'var(--shadow-md)',
@@ -780,9 +920,9 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
-                padding: '5px 12px',
+                padding: '6px 14px',
                 borderRadius: 8,
-                fontSize: 12,
+                fontSize: 12.5,
                 fontWeight: 700,
                 cursor: 'pointer',
                 background: viewMode === 'reader' ? 'var(--accent)' : 'transparent',
@@ -802,9 +942,9 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
-                padding: '5px 12px',
+                padding: '6px 14px',
                 borderRadius: 8,
-                fontSize: 12,
+                fontSize: 12.5,
                 fontWeight: 700,
                 cursor: 'pointer',
                 background: viewMode === 'cards' ? 'var(--accent)' : 'transparent',
@@ -827,9 +967,9 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
-                padding: '5px 12px',
+                padding: '6px 14px',
                 borderRadius: 8,
-                fontSize: 12,
+                fontSize: 12.5,
                 fontWeight: 700,
                 cursor: 'pointer',
                 background: viewMode === 'stepper' ? 'var(--accent)' : 'transparent',
@@ -844,11 +984,62 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
             </button>
           </div>
 
+          {/* Reader Sub-Mode (When in Reader Mode) */}
+          {viewMode === 'reader' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'var(--card)', padding: 2, borderRadius: 8, border: '1px solid var(--border)' }}>
+              <button
+                onClick={() => setReaderSubMode('formatted')}
+                style={{
+                  padding: '3px 9px',
+                  borderRadius: 6,
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  background: readerSubMode === 'formatted' ? 'var(--accent-bg)' : 'transparent',
+                  color: readerSubMode === 'formatted' ? 'var(--accent)' : 'var(--t3)',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                Article
+              </button>
+              <button
+                onClick={() => setReaderSubMode('structured')}
+                style={{
+                  padding: '3px 9px',
+                  borderRadius: 6,
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  background: readerSubMode === 'structured' ? 'var(--accent-bg)' : 'transparent',
+                  color: readerSubMode === 'structured' ? 'var(--accent)' : 'var(--t3)',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                Structured Q&A
+              </button>
+              <button
+                onClick={() => setReaderSubMode('raw')}
+                style={{
+                  padding: '3px 9px',
+                  borderRadius: 6,
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  background: readerSubMode === 'raw' ? 'var(--accent-bg)' : 'transparent',
+                  color: readerSubMode === 'raw' ? 'var(--accent)' : 'var(--t3)',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                Raw MD
+              </button>
+            </div>
+          )}
+
           {/* Reading Comfort & Density Controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             {/* Font Size Selector */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--card)', padding: '3px 6px', borderRadius: 8, border: '1px solid var(--border)' }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t3)', paddingRight: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'var(--card)', padding: '3px 6px', borderRadius: 8, border: '1px solid var(--border)' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t3)', paddingRight: 2 }}>
                 <Type style={{ width: 13, height: 13, display: 'inline', verticalAlign: '-2px' }} />
               </span>
               {(['sm', 'md', 'lg'] as FontSize[]).map((size) => (
@@ -865,7 +1056,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                     border: 'none',
                     cursor: 'pointer',
                   }}
-                  title={`Font size: ${size === 'sm' ? 'Compact (13px)' : size === 'md' ? 'Default (14.5px)' : 'Comfort (16.5px)'}`}
+                  title={`Font size: ${size === 'sm' ? 'Compact' : size === 'md' ? 'Default' : 'Comfort'}`}
                 >
                   {size.toUpperCase()}
                 </button>
@@ -893,7 +1084,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                   title="Toggle compact list view vs detailed cards"
                 >
                   <List style={{ width: 13, height: 13 }} />
-                  <span>{isCompact ? 'Compact View' : 'Comfortable'}</span>
+                  <span>{isCompact ? 'Compact View' : 'Detailed'}</span>
                 </button>
 
                 <button
@@ -930,9 +1121,9 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                 borderRadius: 8,
                 fontSize: 11.5,
                 fontWeight: 600,
-                background: onlyRejectionLessons ? 'rgba(245, 158, 11, 0.15)' : 'var(--card)',
-                color: onlyRejectionLessons ? 'var(--warn)' : 'var(--t2)',
-                border: onlyRejectionLessons ? '1px solid var(--warn)' : '1px solid var(--border)',
+                background: onlyRejectionLessons ? 'var(--streak-bg)' : 'var(--card)',
+                color: onlyRejectionLessons ? 'var(--streak)' : 'var(--t2)',
+                border: onlyRejectionLessons ? '1px solid var(--streak)' : '1px solid var(--border)',
                 cursor: 'pointer',
               }}
               title="Show only questions that have rejection lessons"
@@ -946,7 +1137,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
         {/* ── QUICK-JUMP TABLE OF CONTENTS (TOC) PILLS ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
           <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--t3)', textTransform: 'uppercase', marginRight: 4, whiteSpace: 'nowrap' }}>
-            Jump to Round:
+            Jump to Section:
           </span>
 
           {viewMode !== 'stepper' && (
@@ -965,7 +1156,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                 transition: 'all 0.15s ease',
               }}
             >
-              All Rounds ({doc.rounds.length})
+              All Sections ({doc.rounds.length})
             </button>
           )}
 
@@ -1025,6 +1216,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
           alignItems: 'center',
           background: 'var(--card)',
           border: '1px solid var(--border)',
+          borderRadius: 12,
         }}
       >
         <div style={{ position: 'relative', flex: '1 1 240px' }}>
@@ -1086,10 +1278,12 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
         <div
           className="card"
           style={{
-            padding: '12px 18px',
+            padding: '14px 20px',
             marginBottom: 20,
             background: 'var(--card)',
             border: '1px solid var(--border)',
+            borderLeft: '4px solid var(--accent)',
+            borderRadius: 12,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -1113,14 +1307,14 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
             }}
           >
             <ChevronLeft style={{ width: 15, height: 15 }} />
-            <span>Previous Round</span>
+            <span>Previous Section</span>
           </button>
 
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Round {stepperRoundIndex + 1} of {doc.rounds.length}
+            <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Section {stepperRoundIndex + 1} of {doc.rounds.length}
             </div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)' }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--t1)' }}>
               {doc.rounds[stepperRoundIndex]?.roundTitle || 'Round Notes'}
             </div>
           </div>
@@ -1140,62 +1334,162 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
               cursor: stepperRoundIndex >= doc.rounds.length - 1 ? 'not-allowed' : 'pointer',
             }}
           >
-            <span>Next Round</span>
+            <span>Next Section</span>
             <ChevronRight style={{ width: 15, height: 15 }} />
           </button>
         </div>
       )}
 
       {/* ── MAIN CONTENT: RENDER ACCORDING TO VIEW MODE ── */}
-      {filteredRounds.length === 0 || totalVisibleQuestions === 0 ? (
-        <div className="card" style={{ padding: 48, textAlign: 'center', background: 'var(--card)', border: '1px solid var(--border)' }}>
-          <Brain style={{ width: 40, height: 40, margin: '0 auto 12px', color: 'var(--t3)' }} />
-          <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)' }}>
-            No interview questions matched your current filter
-          </div>
-          <p style={{ fontSize: 13, color: 'var(--t2)', marginTop: 6 }}>
-            Try resetting your search query or selecting "All Rounds" and "All Question Types".
-          </p>
-          <button
-            onClick={() => {
-              setSelectedRound('all');
-              setSelectedType('All');
-              setSearchQuery('');
-              setOnlyRejectionLessons(false);
-            }}
-            className="btn btn-primary"
-            style={{ marginTop: 14 }}
-          >
-            Reset All Filters
-          </button>
-        </div>
-      ) : viewMode === 'reader' ? (
+      {viewMode === 'reader' && readerSubMode === 'raw' ? (
         /* ══════════════════════════════════════════════════════════════
-           VIEW MODE 1: README / DOCUMENT READER (Clean Article Style)
-           Solves length, scrolling fatigue, and harsh colors.
+           RAW MARKDOWN VIEW
            ══════════════════════════════════════════════════════════════ */
         <div
           className="card"
           style={{
-            maxWidth: 880,
+            maxWidth: 920,
             margin: '0 auto',
-            padding: '36px 40px',
+            padding: 24,
             background: 'var(--card)',
             border: '1px solid var(--border)',
+            borderRadius: 16,
             boxShadow: 'var(--shadow-md)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--t2)' }}>
+              Raw Markdown ({readingStats.words} words)
+            </span>
+            <button
+              onClick={handleCopyRawMarkdown}
+              className="btn btn-primary"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '5px 12px' }}
+            >
+              {copiedRaw ? <Check style={{ width: 14, height: 14 }} /> : <Copy style={{ width: 14, height: 14 }} />}
+              <span>{copiedRaw ? 'Copied' : 'Copy All'}</span>
+            </button>
+          </div>
+          <pre
+            style={{
+              padding: 16,
+              borderRadius: 10,
+              background: 'var(--page)',
+              border: '1px solid var(--border)',
+              color: 'var(--t1)',
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+              fontSize: 12.5,
+              lineHeight: 1.6,
+              overflowX: 'auto',
+              whiteSpace: 'pre-wrap',
+            }}
+          >
+            {doc.rawMarkdown}
+          </pre>
+        </div>
+      ) : viewMode === 'reader' && readerSubMode === 'formatted' ? (
+        /* ══════════════════════════════════════════════════════════════
+           VIEW MODE 1A: CONTINUOUS ARTICLE DOCUMENT READER
+           Always renders the full document even if rounds were not split!
+           ══════════════════════════════════════════════════════════════ */
+        <div
+          className="card"
+          style={{
+            maxWidth: 900,
+            margin: '0 auto',
+            padding: '36px 42px',
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderTop: '3px solid var(--accent)',
+            boxShadow: 'var(--shadow-lg)',
             borderRadius: 16,
           }}
         >
           {/* Readme Document Header */}
           <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: 24, marginBottom: 28 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-              {doc.company} • Interview Debrief Document
+            <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+              {doc.company} • Interview Debrief & Notes
             </div>
-            <h1 style={{ fontSize: 26, fontWeight: 800, color: 'var(--t1)', margin: 0, lineHeight: 1.3 }}>
+            <h1 style={{ fontSize: 27, fontWeight: 800, color: 'var(--t1)', margin: 0, lineHeight: 1.3 }}>
               {doc.role}
             </h1>
             {doc.overview && (
-              <p style={{ fontSize: fontPx, color: 'var(--t2)', marginTop: 12, lineHeight: 1.6 }}>
+              <p style={{ fontSize: fontPx, color: 'var(--t2)', marginTop: 12, lineHeight: 1.65 }}>
+                {doc.overview}
+              </p>
+            )}
+          </div>
+
+          {/* Render Full Markdown Text Content with high-fidelity formatting */}
+          <MarkdownTextRenderer content={doc.rawMarkdown} fontSize={fontPx} />
+        </div>
+      ) : filteredRounds.length === 0 || totalVisibleQuestions === 0 ? (
+        /* ══════════════════════════════════════════════════════════════
+           EMPTY FILTER FALLBACK: Show document instead of dead screen
+           ══════════════════════════════════════════════════════════════ */
+        <div
+          className="card"
+          style={{
+            maxWidth: 900,
+            margin: '0 auto',
+            padding: '32px 36px',
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: 16,
+            boxShadow: 'var(--shadow-md)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 14, borderBottom: '1px solid var(--border)' }}>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--t1)' }}>
+                Viewing Full Document
+              </div>
+              <div style={{ fontSize: 12.5, color: 'var(--t3)', marginTop: 2 }}>
+                Current filters yielded 0 card matches. Showing complete debrief notes below.
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setSelectedRound('all');
+                setSelectedType('All');
+                setSearchQuery('');
+                setOnlyRejectionLessons(false);
+              }}
+              className="btn btn-primary"
+              style={{ fontSize: 12, padding: '5px 12px' }}
+            >
+              Reset Filters
+            </button>
+          </div>
+          <MarkdownTextRenderer content={doc.rawMarkdown} fontSize={fontPx} />
+        </div>
+      ) : viewMode === 'reader' && readerSubMode === 'structured' ? (
+        /* ══════════════════════════════════════════════════════════════
+           VIEW MODE 1B: STRUCTURED ARTICLE Q&A
+           ══════════════════════════════════════════════════════════════ */
+        <div
+          className="card"
+          style={{
+            maxWidth: 900,
+            margin: '0 auto',
+            padding: '36px 42px',
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderTop: '3px solid var(--accent)',
+            boxShadow: 'var(--shadow-lg)',
+            borderRadius: 16,
+          }}
+        >
+          {/* Readme Document Header */}
+          <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: 24, marginBottom: 28 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+              {doc.company} • Interview Debrief Document
+            </div>
+            <h1 style={{ fontSize: 27, fontWeight: 800, color: 'var(--t1)', margin: 0, lineHeight: 1.3 }}>
+              {doc.role}
+            </h1>
+            {doc.overview && (
+              <p style={{ fontSize: fontPx, color: 'var(--t2)', marginTop: 12, lineHeight: 1.65 }}>
                 {doc.overview}
               </p>
             )}
@@ -1216,7 +1510,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                   <div>
                     <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Round {round.roundNumber}
+                      Section {round.roundNumber}
                     </span>
                     <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--t1)', margin: '4px 0 0' }}>
                       {round.roundTitle}
@@ -1229,7 +1523,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                   </div>
 
                   <span style={{ fontSize: 12, color: 'var(--t3)', fontWeight: 600 }}>
-                    {round.questions.length} Qs
+                    {round.questions.length} Items
                   </span>
                 </div>
 
@@ -1323,7 +1617,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Formatted Answer / Theory Explanation */}
+                        {/* Formatted Answer */}
                         <div style={{ marginTop: 12 }}>
                           <MarkdownTextRenderer content={q.answer} fontSize={fontPx} />
                         </div>
@@ -1343,7 +1637,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                           </div>
                         )}
 
-                        {/* Rejection Retrospective Lesson Callout (Calm, legible contrast) */}
+                        {/* Rejection Retrospective Lesson Callout */}
                         {q.rejectionLearning && (
                           <div
                             style={{
@@ -1414,13 +1708,14 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '10px 16px',
-                  borderRadius: 10,
+                  padding: '12px 18px',
+                  borderRadius: 12,
                   background: 'var(--card)',
                   border: '1px solid var(--border)',
                   borderLeft: '4px solid var(--accent)',
                   flexWrap: 'wrap',
                   gap: 10,
+                  boxShadow: 'var(--shadow)',
                 }}
               >
                 <div>
@@ -1438,7 +1733,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                     >
                       Round {round.roundNumber}
                     </span>
-                    <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
+                    <h3 style={{ fontSize: 15.5, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
                       {round.roundTitle}
                     </h3>
                   </div>
@@ -1497,12 +1792,14 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                         key={q.id}
                         className="card"
                         style={{
-                          padding: '10px 16px',
+                          padding: '12px 16px',
                           background: 'var(--card)',
                           border: '1px solid var(--border)',
+                          borderRadius: 10,
                           display: 'flex',
                           flexDirection: 'column',
                           gap: 8,
+                          boxShadow: 'var(--shadow)',
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
@@ -1574,6 +1871,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                         padding: 0,
                         overflow: 'hidden',
                         border: '1px solid var(--border)',
+                        borderRadius: 12,
                         background: 'var(--card)',
                         boxShadow: 'var(--shadow)',
                       }}
@@ -1581,7 +1879,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                       {/* Card Header */}
                       <div
                         style={{
-                          padding: '14px 18px',
+                          padding: '16px 20px',
                           display: 'flex',
                           alignItems: 'flex-start',
                           justifyContent: 'space-between',
@@ -1633,7 +1931,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                           </div>
 
                           {/* Question Text */}
-                          <h4 style={{ fontSize: 15.5, fontWeight: 800, color: 'var(--t1)', margin: 0, lineHeight: 1.4 }}>
+                          <h4 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', margin: 0, lineHeight: 1.4 }}>
                             {q.question}
                           </h4>
 
@@ -1722,13 +2020,13 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
 
                       {/* Card Body (when expanded) */}
                       {isExpanded && (
-                        <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                        <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
                           {/* Answer Box */}
                           <div
                             style={{
                               background: 'var(--card-hover)',
-                              borderRadius: 8,
-                              padding: '12px 16px',
+                              borderRadius: 10,
+                              padding: '14px 18px',
                               border: '1px solid var(--border)',
                             }}
                           >
@@ -1766,12 +2064,12 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                             </div>
                           )}
 
-                          {/* Rejection Retrospective Callout (Soft, eye-friendly contrast) */}
+                          {/* Rejection Retrospective Callout */}
                           {q.rejectionLearning && (
                             <div
                               style={{
-                                borderRadius: 8,
-                                padding: '12px 14px',
+                                borderRadius: 10,
+                                padding: '14px 16px',
                                 background: 'var(--card)',
                                 border: '1px solid var(--border)',
                                 borderLeft: '3px solid var(--warn)',
@@ -1796,8 +2094,8 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
 
                               <div
                                 style={{
-                                  padding: '8px 10px',
-                                  borderRadius: 6,
+                                  padding: '10px 12px',
+                                  borderRadius: 8,
                                   background: 'var(--card-hover)',
                                   border: '1px solid var(--border-light)',
                                   display: 'flex',
@@ -1821,8 +2119,8 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                             <div
                               style={{
                                 background: 'var(--card-hover)',
-                                borderRadius: 6,
-                                padding: '8px 12px',
+                                borderRadius: 8,
+                                padding: '10px 14px',
                                 border: '1px solid var(--border-light)',
                               }}
                             >
@@ -1861,7 +2159,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
               bottom: 24,
               right: 24,
               zIndex: 50,
-              padding: '8px 14px',
+              padding: '9px 16px',
               borderRadius: 20,
               background: 'var(--card)',
               color: 'var(--t1)',
@@ -1870,13 +2168,13 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
               display: 'inline-flex',
               alignItems: 'center',
               gap: 6,
-              fontSize: 12,
+              fontSize: 12.5,
               fontWeight: 700,
               cursor: 'pointer',
             }}
           >
             <ArrowUp style={{ width: 14, height: 14, color: 'var(--accent)' }} />
-            <span>Top</span>
+            <span>Back to Top</span>
           </motion.button>
         )}
       </AnimatePresence>
@@ -1920,7 +2218,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                     Paste Interview Notes Markdown
                   </h3>
                   <p style={{ fontSize: 12.5, color: 'var(--t2)', marginTop: 4 }}>
-                    Paste interview questions with rounds (e.g. <code style={{ color: 'var(--accent)' }}>## Round 1</code>) and theory topics.
+                    Paste interview questions with rounds or general technical questions.
                   </p>
                 </div>
                 <button
@@ -1940,7 +2238,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                   <input
                     type="text"
                     className="inp"
-                    placeholder="e.g. Amazon - L6 Principal Frontend (2026)"
+                    placeholder="e.g. SecPod Technologies — Software Engineer"
                     value={pasteDocTitle}
                     onChange={(e) => setPasteDocTitle(e.target.value)}
                     style={{ width: '100%' }}
@@ -1954,7 +2252,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                   <textarea
                     rows={12}
                     className="inp"
-                    placeholder={`# Company Name - Senior Engineer\n\n## Round 1: Technical & Theory Screen\n### Q1: [Theory] Explain React reconciliation and fiber architecture\n**Answer:** React represents virtual DOM as a singly linked list...\n**Mistake:** Did not mention commit phase synchronicity\n**What to Learn:** Master the render vs commit lifecycle\n\n## Round 2: Coding & DSA\n### Q2: [Coding] LRU Cache\n\`\`\`python\nclass LRUCache:\n    ...\n\`\`\``}
+                    placeholder={`# SecPod Technologies — Software Engineer\n\n## Round 1: C/C++ & Operating Systems\n### Q1: Explain virtual memory, page faults, and TLB\n**Answer:** Virtual memory allows OS to map virtual addresses to physical pages...\n\n## Round 2: Networking & Security\n### Q2: What is the TCP 3-way handshake and TIME_WAIT state?`}
                     value={pasteContent}
                     onChange={(e) => setPasteContent(e.target.value)}
                     style={{ width: '100%', fontFamily: 'monospace', fontSize: 12.5, lineHeight: 1.5 }}
@@ -2017,10 +2315,10 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
                 <div>
                   <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-                    {editingQuestionId ? 'Edit Question & Notes' : `Add Question to Round ${targetRoundNumber}`}
+                    {editingQuestionId ? 'Edit Question & Notes' : `Add Question to Section ${targetRoundNumber}`}
                   </h3>
                   <p style={{ fontSize: 12.5, color: 'var(--t2)', marginTop: 4, margin: 0 }}>
-                    Customize question prompt, theory explanation, code snippet, and rejection learnings.
+                    Customize question prompt, explanation, code snippet, and rejection learnings.
                   </p>
                 </div>
                 <button
@@ -2041,7 +2339,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                   <input
                     type="text"
                     className="inp"
-                    placeholder="e.g. How does React Reconciliation work and why is it interruptible?"
+                    placeholder="e.g. How does virtual memory work and what happens during a page fault?"
                     value={editFormData.question}
                     onChange={(e) => setEditFormData({ ...editFormData, question: e.target.value })}
                     style={{ width: '100%' }}
@@ -2076,7 +2374,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                     <input
                       type="text"
                       className="inp"
-                      placeholder="e.g. React & Frontend, Database & SQL"
+                      placeholder="e.g. Operating Systems, C / C++, Networking"
                       value={editFormData.category}
                       onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
                       style={{ width: '100%' }}
@@ -2108,7 +2406,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                   <input
                     type="text"
                     className="inp"
-                    placeholder="e.g. Fiber Architecture, Reconciliation, Time Slicing"
+                    placeholder="e.g. Page Table, TLB, Cache Hit Ratio, Kernel Trap"
                     value={editFormData.keyConcepts}
                     onChange={(e) => setEditFormData({ ...editFormData, keyConcepts: e.target.value })}
                     style={{ width: '100%' }}
@@ -2143,11 +2441,11 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                       value={editFormData.codeLanguage}
                       onChange={(e) => setEditFormData({ ...editFormData, codeLanguage: e.target.value as CodingLanguage })}
                     >
+                      <option value="cpp">C++</option>
                       <option value="python">Python</option>
                       <option value="typescript">TypeScript</option>
                       <option value="javascript">JavaScript</option>
                       <option value="java">Java</option>
-                      <option value="cpp">C++</option>
                       <option value="go">Go</option>
                       <option value="sql">SQL</option>
                       <option value="rust">Rust</option>
@@ -2186,7 +2484,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                     <input
                       type="text"
                       className="inp"
-                      placeholder="e.g. Described Virtual DOM as just a copy without explaining Fiber pointers"
+                      placeholder="e.g. Stated TLB miss always reads from disk rather than page table in RAM"
                       value={editFormData.identifiedMistake}
                       onChange={(e) => setEditFormData({ ...editFormData, identifiedMistake: e.target.value })}
                       style={{ width: '100%', fontSize: 12.5 }}
@@ -2199,7 +2497,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                     <input
                       type="text"
                       className="inp"
-                      placeholder="e.g. Master the two-phase lifecycle: render (cooperative) vs commit (synchronous)"
+                      placeholder="e.g. Draw the step-by-step memory hierarchy: CPU -> TLB -> RAM Page Table -> Swap on Disk"
                       value={editFormData.whatToLearn}
                       onChange={(e) => setEditFormData({ ...editFormData, whatToLearn: e.target.value })}
                       style={{ width: '100%', fontSize: 12.5 }}
@@ -2215,7 +2513,7 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                   <textarea
                     rows={2}
                     className="inp"
-                    placeholder="e.g. How does React 19 handle automatic batching across async promises?"
+                    placeholder="e.g. What is the difference between major and minor page faults?"
                     value={editFormData.followUps}
                     onChange={(e) => setEditFormData({ ...editFormData, followUps: e.target.value })}
                     style={{ width: '100%', fontSize: 12 }}
