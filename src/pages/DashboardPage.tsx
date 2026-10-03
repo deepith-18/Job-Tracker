@@ -499,6 +499,13 @@ export const DashboardPage: React.FC = () => {
                   subtitle: 'Drag & drop stages and review cards',
                 },
                 {
+                  to: '/calendar',
+                  icon: Calendar,
+                  color: '#f59e0b',
+                  title: 'Interview Calendar',
+                  subtitle: 'Weekly schedule & Google Calendar .ics export',
+                },
+                {
                   to: '/journal?tab=flashcards',
                   icon: Layers,
                   color: '#8b5cf6',

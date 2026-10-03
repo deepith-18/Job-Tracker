@@ -50,7 +50,14 @@ const NAV_SECTIONS = [
     to: '/applications',
     label: 'Applications',
     icon: Briefcase,
-    match: ['/applications', '/calendar', '/offer-matrix', '/offer-calculator', '/company-intel'],
+    match: ['/applications', '/offer-matrix', '/offer-calculator', '/company-intel'],
+  },
+  {
+    id: 'calendar',
+    to: '/calendar',
+    label: 'Calendar',
+    icon: Calendar,
+    match: ['/calendar'],
   },
   {
     id: 'journal',

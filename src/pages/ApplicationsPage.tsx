@@ -349,6 +349,29 @@ export const ApplicationsPage: React.FC = () => {
                 <LayoutGrid style={{ width: 14, height: 14 }} />
                 <span>Cards</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => navigate('/calendar')}
+                style={{
+                  padding: '7px 13px',
+                  borderRadius: 9,
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--t2)',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  whiteSpace: 'nowrap',
+                }}
+                title="Open Weekly Interview & Assessment Calendar"
+              >
+                <Calendar style={{ width: 14, height: 14, color: '#f59e0b' }} />
+                <span>Calendar</span>
+              </button>
             </div>
 
             {/* Add Application Button */}
