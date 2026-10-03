@@ -11,10 +11,12 @@ import {
   Award,
   CheckCircle2,
   Clock,
+  Sparkles,
 } from 'lucide-react';
 import { useToast } from '../ui/ToastContext';
 import { StatusDropdown } from '../applications/StatusDropdown';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { InterviewCheatSheetModal } from '../common/InterviewCheatSheetModal';
 import { updateApplication, deleteApplication } from '../../firebase/firestore';
 import type { Application, ApplicationStatus } from '../../types';
 import { COMMON_SOURCES, REJECTION_REASONS } from '../../types';
@@ -54,6 +56,7 @@ export const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = (
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [cheatSheetOpen, setCheatSheetOpen] = useState(false);
 
   // Drawer Tab State: 'details' vs 'copilot'
   const [activeTab, setActiveTab] = useState<'details' | 'copilot'>('details');
@@ -300,25 +303,50 @@ Best regards,
               </div>
             </div>
 
-            <button
-              onClick={onClose}
-              style={{
-                background: 'var(--card)',
-                border: '1px solid var(--border)',
-                color: 'var(--t2)',
-                width: 32,
-                height: 32,
-                borderRadius: 9,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.15s ease',
-              }}
-              title="Close (Esc)"
-            >
-              <X style={{ width: 16, height: 16 }} />
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => setCheatSheetOpen(true)}
+                className="btn btn-ghost btn-sm"
+                title="Open Interview Day Cheat Sheet"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  fontSize: 12,
+                  padding: '5px 10px',
+                  borderRadius: 8,
+                  background: 'rgba(245, 158, 11, 0.12)',
+                  color: '#d97706',
+                  border: '1px solid rgba(245, 158, 11, 0.28)',
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                }}
+              >
+                <Sparkles style={{ width: 13, height: 13 }} />
+                <span>Cheat Sheet</span>
+              </button>
+
+              <button
+                onClick={onClose}
+                style={{
+                  background: 'var(--card)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--t2)',
+                  width: 32,
+                  height: 32,
+                  borderRadius: 9,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.15s ease',
+                }}
+                title="Close (Esc)"
+              >
+                <X style={{ width: 16, height: 16 }} />
+              </button>
+            </div>
           </div>
 
           {/* Segmented Mode Switcher */}
@@ -802,6 +830,13 @@ Best regards,
           title="Delete Application"
           message={`Are you sure you want to remove "${application.company} — ${application.role}"? This cannot be undone.`}
           loading={deleting}
+        />
+
+        {/* Interview Cheat Sheet Modal */}
+        <InterviewCheatSheetModal
+          app={application}
+          isOpen={cheatSheetOpen}
+          onClose={() => setCheatSheetOpen(false)}
         />
       </div>
     </AnimatePresence>
