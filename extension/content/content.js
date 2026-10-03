@@ -76,12 +76,22 @@
     const strayWidget = document.getElementById('job-orbit-widget-root');
     if (strayWidget) strayWidget.remove();
 
+    function getPortalConfig() {
+      try {
+        if (typeof window !== 'undefined' && window.__JOB_ORBIT_CONFIG__) {
+          return window.__JOB_ORBIT_CONFIG__;
+        }
+      } catch (e) {}
+      return null;
+    }
+
     // Auto-sync session to background
     extractFirebaseSession().then((session) => {
       if (session && session.uid) {
         api.runtime.sendMessage({
           type: 'SYNC_ORBIT_SESSION',
           auth: session,
+          config: getPortalConfig(),
           portalUrl: window.location.origin
         });
       }
@@ -91,7 +101,7 @@
     api.runtime.onMessage.addListener((req, sender, sendResponse) => {
       if (req.type === 'REQUEST_ORBIT_SESSION') {
         extractFirebaseSession().then((session) => {
-          sendResponse({ success: !!session, auth: session });
+          sendResponse({ success: !!session, auth: session, config: getPortalConfig() });
         });
         return true;
       }

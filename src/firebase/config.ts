@@ -60,5 +60,10 @@ export const db = initializeFirestore(app, {
   }),
 });
 
+// Safely expose client config for Job Orbit browser extension 1-click sync
+if (typeof window !== 'undefined') {
+  (window as unknown as { __JOB_ORBIT_CONFIG__?: typeof firebaseConfig }).__JOB_ORBIT_CONFIG__ = firebaseConfig;
+}
+
 export default app;
 

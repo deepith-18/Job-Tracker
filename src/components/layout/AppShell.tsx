@@ -25,6 +25,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { CommandPalette } from './CommandPalette';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
+import { MobileCommandHub } from './MobileCommandHub';
 import { BrandLogo } from '../common/BrandLogo';
 import { useAuthStore } from '../../store/authStore';
 import { signOutUser } from '../../firebase/auth';
@@ -441,6 +442,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               flexDirection: 'column',
               gap: 12,
               border: '1px solid var(--border)',
+              maxHeight: 'calc(100vh - 76px)',
+              overflowY: 'auto',
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -707,6 +710,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
       {/* ── Global Command+K Spotlight Palette ── */}
       <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} />
+
+      {/* ── Mobile Bottom Navigation Dock & Launchpad ── */}
+      <MobileCommandHub />
 
       {/* ── Global Keyboard Shortcuts Cheatsheet Modal ── */}
       <KeyboardShortcutsModal isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />

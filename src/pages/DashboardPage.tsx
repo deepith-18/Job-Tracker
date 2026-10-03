@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -13,14 +13,17 @@ import {
   Mic,
   ArrowUpRight,
   User,
+  Sparkles,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { QuickAddBar } from '../components/dashboard/QuickAddBar';
 import { SearchHealthWidget } from '../components/dashboard/SearchHealthWidget';
+import { InterviewCheatSheetModal } from '../components/common/InterviewCheatSheetModal';
 import { useApplications } from '../hooks/useApplications';
 import { useAuthStore } from '../store/authStore';
 import { useUserSettings } from '../hooks/useUserSettings';
 import { differenceInDays, isToday, isPast, isTomorrow, format, formatDistanceToNow } from 'date-fns';
+import type { Application } from '../types';
 
 const STATUS_COLORS: Record<string, string> = {
   Wishlist: '#78716c',
@@ -57,6 +60,7 @@ export const DashboardPage: React.FC = () => {
   const user = useAuthStore((s) => s.user);
   const { applications, loading } = useApplications();
   const { settings } = useUserSettings();
+  const [cheatSheetApp, setCheatSheetApp] = useState<Application | null>(null);
 
   const rawName = settings?.displayName || user?.displayName || user?.email?.split('@')[0] || 'Candidate';
   const firstName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
@@ -311,10 +315,11 @@ export const DashboardPage: React.FC = () => {
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       gap: 12,
+                      flexWrap: 'wrap',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <Calendar style={{ width: 16, height: 16, color: '#f59e0b' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '1 1 200px' }}>
+                      <Calendar style={{ width: 16, height: 16, color: '#f59e0b', flexShrink: 0 }} />
                       <div>
                         <span style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--t1)' }}>{a.company}</span>
                         <span style={{ fontSize: 12, color: 'var(--t3)', marginLeft: 8 }}>
@@ -322,10 +327,19 @@ export const DashboardPage: React.FC = () => {
                         </span>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <StatusPill status={a.status} />
+                      <button
+                        type="button"
+                        onClick={() => setCheatSheetApp(a)}
+                        className="btn btn-primary btn-sm"
+                        style={{ fontSize: 11.5, padding: '4px 10px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      >
+                        <Sparkles style={{ width: 13, height: 13 }} />
+                        <span>Cheat Sheet</span>
+                      </button>
                       <Link to="/journal?tab=mock" className="btn btn-ghost btn-sm" style={{ fontSize: 11.5, padding: '4px 10px' }}>
-                        Prep Interview
+                        Mock Prep
                       </Link>
                     </div>
                   </div>
@@ -344,10 +358,11 @@ export const DashboardPage: React.FC = () => {
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       gap: 12,
+                      flexWrap: 'wrap',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <AlertTriangle style={{ width: 16, height: 16, color: '#ef4444' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '1 1 200px' }}>
+                      <AlertTriangle style={{ width: 16, height: 16, color: '#ef4444', flexShrink: 0 }} />
                       <div>
                         <span style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--t1)' }}>{a.company}</span>
                         <span style={{ fontSize: 12, color: 'var(--t3)', marginLeft: 8 }}>
@@ -372,10 +387,11 @@ export const DashboardPage: React.FC = () => {
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       gap: 12,
+                      flexWrap: 'wrap',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <Clock style={{ width: 16, height: 16, color: '#6366f1' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '1 1 200px' }}>
+                      <Clock style={{ width: 16, height: 16, color: '#6366f1', flexShrink: 0 }} />
                       <div>
                         <span style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--t1)' }}>{a.company}</span>
                         <span style={{ fontSize: 12, color: 'var(--t3)', marginLeft: 8 }}>
@@ -383,7 +399,7 @@ export const DashboardPage: React.FC = () => {
                         </span>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <StatusPill status={a.status} />
                       <Link to="/journal?tab=email" className="btn btn-ghost btn-sm" style={{ fontSize: 11.5, padding: '4px 10px' }}>
                         Draft Email
@@ -554,6 +570,13 @@ export const DashboardPage: React.FC = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* ── Interview Cheat Sheet Modal ── */}
+      <InterviewCheatSheetModal
+        app={cheatSheetApp}
+        isOpen={!!cheatSheetApp}
+        onClose={() => setCheatSheetApp(null)}
+      />
     </AppShell>
   );
 };

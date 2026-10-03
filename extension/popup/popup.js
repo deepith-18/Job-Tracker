@@ -63,6 +63,7 @@ async function handleSyncFromTab() {
     const tabs = await new Promise((resolve) => api.tabs.query({}, resolve));
     let matchedAuth = null;
     let matchedOrigin = null;
+    let matchedConfig = null;
 
     for (const tab of tabs) {
       if (!tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('about:')) continue;
@@ -76,6 +77,7 @@ async function handleSyncFromTab() {
 
         if (res && res.success && res.auth && res.auth.uid) {
           matchedAuth = res.auth;
+          if (res.config) matchedConfig = res.config;
           try {
             matchedOrigin = new URL(tab.url).origin;
           } catch (e) {}
@@ -89,6 +91,7 @@ async function handleSyncFromTab() {
       api.runtime.sendMessage({
         type: 'SYNC_ORBIT_SESSION',
         auth: matchedAuth,
+        config: matchedConfig,
         portalUrl: matchedOrigin
       }, (syncRes) => {
         btn.disabled = false;

@@ -1,8 +1,15 @@
 // Job Orbit - Background Service Worker
 // Manages authentication, Firestore API calls, and background coordination
 
-// In Chrome Service Worker, importScripts loads the library.
+// In Chrome Service Worker, importScripts loads optional local config and library.
 // In Firefox Background Script, it is pre-loaded via manifest.json scripts array.
+if (typeof importScripts === 'function') {
+  try {
+    importScripts('../lib/config.local.js');
+  } catch (e) {
+    try { importScripts('/lib/config.local.js'); } catch (e2) {}
+  }
+}
 if (typeof saveApplicationToFirestore === 'undefined' && typeof importScripts === 'function') {
   try {
     importScripts('../lib/firebase-rest.js');
@@ -53,6 +60,9 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
             const dataToStore = { jobOrbitAuth: message.auth };
             if (message.portalUrl) {
               dataToStore.jobOrbitPortalUrl = message.portalUrl;
+            }
+            if (message.config && message.config.apiKey) {
+              dataToStore.jobOrbitConfig = message.config;
             }
             await browserStorage.set(dataToStore);
             sendResponse({ success: true, email: message.auth.email, uid: message.auth.uid });

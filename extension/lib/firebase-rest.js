@@ -1,11 +1,26 @@
 // Firebase REST & Firestore Helper for Job Orbit Browser Extension
 // Works in both Chrome and Firefox (Manifest V3)
 
-const FIREBASE_CONFIG = {
-  apiKey: "YOUR_FIREBASE_API_KEY",
-  projectId: "job-tracker-e81f9",
-  authDomain: "job-tracker-e81f9.firebaseapp.com"
+// Optional local override from config.local.js (git-ignored, for private development)
+const localConfig = (typeof globalThis !== 'undefined' && globalThis.__JOB_ORBIT_LOCAL_CONFIG__) || {};
+
+const DEFAULT_FIREBASE_CONFIG = {
+  apiKey: localConfig.apiKey || "YOUR_FIREBASE_API_KEY",
+  projectId: localConfig.projectId || "job-tracker-e81f9",
+  authDomain: localConfig.authDomain || "job-tracker-e81f9.firebaseapp.com"
 };
+
+let FIREBASE_CONFIG = { ...DEFAULT_FIREBASE_CONFIG };
+
+async function getEffectiveFirebaseConfig() {
+  try {
+    const { jobOrbitConfig } = await browserStorage.get('jobOrbitConfig');
+    if (jobOrbitConfig && jobOrbitConfig.apiKey) {
+      return { ...DEFAULT_FIREBASE_CONFIG, ...jobOrbitConfig };
+    }
+  } catch (e) {}
+  return DEFAULT_FIREBASE_CONFIG;
+}
 
 // Cross-browser storage helper
 const browserStorage = {
@@ -37,7 +52,8 @@ const browserStorage = {
  * Sign in to Firebase with Email and Password
  */
 async function firebaseSignIn(email, password) {
-  const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_CONFIG.apiKey}`;
+  const cfg = await getEffectiveFirebaseConfig();
+  const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${cfg.apiKey}`;
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -76,7 +92,8 @@ async function firebaseSignIn(email, password) {
  * Refresh expired Firebase token
  */
 async function refreshFirebaseToken(refreshToken) {
-  const url = `https://securetoken.googleapis.com/v1/token?key=${FIREBASE_CONFIG.apiKey}`;
+  const cfg = await getEffectiveFirebaseConfig();
+  const url = `https://securetoken.googleapis.com/v1/token?key=${cfg.apiKey}`;
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -170,7 +187,8 @@ async function saveApplicationToFirestore(appData) {
   fields.deadline = { nullValue: null };
   fields.firstResponseDate = { nullValue: null };
 
-  const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_CONFIG.projectId}/databases/(default)/documents/applications`;
+  const cfg = await getEffectiveFirebaseConfig();
+  const url = `https://firestore.googleapis.com/v1/projects/${cfg.projectId}/databases/(default)/documents/applications`;
 
   const headers = {
     'Content-Type': 'application/json'
