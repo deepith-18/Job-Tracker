@@ -19,10 +19,14 @@ import {
   XCircle,
   Calendar,
   Grid,
+  Zap,
+  DollarSign,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { AnalyticsSection } from '../components/analytics/AnalyticsSection';
 import { OutcomeConfusionMatrix } from '../components/analytics/OutcomeConfusionMatrix';
+import { PipelineVelocityPredictor } from '../components/analytics/PipelineVelocityPredictor';
+import { CompensationIntelligence } from '../components/analytics/CompensationIntelligence';
 import { useApplications } from '../hooks/useApplications';
 import { useUserSettings } from '../hooks/useUserSettings';
 import { useSkills } from '../hooks/useSkills';
@@ -48,6 +52,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 // ── TABS (Vector Lucide icons, no emojis) ──
 const TABS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
+  { id: 'predictor', label: 'Offer Velocity & Leverage', icon: Zap },
+  { id: 'compensation', label: 'Compensation & Benchmarks', icon: DollarSign },
   { id: 'matrix', label: 'Outcome Confusion Matrix', icon: Grid },
   { id: 'skills', label: 'Skills Radar', icon: Target },
   { id: 'heatmap', label: 'Activity Heatmap', icon: Flame },
@@ -99,6 +105,16 @@ export const InsightsPage: React.FC = () => {
       {/* Tab Panels */}
       <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
         <OverviewTab applications={applications} />
+      </div>
+      <div style={{ display: activeTab === 'predictor' ? 'block' : 'none' }}>
+        <div className="pb" style={{ paddingTop: 16 }}>
+          <PipelineVelocityPredictor applications={applications} />
+        </div>
+      </div>
+      <div style={{ display: activeTab === 'compensation' ? 'block' : 'none' }}>
+        <div className="pb" style={{ paddingTop: 16 }}>
+          <CompensationIntelligence />
+        </div>
       </div>
       <div style={{ display: activeTab === 'matrix' ? 'block' : 'none' }}>
         <div className="pb" style={{ paddingTop: 16 }}>
