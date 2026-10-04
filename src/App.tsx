@@ -23,6 +23,7 @@ import { PortfolioGeneratorPage } from './pages/PortfolioGeneratorPage';
 import { OfferMatrixPage } from './pages/OfferMatrixPage';
 import { DiagnosticsPage } from './pages/DiagnosticsPage';
 import { DeploymentGuidePage } from './pages/DeploymentGuidePage';
+import { InterviewWarRoomPage } from './pages/InterviewWarRoomPage';
 
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { useAuth } from './hooks/useAuth';
@@ -71,6 +72,7 @@ function App() {
         <Route path="/tech-trends" element={<ProtectedRoute><InsightsPage /></ProtectedRoute>} />
         <Route path="/portfolio-generator" element={<ProtectedRoute><PortfolioGeneratorPage /></ProtectedRoute>} />
         <Route path="/offer-matrix" element={<ProtectedRoute><OfferMatrixPage /></ProtectedRoute>} />
+        <Route path="/war-room" element={<ProtectedRoute><InterviewWarRoomPage /></ProtectedRoute>} />
         <Route path="/mindset" element={<ProtectedRoute><JournalPage /></ProtectedRoute>} />
         <Route path="/diagnostics" element={<ProtectedRoute><DiagnosticsPage /></ProtectedRoute>} />
         <Route path="/deployment-guide" element={<ProtectedRoute><DeploymentGuidePage /></ProtectedRoute>} />

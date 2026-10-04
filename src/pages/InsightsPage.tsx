@@ -19,13 +19,15 @@ import {
   XCircle,
   Calendar,
   Grid,
-  Zap,
   DollarSign,
+  Send,
+  FileSearch,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { AnalyticsSection } from '../components/analytics/AnalyticsSection';
 import { OutcomeConfusionMatrix } from '../components/analytics/OutcomeConfusionMatrix';
-import { PipelineVelocityPredictor } from '../components/analytics/PipelineVelocityPredictor';
+import { OutreachCadenceRadar } from '../components/analytics/OutreachCadenceRadar';
+import { JobDescriptionMatcher } from '../components/tools/JobDescriptionMatcher';
 import { CompensationIntelligence } from '../components/analytics/CompensationIntelligence';
 import { useApplications } from '../hooks/useApplications';
 import { useUserSettings } from '../hooks/useUserSettings';
@@ -52,7 +54,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 // ── TABS (Vector Lucide icons, no emojis) ──
 const TABS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
-  { id: 'predictor', label: 'Offer Velocity & Leverage', icon: Zap },
+  { id: 'cadence', label: 'Outreach & Ghosting Radar', icon: Send },
+  { id: 'jd-matcher', label: 'Live JD ATS Scanner', icon: FileSearch },
   { id: 'compensation', label: 'Compensation & Benchmarks', icon: DollarSign },
   { id: 'matrix', label: 'Outcome Confusion Matrix', icon: Grid },
   { id: 'skills', label: 'Skills Radar', icon: Target },
@@ -106,9 +109,14 @@ export const InsightsPage: React.FC = () => {
       <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
         <OverviewTab applications={applications} />
       </div>
-      <div style={{ display: activeTab === 'predictor' ? 'block' : 'none' }}>
+      <div style={{ display: activeTab === 'cadence' ? 'block' : 'none' }}>
         <div className="pb" style={{ paddingTop: 16 }}>
-          <PipelineVelocityPredictor applications={applications} />
+          <OutreachCadenceRadar applications={applications} />
+        </div>
+      </div>
+      <div style={{ display: activeTab === 'jd-matcher' ? 'block' : 'none' }}>
+        <div className="pb" style={{ paddingTop: 16 }}>
+          <JobDescriptionMatcher />
         </div>
       </div>
       <div style={{ display: activeTab === 'compensation' ? 'block' : 'none' }}>

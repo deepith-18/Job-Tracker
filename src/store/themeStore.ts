@@ -2,12 +2,15 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
+export type ThemePalette = 'indigo' | 'emerald' | 'cyan' | 'amber';
 
 interface ThemeStore {
   theme: ThemeMode;
   resolvedTheme: 'light' | 'dark';
+  palette: ThemePalette;
   setTheme: (theme: ThemeMode) => void;
   toggleTheme: () => void;
+  setPalette: (palette: ThemePalette) => void;
 }
 
 const getSystemTheme = (): 'light' | 'dark' => {
@@ -17,10 +20,11 @@ const getSystemTheme = (): 'light' | 'dark' => {
   return 'light';
 };
 
-const applyThemeToDocument = (resolved: 'light' | 'dark') => {
+const applyThemeToDocument = (resolved: 'light' | 'dark', palette: ThemePalette = 'indigo') => {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
   root.setAttribute('data-theme', resolved);
+  root.setAttribute('data-palette', palette);
   if (resolved === 'dark') {
     root.classList.add('dark');
     root.classList.remove('light');
@@ -33,18 +37,23 @@ const applyThemeToDocument = (resolved: 'light' | 'dark') => {
 export const useThemeStore = create<ThemeStore>()(
   persist(
     (set, get) => ({
-      theme: 'system',
-      resolvedTheme: getSystemTheme(),
+      theme: 'dark', // Default to sleek executive dark mode
+      resolvedTheme: 'dark',
+      palette: 'indigo',
       setTheme: (newTheme: ThemeMode) => {
         const resolved = newTheme === 'system' ? getSystemTheme() : newTheme;
-        applyThemeToDocument(resolved);
+        applyThemeToDocument(resolved, get().palette);
         set({ theme: newTheme, resolvedTheme: resolved });
       },
       toggleTheme: () => {
         const current = get().resolvedTheme;
         const next: ThemeMode = current === 'dark' ? 'light' : 'dark';
-        applyThemeToDocument(next);
+        applyThemeToDocument(next, get().palette);
         set({ theme: next, resolvedTheme: next });
+      },
+      setPalette: (newPalette: ThemePalette) => {
+        applyThemeToDocument(get().resolvedTheme, newPalette);
+        set({ palette: newPalette });
       },
     }),
     {
@@ -53,7 +62,7 @@ export const useThemeStore = create<ThemeStore>()(
         if (state) {
           const resolved = state.theme === 'system' ? getSystemTheme() : state.theme;
           state.resolvedTheme = resolved;
-          applyThemeToDocument(resolved);
+          applyThemeToDocument(resolved, state.palette || 'indigo');
         }
       },
     }
@@ -66,7 +75,7 @@ if (typeof window !== 'undefined') {
     const currentTheme = useThemeStore.getState().theme;
     if (currentTheme === 'system') {
       const resolved = e.matches ? 'dark' : 'light';
-      applyThemeToDocument(resolved);
+      applyThemeToDocument(resolved, useThemeStore.getState().palette);
       useThemeStore.setState({ resolvedTheme: resolved });
     }
   });

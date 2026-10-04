@@ -21,12 +21,14 @@ import {
   CheckCircle2,
   Sparkles,
   Calendar,
+  Shield,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CommandPalette } from './CommandPalette';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 import { MobileCommandHub } from './MobileCommandHub';
 import { BrandLogo } from '../common/BrandLogo';
+import { ThemePaletteSelector } from './ThemePaletteSelector';
 import { useAuthStore } from '../../store/authStore';
 import { signOutUser } from '../../firebase/auth';
 import { useApplications } from '../../hooks/useApplications';
@@ -72,6 +74,13 @@ const NAV_SECTIONS = [
     label: 'Insights',
     icon: TrendingUp,
     match: ['/insights', '/skills', '/heatmap', '/goals', '/reports', '/tech-trends', '/achievements', '/career-roadmap'],
+  },
+  {
+    id: 'war-room',
+    to: '/war-room',
+    label: 'War Room',
+    icon: Shield,
+    match: ['/war-room'],
   },
 ];
 
@@ -345,33 +354,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               <Keyboard style={{ width: 15, height: 15 }} />
             </button>
 
-            {/* Theme Toggle Button (Light/Dark Mode) */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="nav-theme-btn"
-              title={`Switch to ${resolvedTheme === 'dark' ? 'Light' : 'Dark'} mode`}
-              aria-label={`Current theme is ${resolvedTheme}. Switch to ${resolvedTheme === 'dark' ? 'Light' : 'Dark'} mode.`}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 34,
-                height: 34,
-                borderRadius: 12,
-                background: 'var(--page)',
-                border: '1px solid var(--border)',
-                color: resolvedTheme === 'dark' ? '#fbbf24' : 'var(--t2)',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              {resolvedTheme === 'dark' ? (
-                <Sun style={{ width: 15, height: 15 }} />
-              ) : (
-                <Moon style={{ width: 15, height: 15 }} />
-              )}
-            </button>
+            {/* Theme & Accent Palette Selector */}
+            <ThemePaletteSelector />
 
             <NavLink
               to="/profile"

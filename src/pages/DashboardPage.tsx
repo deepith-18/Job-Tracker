@@ -16,6 +16,8 @@ import {
   Sparkles,
   Scale,
   BookOpen,
+  Shield,
+  FileSearch,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { QuickAddBar } from '../components/dashboard/QuickAddBar';
@@ -499,6 +501,20 @@ export const DashboardPage: React.FC = () => {
                   color: '#6366f1',
                   title: 'Kanban Pipeline',
                   subtitle: 'Drag & drop stages and review cards',
+                },
+                {
+                  to: '/war-room',
+                  icon: Shield,
+                  color: '#6366f1',
+                  title: 'Live Interview War Room',
+                  subtitle: 'Live call stopwatch, reverse Q&A & scratchpad',
+                },
+                {
+                  to: '/insights?tab=jd-matcher',
+                  icon: FileSearch,
+                  color: '#06b6d4',
+                  title: 'Live JD ATS Scanner',
+                  subtitle: 'Keyword match score & tailored resume bullets',
                 },
                 {
                   to: '/offer-matrix',

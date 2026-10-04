@@ -112,6 +112,39 @@ html.dark {
   --nav-border: rgba(255, 255, 255, 0.1);
 }
 
+/* ── Dynamic Theme Accent Palettes ── */
+[data-palette="emerald"] {
+  --accent:       #10b981;
+  --accent-h:     #059669;
+  --accent-deep:  #047857;
+  --accent-bg:    rgba(16, 185, 129, 0.16);
+  --accent-glow:  rgba(16, 185, 129, 0.35);
+}
+
+[data-palette="cyan"] {
+  --accent:       #06b6d4;
+  --accent-h:     #0891b2;
+  --accent-deep:  #0e7490;
+  --accent-bg:    rgba(6, 182, 212, 0.16);
+  --accent-glow:  rgba(6, 182, 212, 0.35);
+}
+
+[data-palette="amber"] {
+  --accent:       #f59e0b;
+  --accent-h:     #d97706;
+  --accent-deep:  #b45309;
+  --accent-bg:    rgba(245, 158, 11, 0.16);
+  --accent-glow:  rgba(245, 158, 11, 0.35);
+}
+
+[data-palette="indigo"] {
+  --accent:       #6366f1;
+  --accent-h:     #4f46e5;
+  --accent-deep:  #4338ca;
+  --accent-bg:    rgba(99, 102, 241, 0.16);
+  --accent-glow:  rgba(99, 102, 241, 0.35);
+}
+
 /* ── Reset ─────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
