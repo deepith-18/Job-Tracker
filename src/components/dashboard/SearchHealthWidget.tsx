@@ -56,16 +56,16 @@ export const SearchHealthWidget: React.FC<SearchHealthWidgetProps> = ({
 
   let tierLabel = 'Steady Pipeline';
   let tierColor = '#6366f1';
-  let tierEmoji = '⚡';
+  let TierIcon = TrendingUp;
 
   if (finalScore >= 85) {
     tierLabel = 'High Momentum';
     tierColor = '#10b981';
-    tierEmoji = '🚀';
+    TierIcon = TrendingUp;
   } else if (finalScore < 60) {
     tierLabel = 'Needs Pipeline Boost';
     tierColor = '#f59e0b';
-    tierEmoji = '⚠️';
+    TierIcon = AlertCircle;
   }
 
   return (
@@ -135,7 +135,7 @@ export const SearchHealthWidget: React.FC<SearchHealthWidgetProps> = ({
                   gap: 4,
                 }}
               >
-                <span>{tierEmoji}</span>
+                <TierIcon style={{ width: 12, height: 12 }} />
                 <span>{tierLabel}</span>
               </span>
               <span style={{ fontSize: 12, color: 'var(--t3)', fontWeight: 600 }}>

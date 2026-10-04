@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AlertTriangle } from 'lucide-react';
 import { useToast } from '../ui/ToastContext';
 import { addApplication } from '../../firebase/firestore';
 import { useAuthStore } from '../../store/authStore';
@@ -230,7 +231,7 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({ applications, onAdded 
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 20 }}>⚠️</span>
+              <AlertTriangle style={{ width: 20, height: 20, color: '#ea580c', flexShrink: 0 }} />
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#9a3412' }}>
                   Duplicate Entry Found

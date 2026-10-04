@@ -2872,10 +2872,10 @@ export const CompanyRoundNotesMdViewer: React.FC = () => {
                       value={editFormData.type}
                       onChange={(e) => setEditFormData({ ...editFormData, type: e.target.value as QuestionCategoryType })}
                     >
-                      <option value="Theory & Concepts">🧠 Theory & Concepts</option>
-                      <option value="Coding & DSA">💻 Coding & DSA</option>
-                      <option value="System Design">🏗️ System Design</option>
-                      <option value="Behavioral & Leadership">👥 Behavioral & Leadership</option>
+                      <option value="Theory & Concepts">Theory & Concepts</option>
+                      <option value="Coding & DSA">Coding & DSA</option>
+                      <option value="System Design">System Design</option>
+                      <option value="Behavioral & Leadership">Behavioral & Leadership</option>
                       <option value="General">General Technical</option>
                     </select>
                   </div>

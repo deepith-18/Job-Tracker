@@ -1,4 +1,5 @@
 import React from 'react';
+import { Filter, X } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { KanbanCard } from './KanbanCard';
 import { useToast } from '../ui/ToastContext';
@@ -81,15 +82,17 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span>🔍 Board filtered to status: <strong>{selectedStatusFilter}</strong></span>
+            <Filter style={{ width: 14, height: 14 }} />
+            <span>Board filtered to status: <strong>{selectedStatusFilter}</strong></span>
           </div>
           {onStatusFilterClear && (
             <button
               onClick={onStatusFilterClear}
               className="btn btn-ghost btn-sm"
-              style={{ fontSize: 12, padding: '4px 10px' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, padding: '4px 10px' }}
             >
-              Clear Filter ✕
+              <span>Clear Filter</span>
+              <X style={{ width: 13, height: 13 }} />
             </button>
           )}
         </div>

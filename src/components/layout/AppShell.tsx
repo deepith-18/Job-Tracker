@@ -863,7 +863,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                   }}
                 >
                   <Sparkles style={{ width: 15, height: 15 }} />
-                  <span>{boostSuccess ? 'Streak Boosted! 🔥 (+1 Day)' : 'Boost Today\'s Activity Streak'}</span>
+                  <span>{boostSuccess ? 'Streak Boosted (+1 Day)' : 'Boost Today\'s Activity Streak'}</span>
                 </button>
 
                 <button

@@ -76,10 +76,10 @@ export const AuthPage: React.FC = () => {
     try {
       if (mode === 'login') {
         await signInWithEmail(email, password);
-        addToast('Welcome back! 👋', 'Signed in successfully', 'success');
+        addToast('Welcome back', 'Signed in successfully', 'success');
       } else {
         await signUpWithEmail(email, password);
-        addToast('Account created!', 'Welcome to Job Orbit', 'success');
+        addToast('Account created', 'Welcome to Job Orbit', 'success');
       }
       navigate('/dashboard');
     } catch (err: unknown) {
@@ -96,7 +96,7 @@ export const AuthPage: React.FC = () => {
     setGoogleLoading(true);
     try {
       await signInWithGoogle();
-      addToast('Welcome back! 👋', 'Signed in with Google successfully', 'success');
+      addToast('Welcome back', 'Signed in with Google successfully', 'success');
       navigate('/dashboard');
     } catch (err: unknown) {
       const code = (err as { code?: string }).code ?? '';

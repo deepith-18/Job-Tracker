@@ -27,6 +27,7 @@ import {
   Sparkles,
   Code2,
   FileSpreadsheet,
+  BookOpen,
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { AppShell } from '../components/layout/AppShell';
@@ -37,10 +38,12 @@ import { updateApplication } from '../firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CodeQuestionVault } from '../components/journal/CodeQuestionVault';
 import { CompanyRoundNotesMdViewer } from '../components/journal/CompanyRoundNotesMdViewer';
+import { StarStoryVault } from '../components/journal/StarStoryVault';
 
 // ── TABS (Vector Lucide icons, no emojis) ──
 const TABS = [
   { id: 'notes', label: 'Interview Notes', icon: FileText },
+  { id: 'star-vault', label: 'STAR Story Bank', icon: BookOpen },
   { id: 'code-vault', label: 'Code & Questions', icon: Code2 },
   { id: 'md-rounds', label: 'Company Rounds & MD', icon: FileSpreadsheet },
   { id: 'documents', label: 'Document Vault', icon: Folder },
@@ -111,6 +114,11 @@ export const JournalPage: React.FC = () => {
       {/* Tab Content Panels */}
       <div style={{ display: activeTab === 'notes' ? 'block' : 'none' }}>
         <JournalNotesContent onOpenCodeVault={handleOpenCodeVault} />
+      </div>
+      <div style={{ display: activeTab === 'star-vault' ? 'block' : 'none' }}>
+        <div className="pb" style={{ paddingTop: 16 }}>
+          <StarStoryVault />
+        </div>
       </div>
       <div style={{ display: activeTab === 'code-vault' ? 'block' : 'none' }}>
         <CodeQuestionVault

@@ -150,7 +150,7 @@ export const InterviewPrepPage: React.FC = () => {
                 </span>
 
                 <span style={{ fontSize: 12, color: 'var(--t3)', fontWeight: 600 }}>
-                  Card {currentIndex + 1} of {filteredCards.length} (Click to Flip 🔄)
+                  Card {currentIndex + 1} of {filteredCards.length} (Click to Flip)
                 </span>
               </div>
 
@@ -190,7 +190,7 @@ export const InterviewPrepPage: React.FC = () => {
                   className="btn btn-ghost btn-sm"
                   style={{ fontSize: 12 }}
                 >
-                  {masteredIds.includes(currentCard.id) ? '✓ Mastered' : '⭐ Mark as Mastered'}
+                  {masteredIds.includes(currentCard.id) ? 'Mastered' : 'Mark as Mastered'}
                 </button>
 
                 <div style={{ display: 'flex', gap: 10 }}>

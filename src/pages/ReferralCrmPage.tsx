@@ -1,4 +1,4 @@
-import { Handshake, Pencil, Trash2 } from 'lucide-react';
+import { Handshake, Pencil, Trash2, Mail, ExternalLink } from 'lucide-react';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppShell } from '../components/layout/AppShell';
@@ -207,13 +207,15 @@ export const ReferralCrmPage: React.FC = () => {
 
                 <div style={{ display: 'flex', gap: 10, fontSize: 12 }}>
                   {c.email && (
-                    <a href={`mailto:${c.email}`} className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}>
-                      📧 Email
+                    <a href={`mailto:${c.email}`} className="btn btn-ghost btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11 }}>
+                      <Mail style={{ width: 12, height: 12 }} />
+                      <span>Email</span>
                     </a>
                   )}
                   {c.linkedIn && (
-                    <a href={c.linkedIn} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}>
-                      🔗 LinkedIn
+                    <a href={c.linkedIn} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11 }}>
+                      <ExternalLink style={{ width: 12, height: 12 }} />
+                      <span>LinkedIn</span>
                     </a>
                   )}
                 </div>

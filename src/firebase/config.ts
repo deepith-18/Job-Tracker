@@ -29,7 +29,7 @@ if (missingVars.length > 0) {
   // Show a visible banner in the page so it is impossible to miss
   if (typeof document !== 'undefined') {
     document.body.innerHTML = `<div style="font-family:monospace;padding:32px;background:#fff1f2;color:#991b1b;font-size:14px;border:2px solid #fecaca;border-radius:12px;margin:40px auto;max-width:640px;">
-      <strong>⚠ Firebase Not Configured</strong><br><br>
+      <strong>Configuration Required: Firebase Not Configured</strong><br><br>
       Missing environment variables:<br><code>${missingVars.join('<br>')}</code><br><br>
       Go to <strong>Vercel → Settings → Environment Variables</strong> and add the VITE_FIREBASE_* values from your .env file, then redeploy.
     </div>`;

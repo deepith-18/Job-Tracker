@@ -52,7 +52,7 @@ export const InterviewCheatSheetModal: React.FC<InterviewCheatSheetModalProps> =
 
   const handleCopy = () => {
     const text = `
-🎯 INTERVIEW CHEAT SHEET: ${company} — ${role}
+INTERVIEW CHEAT SHEET: ${company} — ${role}
 Status: ${app.status}
 
 1. ELEVATOR PITCH BLUEPRINT:

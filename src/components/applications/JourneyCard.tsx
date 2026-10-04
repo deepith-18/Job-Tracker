@@ -199,7 +199,7 @@ export const JourneyCard: React.FC<JourneyCardProps> = ({ app, index, onEdit, on
 
         {app.deadline && (
           <span className={`dl-near${isDeadlinePast ? ' dl-past' : isDeadlineToday ? ' dl-today' : ''}`}>
-            {isDeadlinePast ? '⚠ Overdue' : isDeadlineToday ? '🔥 Due today' : `⏰ ${daysLeft}d left`}
+            {isDeadlinePast ? 'Overdue' : isDeadlineToday ? 'Due today' : `${daysLeft}d left`}
             {' '}· {format(app.deadline, 'MMM d')}
           </span>
         )}

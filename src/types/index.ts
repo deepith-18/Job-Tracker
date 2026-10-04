@@ -57,6 +57,7 @@ export interface Application {
   rejectionReasons: string[];
   interviewDates?: (Date | string)[];
   firstResponseDate?: Date | null;
+  salary?: string;
   createdAt: Date;
   updatedAt: Date;
 }

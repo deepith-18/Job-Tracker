@@ -113,7 +113,7 @@ export const InsightsPage: React.FC = () => {
       </div>
       <div style={{ display: activeTab === 'compensation' ? 'block' : 'none' }}>
         <div className="pb" style={{ paddingTop: 16 }}>
-          <CompensationIntelligence />
+          <CompensationIntelligence applications={applications} />
         </div>
       </div>
       <div style={{ display: activeTab === 'matrix' ? 'block' : 'none' }}>

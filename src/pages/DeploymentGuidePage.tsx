@@ -50,8 +50,8 @@ export const DeploymentGuidePage: React.FC = () => {
         {/* Platform Selector */}
         <div style={{ display: 'flex', gap: 12 }}>
           {[
-            { id: 'vercel', label: '⭐ Vercel (Recommended Best)' },
-            { id: 'netlify', label: '🌐 Netlify' },
+            { id: 'vercel', label: 'Vercel (Recommended)' },
+            { id: 'netlify', label: 'Netlify' },
             { id: 'firebase', label: 'Firebase Hosting' },
           ].map((p) => (
             <button
@@ -78,7 +78,7 @@ export const DeploymentGuidePage: React.FC = () => {
           {activePlatform === 'vercel' && (
             <div>
               <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--t1)', marginBottom: 8 }}>
-                ⭐ Deploying to Vercel (Fastest & Best Option)
+                Deploying to Vercel
               </h2>
               <p style={{ fontSize: 13.5, color: 'var(--t2)', lineHeight: 1.6, marginBottom: 16 }}>
                 Vercel is the recommended hosting provider for React & Vite apps. It provides global CDN edge networks, free SSL certificates, and instant preview deployments on every Git push.
@@ -99,7 +99,7 @@ export const DeploymentGuidePage: React.FC = () => {
           {activePlatform === 'netlify' && (
             <div>
               <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--t1)', marginBottom: 8 }}>
-                🌐 Deploying to Netlify
+                Deploying to Netlify
               </h2>
               <p style={{ fontSize: 13.5, color: 'var(--t2)', lineHeight: 1.6, marginBottom: 16 }}>
                 Netlify offers continuous deployment from Git and drag-and-drop artifact hosting.

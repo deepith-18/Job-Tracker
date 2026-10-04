@@ -14,6 +14,8 @@ import {
   ArrowUpRight,
   User,
   Sparkles,
+  Scale,
+  BookOpen,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { QuickAddBar } from '../components/dashboard/QuickAddBar';
@@ -497,6 +499,20 @@ export const DashboardPage: React.FC = () => {
                   color: '#6366f1',
                   title: 'Kanban Pipeline',
                   subtitle: 'Drag & drop stages and review cards',
+                },
+                {
+                  to: '/offer-matrix',
+                  icon: Scale,
+                  color: '#10b981',
+                  title: 'Offer Decision Matrix',
+                  subtitle: 'MCDA comparative ranking & counter-offer letters',
+                },
+                {
+                  to: '/journal?tab=star-vault',
+                  icon: BookOpen,
+                  color: '#6366f1',
+                  title: 'STAR Story Bank',
+                  subtitle: 'Structured behavioral answer vault & metrics',
                 },
                 {
                   to: '/calendar',

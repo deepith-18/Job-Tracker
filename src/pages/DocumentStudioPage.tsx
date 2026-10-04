@@ -1,4 +1,4 @@
-import { File, Folder, Pencil, Trash2, Sparkles, Clipboard } from 'lucide-react';
+import { File, Folder, Pencil, Trash2, Sparkles, Clipboard, ExternalLink } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppShell } from '../components/layout/AppShell';
@@ -226,9 +226,10 @@ Candidate`;
                         <button
                           onClick={(e) => { e.preventDefault(); setPreviewUrl(doc.link); }}
                           className="btn btn-ghost btn-sm"
-                          style={{ fontSize: 11.5, padding: '4px 8px' }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11.5, padding: '4px 8px' }}
                         >
-                          View 🔗
+                          <ExternalLink style={{ width: 12, height: 12 }} />
+                          <span>View</span>
                         </button>
                       )}
                       <button
