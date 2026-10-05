@@ -12,6 +12,7 @@ import {
   Flame,
   Check,
   ChevronRight,
+  Activity,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore, THEME_PALETTES } from '../../store/themeStore';
@@ -328,6 +329,30 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
               <User size={14} color="var(--accent)" />
               <span style={{ flex: 1 }}>Profile & Settings</span>
               <ChevronRight size={13} color="var(--t3)" />
+            </NavLink>
+
+            <NavLink
+              to="/search-doctor"
+              onClick={() => setIsOpen(false)}
+              className="dropdown-menu-item"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '8px 10px',
+                borderRadius: 8,
+                fontSize: 12.5,
+                fontWeight: 600,
+                color: 'var(--t1)',
+                textDecoration: 'none',
+                transition: 'all 0.12s ease',
+              }}
+            >
+              <Activity size={14} color="#10b981" />
+              <span style={{ flex: 1 }}>AI Search Doctor & Fixer</span>
+              <span style={{ fontSize: 10, color: '#10b981', fontWeight: 800, background: '#10b98115', padding: '1px 6px', borderRadius: 6 }}>
+                Doctor
+              </span>
             </NavLink>
 
             <NavLink

@@ -22,13 +22,16 @@ import {
   DollarSign,
   Send,
   FileSearch,
+  Activity,
 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { AppShell } from '../components/layout/AppShell';
 import { AnalyticsSection } from '../components/analytics/AnalyticsSection';
 import { OutcomeConfusionMatrix } from '../components/analytics/OutcomeConfusionMatrix';
 import { OutreachCadenceRadar } from '../components/analytics/OutreachCadenceRadar';
 import { JobDescriptionMatcher } from '../components/tools/JobDescriptionMatcher';
 import { CompensationIntelligence } from '../components/analytics/CompensationIntelligence';
+import { JobSearchDoctor } from '../components/analytics/JobSearchDoctor';
 import { useApplications } from '../hooks/useApplications';
 import { useUserSettings } from '../hooks/useUserSettings';
 import { useSkills } from '../hooks/useSkills';
@@ -54,6 +57,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // ── TABS (Vector Lucide icons, no emojis) ──
 const TABS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
+  { id: 'doctor', label: 'AI Search Doctor & Mistake Diagnosis', icon: Activity },
   { id: 'cadence', label: 'Outreach & Ghosting Radar', icon: Send },
   { id: 'jd-matcher', label: 'Live JD ATS Scanner', icon: FileSearch },
   { id: 'compensation', label: 'Compensation & Benchmarks', icon: DollarSign },
@@ -66,7 +70,10 @@ const TABS = [
 ];
 
 export const InsightsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const initialTab = queryParams.get('tab') || 'overview';
+  const [activeTab, setActiveTab] = useState(initialTab);
   const { applications } = useApplications();
 
   return (
@@ -108,6 +115,11 @@ export const InsightsPage: React.FC = () => {
       {/* Tab Panels */}
       <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
         <OverviewTab applications={applications} />
+      </div>
+      <div style={{ display: activeTab === 'doctor' ? 'block' : 'none' }}>
+        <div className="pb" style={{ paddingTop: 16 }}>
+          <JobSearchDoctor applications={applications} />
+        </div>
       </div>
       <div style={{ display: activeTab === 'cadence' ? 'block' : 'none' }}>
         <div className="pb" style={{ paddingTop: 16 }}>

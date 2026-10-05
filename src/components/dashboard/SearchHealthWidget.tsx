@@ -7,7 +7,7 @@ import {
   ArrowRight,
   Flame,
   Calendar,
-  Sparkles,
+  Activity,
 } from 'lucide-react';
 import { Application } from '../../types';
 import { differenceInDays } from 'date-fns';
@@ -154,22 +154,22 @@ export const SearchHealthWidget: React.FC<SearchHealthWidgetProps> = ({
 
         {/* Action button */}
         <Link
-          to="/insights"
-          className="btn btn-ghost btn-sm"
+          to="/search-doctor"
+          className="btn btn-primary btn-sm"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: 6,
             fontSize: 12.5,
-            fontWeight: 700,
-            color: 'var(--accent)',
-            border: '1px solid rgba(99, 102, 241, 0.25)',
-            background: 'var(--card)',
+            fontWeight: 800,
             textDecoration: 'none',
+            padding: '8px 16px',
+            borderRadius: 12,
+            boxShadow: '0 4px 14px var(--accent-glow)',
           }}
         >
-          <Sparkles style={{ width: 13, height: 13 }} />
-          <span>Detailed Diagnostics</span>
+          <Activity style={{ width: 14, height: 14 }} strokeWidth={2.5} />
+          <span>AI Search Doctor & Mistake Diagnosis</span>
           <ArrowRight style={{ width: 12, height: 12 }} />
         </Link>
       </div>

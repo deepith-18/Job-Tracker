@@ -24,6 +24,7 @@ import { OfferMatrixPage } from './pages/OfferMatrixPage';
 import { DiagnosticsPage } from './pages/DiagnosticsPage';
 import { DeploymentGuidePage } from './pages/DeploymentGuidePage';
 import { InterviewWarRoomPage } from './pages/InterviewWarRoomPage';
+import { JobSearchDoctorPage } from './pages/JobSearchDoctorPage';
 
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { useAuth } from './hooks/useAuth';
@@ -73,6 +74,8 @@ function App() {
         <Route path="/portfolio-generator" element={<ProtectedRoute><PortfolioGeneratorPage /></ProtectedRoute>} />
         <Route path="/offer-matrix" element={<ProtectedRoute><OfferMatrixPage /></ProtectedRoute>} />
         <Route path="/war-room" element={<ProtectedRoute><InterviewWarRoomPage /></ProtectedRoute>} />
+        <Route path="/search-doctor" element={<ProtectedRoute><JobSearchDoctorPage /></ProtectedRoute>} />
+        <Route path="/funnel-doctor" element={<ProtectedRoute><JobSearchDoctorPage /></ProtectedRoute>} />
         <Route path="/mindset" element={<ProtectedRoute><JournalPage /></ProtectedRoute>} />
         <Route path="/diagnostics" element={<ProtectedRoute><DiagnosticsPage /></ProtectedRoute>} />
         <Route path="/deployment-guide" element={<ProtectedRoute><DeploymentGuidePage /></ProtectedRoute>} />
