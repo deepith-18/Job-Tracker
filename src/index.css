@@ -112,7 +112,10 @@ html.dark {
   --nav-border: rgba(255, 255, 255, 0.1);
 }
 
-/* ── Dynamic Theme Accent Palettes ── */
+/* ── Dynamic Theme Accent Palettes (High Specificity to override html.dark and html.light) ── */
+html[data-palette="emerald"],
+html.dark[data-palette="emerald"],
+html.light[data-palette="emerald"],
 [data-palette="emerald"] {
   --accent:       #10b981;
   --accent-h:     #059669;
@@ -120,7 +123,17 @@ html.dark {
   --accent-bg:    rgba(16, 185, 129, 0.16);
   --accent-glow:  rgba(16, 185, 129, 0.35);
 }
+html.light[data-palette="emerald"] {
+  --accent:       #059669;
+  --accent-h:     #047857;
+  --accent-deep:  #065f46;
+  --accent-bg:    #ecfdf5;
+  --accent-glow:  rgba(5, 150, 105, 0.2);
+}
 
+html[data-palette="cyan"],
+html.dark[data-palette="cyan"],
+html.light[data-palette="cyan"],
 [data-palette="cyan"] {
   --accent:       #06b6d4;
   --accent-h:     #0891b2;
@@ -128,7 +141,17 @@ html.dark {
   --accent-bg:    rgba(6, 182, 212, 0.16);
   --accent-glow:  rgba(6, 182, 212, 0.35);
 }
+html.light[data-palette="cyan"] {
+  --accent:       #0891b2;
+  --accent-h:     #0e7490;
+  --accent-deep:  #155e75;
+  --accent-bg:    #ecfeff;
+  --accent-glow:  rgba(8, 145, 178, 0.2);
+}
 
+html[data-palette="amber"],
+html.dark[data-palette="amber"],
+html.light[data-palette="amber"],
 [data-palette="amber"] {
   --accent:       #f59e0b;
   --accent-h:     #d97706;
@@ -136,13 +159,30 @@ html.dark {
   --accent-bg:    rgba(245, 158, 11, 0.16);
   --accent-glow:  rgba(245, 158, 11, 0.35);
 }
+html.light[data-palette="amber"] {
+  --accent:       #d97706;
+  --accent-h:     #b45309;
+  --accent-deep:  #92400e;
+  --accent-bg:    #fffbeb;
+  --accent-glow:  rgba(217, 119, 6, 0.2);
+}
 
+html[data-palette="indigo"],
+html.dark[data-palette="indigo"],
+html.light[data-palette="indigo"],
 [data-palette="indigo"] {
   --accent:       #6366f1;
   --accent-h:     #4f46e5;
   --accent-deep:  #4338ca;
   --accent-bg:    rgba(99, 102, 241, 0.16);
   --accent-glow:  rgba(99, 102, 241, 0.35);
+}
+html.light[data-palette="indigo"] {
+  --accent:       #4f46e5;
+  --accent-h:     #4338ca;
+  --accent-deep:  #3730a3;
+  --accent-bg:    #eef2ff;
+  --accent-glow:  rgba(79, 70, 229, 0.2);
 }
 
 /* ── Reset ─────────────────────────────── */

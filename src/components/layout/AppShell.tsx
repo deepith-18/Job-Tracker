@@ -555,29 +555,46 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               </NavLink>
             </div>
 
-            {/* Mobile Theme Toggle Button */}
-            <button
-              type="button"
-              onClick={toggleTheme}
+            {/* Mobile Theme & Accent Palette Controls */}
+            <div
               style={{
                 display: 'flex',
-                alignItems: 'center',
+                flexDirection: 'column',
                 gap: 12,
-                padding: '11px 14px',
-                borderRadius: 12,
-                fontSize: 13.5,
-                fontWeight: 700,
-                color: 'var(--t1)',
+                padding: '12px 14px',
+                borderRadius: 14,
                 background: 'var(--page)',
                 border: '1px solid var(--border)',
-                cursor: 'pointer',
                 width: '100%',
               }}
             >
-              {resolvedTheme === 'dark' ? <Sun style={{ width: 17, height: 17, color: '#fbbf24' }} /> : <Moon style={{ width: 17, height: 17, color: 'var(--t2)' }} />}
-              <span style={{ flex: 1, textAlign: 'left' }}>Theme</span>
-              <span style={{ fontSize: 12, color: 'var(--accent)', textTransform: 'capitalize', fontWeight: 600 }}>{resolvedTheme} Mode</span>
-            </button>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {resolvedTheme === 'dark' ? <Moon style={{ width: 17, height: 17, color: 'var(--accent)' }} /> : <Sun style={{ width: 17, height: 17, color: '#fbbf24' }} />}
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--t1)' }}>Appearance</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="btn btn-ghost btn-sm"
+                  style={{
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    padding: '4px 10px',
+                    borderRadius: 8,
+                    color: 'var(--accent)',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  {resolvedTheme === 'dark' ? '☀ Light Mode' : '🌙 Dark Mode'}
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t3)' }}>Accent Theme</span>
+                <ThemePaletteSelector showThemeToggle={false} />
+              </div>
+            </div>
 
             {/* Sign Out Action */}
             <button

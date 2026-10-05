@@ -758,11 +758,11 @@ Warm regards,
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--t2)' }}>
+            <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--t2)' }}>
                 Year 1 Total: <strong style={{ color: 'var(--t1)' }}>{formatMoney(firstYearTC)}</strong>
               </div>
-              <div style={{ fontSize: 17, fontWeight: 900, color: 'var(--t1)' }}>
+              <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--t1)' }}>
                 Annual Ongoing TC: <span style={{ color: '#10b981' }}>{formatMoney(annualTC)}</span>
               </div>
             </div>

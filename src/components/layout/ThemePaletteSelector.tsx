@@ -9,13 +9,19 @@ const PALETTES: { id: ThemePalette; label: string; color: string }[] = [
   { id: 'amber', label: 'Sunset Amber', color: '#f59e0b' },
 ];
 
-export const ThemePaletteSelector: React.FC = () => {
+interface ThemePaletteSelectorProps {
+  showThemeToggle?: boolean;
+}
+
+export const ThemePaletteSelector: React.FC<ThemePaletteSelectorProps> = ({
+  showThemeToggle = true,
+}) => {
   const { resolvedTheme, toggleTheme, palette, setPalette } = useThemeStore();
 
   return (
     <div
       style={{
-        display: 'flex',
+        display: 'inline-flex',
         alignItems: 'center',
         gap: 6,
         background: 'var(--page)',
@@ -25,26 +31,29 @@ export const ThemePaletteSelector: React.FC = () => {
       }}
     >
       {/* Light / Dark Mode Toggle */}
-      <button
-        onClick={toggleTheme}
-        className="btn btn-ghost"
-        style={{
-          padding: 4,
-          borderRadius: 8,
-          color: 'var(--t2)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-        title={`Switch to ${resolvedTheme === 'dark' ? 'Light' : 'Dark'} Mode`}
-      >
-        {resolvedTheme === 'dark' ? <Sun size={14} color="#f59e0b" /> : <Moon size={14} color="#6366f1" />}
-      </button>
-
-      <div style={{ width: 1, height: 14, background: 'var(--border)' }} />
+      {showThemeToggle && (
+        <>
+          <button
+            onClick={toggleTheme}
+            className="btn btn-ghost"
+            style={{
+              padding: 4,
+              borderRadius: 8,
+              color: 'var(--t2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            title={`Switch to ${resolvedTheme === 'dark' ? 'Light' : 'Dark'} Mode`}
+          >
+            {resolvedTheme === 'dark' ? <Sun size={14} color="#f59e0b" /> : <Moon size={14} color="#6366f1" />}
+          </button>
+          <div style={{ width: 1, height: 14, background: 'var(--border)' }} />
+        </>
+      )}
 
       {/* Palette Color Dots */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
         {PALETTES.map((p) => {
           const isActive = palette === p.id;
           return (
@@ -52,17 +61,20 @@ export const ThemePaletteSelector: React.FC = () => {
               key={p.id}
               onClick={() => setPalette(p.id)}
               style={{
-                width: 16,
-                height: 16,
+                width: 17,
+                height: 17,
                 borderRadius: '50%',
                 background: p.color,
-                border: isActive ? '2px solid var(--t1)' : '1px solid transparent',
+                border: isActive ? '2px solid var(--t1)' : '1px solid rgba(0,0,0,0.15)',
                 cursor: 'pointer',
-                transform: isActive ? 'scale(1.15)' : 'scale(1)',
+                transform: isActive ? 'scale(1.2)' : 'scale(1)',
+                boxShadow: isActive ? `0 0 8px ${p.color}80` : 'none',
                 transition: 'all 0.15s ease',
                 padding: 0,
+                position: 'relative',
               }}
               title={`Switch accent to ${p.label}`}
+              aria-label={p.label}
             />
           );
         })}
