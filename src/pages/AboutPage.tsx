@@ -20,6 +20,8 @@ import {
   Database,
   Calculator,
   Terminal,
+  Activity,
+  X,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { BrandLogo } from '../components/common/BrandLogo';
@@ -152,9 +154,15 @@ export const AboutPage: React.FC = () => {
       icon: Briefcase,
     },
     {
-      title: 'Interview Preparation Studio',
+      title: 'Pipeline Diagnostics & Stage Post-Mortem',
       description:
-        'Built-in question banks, STAR method answer frameworks, and company intel dossiers to help you walk into every interview prepared.',
+        'Audit application conversion bottlenecks across screening, OA, and technical rounds with data-driven recovery strategies.',
+      icon: Activity,
+    },
+    {
+      title: 'Interview War Room & Live Scratchpad',
+      description:
+        'In-call live scratchpad with STAR method answer frameworks, reverse questions catalog, and one-click debrief export.',
       icon: Target,
     },
     {
@@ -173,8 +181,15 @@ export const AboutPage: React.FC = () => {
 
   const CHANGELOG = [
     {
-      version: 'v2.5',
+      version: 'v3.0',
       tag: 'Current',
+      title: 'Pipeline Diagnostics, Interview War Room & Profile OS Hub',
+      description:
+        'Introduced stage-by-stage funnel diagnostics, real-time interview scratchpad & reverse question vault, dynamic theme color palettes, and comprehensive executive profile management.',
+    },
+    {
+      version: 'v2.5',
+      tag: 'Stable',
       title: 'Direct Creator Inquiries & UI Refinements',
       description:
         'Added privacy-protected direct feedback dispatch, streamlined inquiry routing, instant keyboard shortcuts, and performance optimizations.',
@@ -765,7 +780,7 @@ export const AboutPage: React.FC = () => {
                   }}
                   aria-label="Close modal"
                 >
-                  ✕
+                  <X size={16} />
                 </button>
               </div>
 

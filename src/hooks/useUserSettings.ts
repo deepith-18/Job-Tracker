@@ -23,6 +23,10 @@ export const useUserSettings = () => {
     githubUrl: '',
     linkedinUrl: '',
     portfolioUrl: '',
+    leetcodeUrl: '',
+    searchStatus: 'Actively Interviewing',
+    seniorityLevel: 'Senior Level',
+    topSkills: ['TypeScript', 'React', 'Node.js', 'Go', 'PostgreSQL', 'System Design'],
   });
   const [loading, setLoading] = useState<boolean>(true);
 

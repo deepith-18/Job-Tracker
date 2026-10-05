@@ -341,6 +341,10 @@ export interface UserSettingsData {
   githubUrl?: string;
   linkedinUrl?: string;
   portfolioUrl?: string;
+  leetcodeUrl?: string;
+  searchStatus?: string;
+  seniorityLevel?: string;
+  topSkills?: string[];
 }
 
 export const subscribeToUserSettings = (
