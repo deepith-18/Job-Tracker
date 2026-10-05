@@ -27,13 +27,15 @@ import { InterviewWarRoomPage } from './pages/InterviewWarRoomPage';
 import { JobSearchDoctorPage } from './pages/JobSearchDoctorPage';
 
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { useAuth } from './hooks/useAuth';
 
 function App() {
   useAuth();
 
   return (
-    <BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
       <Routes>
         {/* Auth */}
         <Route path="/login" element={<LoginPage />} />
@@ -86,7 +88,8 @@ function App() {
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
-  );
+  </ErrorBoundary>
+);
 }
 
 export default App;
