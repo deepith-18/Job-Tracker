@@ -9,9 +9,9 @@ export const JobSearchDoctorPage: React.FC = () => {
   return (
     <AppShell>
       <div className="ph" style={{ paddingBottom: 16 }}>
-        <h1 className="page-title">AI Job Search Doctor & Application Post-Mortem</h1>
+        <h1 className="page-title">Pipeline Diagnostics & Funnel Audit</h1>
         <p className="page-sub">
-          Pinpoint why applications stall, diagnose your exact screening bottlenecks, and execute data-backed prescriptions to land interviews.
+          Pinpoint where applications stall, analyze screening bottlenecks, and review stage-by-stage recovery strategies.
         </p>
       </div>
 

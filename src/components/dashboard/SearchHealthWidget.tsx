@@ -169,7 +169,7 @@ export const SearchHealthWidget: React.FC<SearchHealthWidgetProps> = ({
           }}
         >
           <Activity style={{ width: 14, height: 14 }} strokeWidth={2.5} />
-          <span>AI Search Doctor & Mistake Diagnosis</span>
+          <span>Pipeline Diagnostics & Funnel Audit</span>
           <ArrowRight style={{ width: 12, height: 12 }} />
         </Link>
       </div>

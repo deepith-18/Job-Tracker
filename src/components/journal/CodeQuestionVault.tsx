@@ -322,7 +322,7 @@ export const CodeQuestionVault: React.FC<CodeQuestionVaultProps> = ({
               {starredCount}
             </div>
             <div style={{ fontSize: 12, color: 'var(--t2)', fontWeight: 600 }}>
-              Starred Must-Know (⭐)
+              Starred Priority Questions
             </div>
           </div>
           <span
@@ -748,7 +748,7 @@ export const CodeQuestionVault: React.FC<CodeQuestionVaultProps> = ({
                     {/* Star / Bookmark Button */}
                     <button
                       onClick={() => toggleStar(q.id)}
-                      title={q.isStarred ? 'Unstar Question' : 'Mark as Important (⭐)'}
+                      title={q.isStarred ? 'Unstar Question' : 'Mark as High Priority'}
                       style={{
                         background: q.isStarred ? 'rgba(245, 158, 11, 0.15)' : 'var(--card-hover)',
                         border: q.isStarred ? '1px solid #f59e0b' : '1px solid var(--border)',
@@ -1237,7 +1237,7 @@ export const CodeQuestionVault: React.FC<CodeQuestionVaultProps> = ({
                       }}
                     />
                     <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--t1)' }}>
-                      Mark as ⭐ Important / High-Yield Question
+                      Mark as High-Yield Priority Question
                     </span>
                   </div>
                 </label>

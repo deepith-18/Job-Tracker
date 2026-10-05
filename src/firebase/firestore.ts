@@ -442,7 +442,7 @@ export const initializeUserCollections = async (uid: string, email?: string | nu
 
     console.log('Firestore user collections initialized for', email || uid);
   } catch (err) {
-    console.error('❌ Failed to initialize Firestore collections:', err);
+    console.error('[Firestore] Failed to initialize Firestore collections:', err);
     // Re-throw so callers can show a visible error to the user
     throw err;
   }

@@ -349,9 +349,9 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
               }}
             >
               <Activity size={14} color="#10b981" />
-              <span style={{ flex: 1 }}>AI Search Doctor & Fixer</span>
+              <span style={{ flex: 1 }}>Pipeline Diagnostics</span>
               <span style={{ fontSize: 10, color: '#10b981', fontWeight: 800, background: '#10b98115', padding: '1px 6px', borderRadius: 6 }}>
-                Doctor
+                Audit
               </span>
             </NavLink>
 

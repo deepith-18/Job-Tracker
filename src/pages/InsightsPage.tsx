@@ -57,7 +57,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // ── TABS (Vector Lucide icons, no emojis) ──
 const TABS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
-  { id: 'doctor', label: 'AI Search Doctor & Mistake Diagnosis', icon: Activity },
+  { id: 'doctor', label: 'Funnel Diagnostics & Audit', icon: Activity },
   { id: 'cadence', label: 'Outreach & Ghosting Radar', icon: Send },
   { id: 'jd-matcher', label: 'Live JD ATS Scanner', icon: FileSearch },
   { id: 'compensation', label: 'Compensation & Benchmarks', icon: DollarSign },

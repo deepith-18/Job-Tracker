@@ -558,7 +558,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                     border: '1px solid var(--border)',
                   }}
                 >
-                  {resolvedTheme === 'dark' ? '☀ Light Mode' : '🌙 Dark Mode'}
+                  {resolvedTheme === 'dark' ? 'Light Mode' : 'Dark Mode'}
                 </button>
               </div>
 

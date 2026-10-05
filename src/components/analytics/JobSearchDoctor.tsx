@@ -138,7 +138,7 @@ export const JobSearchDoctor: React.FC<JobSearchDoctorProps> = ({ applications }
     } catch {}
 
     if (!completedActions[key]) {
-      addToast('Action Completed! 🚀', 'Great momentum towards your next interview loop', 'success');
+      addToast('Action Completed', 'Progress recorded toward your interview loop', 'success');
     }
   };
 
@@ -269,7 +269,7 @@ export const JobSearchDoctor: React.FC<JobSearchDoctorProps> = ({ applications }
                 </span>
               </div>
               <h2 style={{ fontSize: 20, fontWeight: 900, color: 'var(--t1)', margin: '4px 0 2px 0' }}>
-                AI Job Search Doctor & Conversion Copilot
+                Application Pipeline Diagnostics & Funnel Audit
               </h2>
               <p style={{ fontSize: 13, color: 'var(--t2)', margin: 0, maxWidth: 680 }}>
                 {metrics.primaryIssue}
@@ -323,7 +323,7 @@ export const JobSearchDoctor: React.FC<JobSearchDoctorProps> = ({ applications }
             className="btn btn-ghost btn-sm"
             style={{ fontSize: 11, padding: '3px 8px', borderRadius: 8, whiteSpace: 'nowrap' }}
           >
-            New Spark ⚡
+            Next Quote
           </button>
         </div>
       </div>
@@ -331,10 +331,10 @@ export const JobSearchDoctor: React.FC<JobSearchDoctorProps> = ({ applications }
       {/* ── Sub Navigation Tabs ── */}
       <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
         {[
-          { id: 'diagnosis', label: '1. The 4 Leaks Sabotaging You', icon: ShieldAlert },
-          { id: 'actions', label: '2. Today\'s Golden 3 Actions', icon: Zap },
-          { id: 'postmortem', label: '3. Application Post-Mortem & Fixer', icon: Target },
-          { id: 'simulator', label: '4. Offer Probability Simulator', icon: Sliders },
+          { id: 'diagnosis', label: '1. Funnel Bottlenecks', icon: ShieldAlert },
+          { id: 'actions', label: '2. Priority Action Items', icon: Zap },
+          { id: 'postmortem', label: '3. Stage Post-Mortem & Recovery', icon: Target },
+          { id: 'simulator', label: '4. Conversion Probability Model', icon: Sliders },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeSubTab === tab.id;
@@ -366,25 +366,25 @@ export const JobSearchDoctor: React.FC<JobSearchDoctorProps> = ({ applications }
         })}
       </div>
 
-      {/* ── TAB 1: The 4 Leaks Sabotaging You ── */}
+      {/* ── TAB 1: Funnel Bottlenecks ── */}
       {activeSubTab === 'diagnosis' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 16 }}>
           {/* Leak 1 */}
           <div className="card" style={{ padding: 22, borderRadius: 18, border: '1.5px solid #ef4444' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
               <span style={{ fontSize: 10.5, fontWeight: 800, padding: '2px 8px', borderRadius: 6, background: '#fef2f2', color: '#ef4444' }}>
-                CRITICAL LEAK #1
+                PRIMARY BOTTLENECK #1
               </span>
               <span style={{ fontSize: 12, fontWeight: 800, color: '#ef4444' }}>−14% Callback Loss</span>
             </div>
             <h4 style={{ fontSize: 15, fontWeight: 800, color: 'var(--t1)', margin: '0 0 6px 0' }}>
-              The "Cold Portal" Application Trap
+              The Cold Portal Application Trap
             </h4>
             <p style={{ fontSize: 12, color: 'var(--t2)', lineHeight: 1.5, margin: 0 }}>
               Applying strictly via LinkedIn "Easy Apply" or generic careers portals puts your resume into an automated pile with 300+ people. Only 1.5% of cold applications turn into phone screens.
             </p>
             <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: 'var(--page)', border: '1px solid var(--border)', fontSize: 11.5 }}>
-              <strong style={{ color: 'var(--accent)' }}>Doctor's Remedy:</strong> For your top 5 target companies, find 1 engineer or alumni on LinkedIn. A warm internal referral increases your callback rate by <strong>12x (18%+)</strong>.
+              <strong style={{ color: 'var(--accent)' }}>Recommended Strategy:</strong> For your top target companies, connect with an engineer or alumni on LinkedIn. A warm internal referral increases your callback rate by <strong>12x (18%+)</strong>.
             </div>
           </div>
 
@@ -392,18 +392,18 @@ export const JobSearchDoctor: React.FC<JobSearchDoctorProps> = ({ applications }
           <div className="card" style={{ padding: 22, borderRadius: 18, border: '1.5px solid #f59e0b' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
               <span style={{ fontSize: 10.5, fontWeight: 800, padding: '2px 8px', borderRadius: 6, background: '#fffbeb', color: '#b45309' }}>
-                HIGH IMPACT LEAK #2
+                HIGH IMPACT BOTTLENECK #2
               </span>
               <span style={{ fontSize: 12, fontWeight: 800, color: '#f59e0b' }}>{metrics.needsNudge.length} Roles Stalled</span>
             </div>
             <h4 style={{ fontSize: 15, fontWeight: 800, color: 'var(--t1)', margin: '0 0 6px 0' }}>
-              The "Zero Follow-up" Ghosting Vacuum
+              The Zero Follow-Up Gap
             </h4>
             <p style={{ fontSize: 12, color: 'var(--t2)', lineHeight: 1.5, margin: 0 }}>
-              You have {metrics.needsNudge.length} applications submitted over 7 days ago with zero follow-ups. Recruiters are overwhelmed. Over 28% of interview callbacks happen solely because the candidate sent a polite nudge!
+              You have {metrics.needsNudge.length} applications submitted over 7 days ago with zero follow-ups. Recruiters receive massive inbound volume; over 28% of interview callbacks happen after a candidate sends a polite follow-up.
             </p>
             <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: 'var(--page)', border: '1px solid var(--border)', fontSize: 11.5 }}>
-              <strong style={{ color: '#f59e0b' }}>Doctor's Remedy:</strong> Send a 3-sentence polite follow-up on Day 7 to 10. (See the template in Tab 3).
+              <strong style={{ color: '#f59e0b' }}>Recommended Strategy:</strong> Send a 3-sentence polite follow-up on Day 7 to 10 using the template in Tab 3.
             </div>
           </div>
 
@@ -411,18 +411,18 @@ export const JobSearchDoctor: React.FC<JobSearchDoctorProps> = ({ applications }
           <div className="card" style={{ padding: 22, borderRadius: 18, border: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
               <span style={{ fontSize: 10.5, fontWeight: 800, padding: '2px 8px', borderRadius: 6, background: 'var(--page)', color: 'var(--t2)' }}>
-                EFFICIENCY LEAK #3
+                EFFICIENCY BOTTLENECK #3
               </span>
               <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)' }}>Speed Advantage</span>
             </div>
             <h4 style={{ fontSize: 15, fontWeight: 800, color: 'var(--t1)', margin: '0 0 6px 0' }}>
-              Missing the "48-Hour Golden Window"
+              Missing the 48-Hour Window
             </h4>
             <p style={{ fontSize: 12, color: 'var(--t2)', lineHeight: 1.5, margin: 0 }}>
-              Job postings older than 5 days typically already have their candidate shortlist formed. Applying on day 10 means your resume is rarely opened even if you are qualified.
+              Job postings older than 5 days typically already have their candidate shortlist formed. Applying on day 10 means your resume is rarely opened even if qualified.
             </p>
             <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: 'var(--page)', border: '1px solid var(--border)', fontSize: 11.5 }}>
-              <strong style={{ color: 'var(--accent)' }}>Doctor's Remedy:</strong> Set up job alerts and prioritize applying within 24 to 48 hours of a role going live.
+              <strong style={{ color: 'var(--accent)' }}>Recommended Strategy:</strong> Set up job alerts and prioritize applying within 24 to 48 hours of a role going live.
             </div>
           </div>
 
@@ -430,24 +430,24 @@ export const JobSearchDoctor: React.FC<JobSearchDoctorProps> = ({ applications }
           <div className="card" style={{ padding: 22, borderRadius: 18, border: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
               <span style={{ fontSize: 10.5, fontWeight: 800, padding: '2px 8px', borderRadius: 6, background: 'var(--page)', color: 'var(--t2)' }}>
-                LEARNING LEAK #4
+                LEARNING BOTTLENECK #4
               </span>
               <span style={{ fontSize: 12, fontWeight: 800, color: '#10b981' }}>Post-Mortem Loop</span>
             </div>
             <h4 style={{ fontSize: 15, fontWeight: 800, color: 'var(--t1)', margin: '0 0 6px 0' }}>
-              Repeating Mistakes Without Post-Mortem
+              Repeating Patterns Without Stage Analysis
             </h4>
             <p style={{ fontSize: 12, color: 'var(--t2)', lineHeight: 1.5, margin: 0 }}>
-              Logging 20 rejections without categorizing WHY they occurred (Resume screen vs OA vs System Design) means you aren't fixing the root bottleneck before applying to the next 50.
+              Submitting applications without categorizing where drops occur (Resume screen vs OA vs System Design) makes it difficult to pinpoint the exact constraint.
             </p>
             <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: 'var(--page)', border: '1px solid var(--border)', fontSize: 11.5 }}>
-              <strong style={{ color: '#10b981' }}>Doctor's Remedy:</strong> Use our Post-Mortem tool (Tab 3) after every rejection to upgrade your answers.
+              <strong style={{ color: '#10b981' }}>Recommended Strategy:</strong> Use our Post-Mortem tool (Tab 3) after rejections to identify and address weaknesses.
             </div>
           </div>
         </div>
       )}
 
-      {/* ── TAB 2: Today's Golden 3 Actions ── */}
+      {/* ── TAB 2: Priority Action Items ── */}
       {activeSubTab === 'actions' && (
         <div
           className="card"
@@ -461,10 +461,10 @@ export const JobSearchDoctor: React.FC<JobSearchDoctorProps> = ({ applications }
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <div>
               <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-                Today's Golden 3 High-Conversion Actions
+                Priority Daily Action Items
               </h3>
               <p style={{ fontSize: 12.5, color: 'var(--t3)', margin: '3px 0 0 0' }}>
-                Stop feeling overwhelmed by 100+ applications. Execute these 3 high-probability steps today to spark interviews.
+                Focus on high-leverage pipeline activities to improve interview conversion.
               </p>
             </div>
             <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)' }}>
@@ -569,7 +569,7 @@ export const JobSearchDoctor: React.FC<JobSearchDoctorProps> = ({ applications }
         </div>
       )}
 
-      {/* ── TAB 3: Application Post-Mortem & Fixer Tool ── */}
+      {/* ── TAB 3: Stage Post-Mortem & Recovery ── */}
       {activeSubTab === 'postmortem' && (
         <div
           className="card"
@@ -586,10 +586,10 @@ export const JobSearchDoctor: React.FC<JobSearchDoctorProps> = ({ applications }
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
             <div>
               <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-                Interactive Application Post-Mortem & Fixer
+                Stage-by-Stage Opportunity Post-Mortem
               </h3>
               <p style={{ fontSize: 12.5, color: 'var(--t3)', margin: '3px 0 0 0' }}>
-                Select any application to diagnose why it stalled and get an immediate tactical cure and copyable follow-up script.
+                Select any application to analyze the bottleneck and review targeted recovery guidance and outreach templates.
               </p>
             </div>
 
@@ -708,7 +708,7 @@ export const JobSearchDoctor: React.FC<JobSearchDoctorProps> = ({ applications }
         </div>
       )}
 
-      {/* ── TAB 4: Offer Probability Simulator ── */}
+      {/* ── TAB 4: Conversion Probability Model ── */}
       {activeSubTab === 'simulator' && (
         <div
           className="card"
@@ -721,10 +721,10 @@ export const JobSearchDoctor: React.FC<JobSearchDoctorProps> = ({ applications }
         >
           <div style={{ marginBottom: 18 }}>
             <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-              "Path to Offer" Math & Conversion Simulator
+              "Path to Offer" Empirical Conversion Model
             </h3>
             <p style={{ fontSize: 12.5, color: 'var(--t3)', margin: '3px 0 0 0' }}>
-              Job search is an empirical numbers game. Adjust the sliders to see how adopting warm referrals and follow-ups dramatically accelerates your job offer timeline.
+              Model how warm referrals and consistent follow-ups impact interview velocity and expected offer timelines.
             </p>
           </div>
 

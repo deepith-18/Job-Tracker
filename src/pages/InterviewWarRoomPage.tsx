@@ -16,6 +16,7 @@ import {
   Trash2,
   Info,
   ExternalLink,
+  Check,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { useApplications } from '../hooks/useApplications';
@@ -572,7 +573,7 @@ export const InterviewWarRoomPage: React.FC = () => {
               {customQuestions.length > 0 && (
                 <div style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 6 }}>
-                    ⭐ Your Custom Questions ({activeApp?.company || 'Company'})
+                    Your Custom Questions ({activeApp?.company || 'Company'})
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {customQuestions.map((q, idx) => (
@@ -734,8 +735,8 @@ export const InterviewWarRoomPage: React.FC = () => {
                   <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
                     In-Call Live Scratchpad
                   </h3>
-                  <span style={{ fontSize: 10.5, color: '#10b981', fontWeight: 700, background: '#10b98115', padding: '1px 6px', borderRadius: 6 }}>
-                    ✓ Auto-saved
+                  <span style={{ fontSize: 10.5, color: '#10b981', fontWeight: 700, background: '#10b98115', padding: '1px 6px', borderRadius: 6, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                    <Check size={11} strokeWidth={3} /> Auto-saved
                   </span>
                 </div>
 
@@ -846,7 +847,7 @@ export const InterviewWarRoomPage: React.FC = () => {
                 </div>
 
                 <div style={{ background: 'var(--page)', padding: 12, borderRadius: 12, border: '1.5px solid var(--accent)' }}>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)' }}>A — Action (60-90 sec) ★ Core</div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)' }}>A — Action (60-90 sec) (Core Focus)</div>
                   <div style={{ fontSize: 12, color: 'var(--t2)', marginTop: 4 }}>
                     The meat of the answer. Use "I architected...", "I resolved trade-offs between A and B...", "I wrote tests for edge cases".
                   </div>
@@ -863,7 +864,7 @@ export const InterviewWarRoomPage: React.FC = () => {
               {/* Emergency Recovery Tactics */}
               <div style={{ background: 'var(--page)', padding: 14, borderRadius: 14, border: '1px solid var(--border)' }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: '#f59e0b', marginBottom: 6 }}>
-                  🚨 Emergency Playbook: "What if I don't know the exact answer?"
+                  Emergency Protocol: "What if I don't know the exact answer?"
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--t2)', lineHeight: 1.5 }}>
                   Never guess or freeze. Use the <strong>Admit & Bridge</strong> formula:
@@ -885,7 +886,7 @@ export const InterviewWarRoomPage: React.FC = () => {
               {/* Clarification Checklist before coding */}
               <div style={{ background: 'var(--page)', padding: 14, borderRadius: 14, border: '1px solid var(--border)' }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent)', marginBottom: 6 }}>
-                  💡 Clarifying Questions to Ask Before Writing Code
+                  Clarifying Questions to Ask Before Writing Code
                 </div>
                 <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: 'var(--t2)', display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <li>Are we optimizing for lowest read latency, write throughput, or storage efficiency?</li>
