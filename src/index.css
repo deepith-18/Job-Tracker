@@ -338,34 +338,66 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   gap: 10px;
 }
-.nav-profile-pill {
-  display: flex;
+/* Quick Add Button */
+.nav-quick-add-btn {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 12px 4px 5px;
-  border-radius: 24px;
-  background: var(--page);
-  border: 1px solid var(--border);
-  text-decoration: none;
-  transition: all 0.15s ease;
-  cursor: pointer;
-}
-.nav-profile-pill:hover {
-  background: #ffffff;
-  border-color: var(--accent);
-}
-.nav-profile-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
   color: #ffffff;
-  display: flex;
+  font-size: 12.5px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 10px var(--accent-glow);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nav-quick-add-btn:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+.nav-quick-add-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Quick Theme Toggle Button */
+.nav-theme-btn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
-  font-weight: 800;
-  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: var(--page);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  color: var(--t2);
+  transition: all 0.18s ease;
+}
+.nav-theme-btn:hover {
+  background: var(--card-hover);
+  border-color: var(--accent);
+  color: var(--t1);
+  transform: rotate(15deg);
+}
+
+/* Dropdown Menu Items */
+.dropdown-menu-item:hover {
+  background: var(--card-hover) !important;
+  color: var(--accent) !important;
+}
+
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* ── Main content ─────────────────────────── */
@@ -1063,24 +1095,19 @@ a { color: inherit; text-decoration: none; }
     height: 32px !important;
   }
 
-  /* Hide redundant desktop-only buttons from compact mobile header */
+  /* Compact mobile controls */
   .nav-search-btn {
     display: none !important;
   }
-  .nav-shortcuts-btn {
+  .nav-theme-btn {
     display: none !important;
   }
-  .nav-about-btn {
+  .nav-quick-add-label {
     display: none !important;
   }
-  .nav-profile-name {
-    display: none !important;
-  }
-  .nav-profile-pill {
-    padding: 0 !important;
-    border-radius: 50% !important;
-    background: transparent !important;
-    border: none !important;
+  .nav-quick-add-btn {
+    padding: 6px 10px !important;
+    border-radius: 10px !important;
   }
   .nav-right-actions {
     gap: 6px !important;

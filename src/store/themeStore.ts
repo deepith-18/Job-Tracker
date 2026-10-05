@@ -4,6 +4,13 @@ import { persist } from 'zustand/middleware';
 export type ThemeMode = 'light' | 'dark' | 'system';
 export type ThemePalette = 'indigo' | 'emerald' | 'cyan' | 'amber';
 
+export const THEME_PALETTES: { id: ThemePalette; label: string; color: string }[] = [
+  { id: 'indigo', label: 'Indigo Cyber', color: '#6366f1' },
+  { id: 'emerald', label: 'Emerald Matrix', color: '#10b981' },
+  { id: 'cyan', label: 'Cyber Cyan', color: '#06b6d4' },
+  { id: 'amber', label: 'Sunset Amber', color: '#f59e0b' },
+];
+
 interface ThemeStore {
   theme: ThemeMode;
   resolvedTheme: 'light' | 'dark';

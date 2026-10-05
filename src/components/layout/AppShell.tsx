@@ -15,7 +15,6 @@ import {
   LogOut,
   Search,
   Info,
-  Keyboard,
   Sun,
   Moon,
   CheckCircle2,
@@ -29,6 +28,8 @@ import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 import { MobileCommandHub } from './MobileCommandHub';
 import { BrandLogo } from '../common/BrandLogo';
 import { ThemePaletteSelector } from './ThemePaletteSelector';
+import { ProfileDropdown } from './ProfileDropdown';
+import { QuickAddModal } from './QuickAddModal';
 import { useAuthStore } from '../../store/authStore';
 import { signOutUser } from '../../firebase/auth';
 import { useApplications } from '../../hooks/useApplications';
@@ -94,17 +95,21 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [streakModalOpen, setStreakModalOpen] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [boostSuccess, setBoostSuccess] = useState(false);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
   const resolvedTheme = useThemeStore((s) => s.resolvedTheme);
 
-  // Global Cmd+K / Ctrl+K & '?' keyboard shortcut
+  // Global Cmd+K / Ctrl+K, 'N', & '?' keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName);
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setPaletteOpen((prev) => !prev);
+      } else if ((e.key === 'n' || e.key === 'N') && !isInput && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        setQuickAddOpen((prev) => !prev);
       } else if (e.key === '?' && !isInput && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         setShortcutsOpen((prev) => !prev);
@@ -113,6 +118,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         setPaletteOpen(false);
         setMobileOpen(false);
         setStreakModalOpen(false);
+        setQuickAddOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -291,8 +297,19 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             })}
           </div>
 
-          {/* Right Search, Profile Capsule & Mobile Toggle */}
+          {/* Right Search, Quick Action, Theme Toggle & Profile Menu */}
           <div className="nav-right-actions">
+            {/* Quick + New Application Button (High utility & attraction) */}
+            <button
+              type="button"
+              onClick={() => setQuickAddOpen(true)}
+              className="nav-quick-add-btn"
+              title="Log New Opportunity (+ or Press N)"
+            >
+              <Plus style={{ width: 14, height: 14 }} strokeWidth={2.5} />
+              <span className="nav-quick-add-label">New</span>
+            </button>
+
             {/* Quick Spotlight Search Trigger */}
             <button
               type="button"
@@ -331,67 +348,22 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               </kbd>
             </button>
 
-            {/* Shortcuts Guide Button */}
+            {/* Quick 1-Click Theme Mode Toggle (Sun / Moon) */}
             <button
               type="button"
-              onClick={() => setShortcutsOpen(true)}
-              className="nav-shortcuts-btn"
-              title="Keyboard Shortcuts Cheatsheet (?)"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 34,
-                height: 34,
-                borderRadius: 12,
-                background: 'var(--page)',
-                border: '1px solid var(--border)',
-                color: 'var(--t2)',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
+              onClick={toggleTheme}
+              className="nav-theme-btn"
+              title={`Switch to ${resolvedTheme === 'dark' ? 'Light' : 'Dark'} Mode`}
             >
-              <Keyboard style={{ width: 15, height: 15 }} />
+              {resolvedTheme === 'dark' ? <Sun size={15} color="#f59e0b" /> : <Moon size={15} color="var(--accent)" />}
             </button>
 
-            {/* Theme & Accent Palette Selector */}
-            <ThemePaletteSelector />
-
-            <NavLink
-              to="/profile"
-              className="nav-profile-pill"
-              title="View Profile & Settings"
-            >
-              <div className="nav-profile-avatar">{initial}</div>
-              <span className="nav-profile-name" style={{ fontSize: 13, fontWeight: 700, color: 'var(--t1)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {displayName}
-              </span>
-            </NavLink>
-
-            <NavLink
-              to="/about"
-              className="nav-about-btn"
-              title="About Job Orbit & Creator Credits (Deepith)"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                padding: '6px 12px',
-                borderRadius: 12,
-                background: location.pathname === '/about' ? '#ffffff' : 'var(--page)',
-                border: '1px solid var(--border)',
-                color: location.pathname === '/about' ? 'var(--accent)' : 'var(--t2)',
-                boxShadow: location.pathname === '/about' ? '0 1px 3px rgba(28, 25, 23, 0.05)' : 'none',
-                fontSize: 13,
-                fontWeight: 600,
-                textDecoration: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <Info style={{ width: 14, height: 14, color: location.pathname === '/about' ? 'var(--accent)' : 'var(--t2)' }} />
-              <span className="nav-about-label">About</span>
-            </NavLink>
+            {/* Executive Profile & Workspace Menu Popover (Palettes, Profile, Shortcuts, About, Sign Out) */}
+            <ProfileDropdown
+              onOpenShortcuts={() => setShortcutsOpen(true)}
+              onOpenStreakModal={() => setStreakModalOpen(true)}
+              streak={streak}
+            />
 
             {/* Mobile Menu Hamburger Button */}
             <button
@@ -718,6 +690,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
       {/* ── Global Command+K Spotlight Palette ── */}
       <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} />
+
+      {/* ── Quick Add Opportunity Modal (Triggered by + New or 'N') ── */}
+      <QuickAddModal isOpen={quickAddOpen} onClose={() => setQuickAddOpen(false)} />
 
       {/* ── Mobile Bottom Navigation Dock & Launchpad ── */}
       <MobileCommandHub />
