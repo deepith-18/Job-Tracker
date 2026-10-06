@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
@@ -32,6 +33,35 @@ import { useAuth } from './hooks/useAuth';
 
 function App() {
   useAuth();
+
+  // Universal horizontal mouse-wheel scrolling for overflow containers on desktop
+  useEffect(() => {
+    const handleGlobalWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      let target = e.target as HTMLElement | null;
+      while (target && target !== document.body) {
+        if (
+          target.classList.contains('page-tab-bar') ||
+          target.classList.contains('horizontal-scroll') ||
+          target.getAttribute('data-scrollable') === 'true'
+        ) {
+          if (target.scrollWidth > target.clientWidth) {
+            const canScrollRight = target.scrollLeft < target.scrollWidth - target.clientWidth - 1;
+            const canScrollLeft = target.scrollLeft > 0;
+            if ((e.deltaY > 0 && canScrollRight) || (e.deltaY < 0 && canScrollLeft)) {
+              e.preventDefault();
+              target.scrollLeft += e.deltaY;
+              return;
+            }
+          }
+        }
+        target = target.parentElement;
+      }
+    };
+
+    window.addEventListener('wheel', handleGlobalWheel, { passive: false });
+    return () => window.removeEventListener('wheel', handleGlobalWheel);
+  }, []);
 
   return (
     <ErrorBoundary>

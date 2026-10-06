@@ -329,7 +329,7 @@ export const JobSearchDoctor: React.FC<JobSearchDoctorProps> = ({ applications }
       </div>
 
       {/* ── Sub Navigation Tabs ── */}
-      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+      <div className="horizontal-scroll" style={{ display: 'flex', gap: 8, paddingBottom: 4 }}>
         {[
           { id: 'diagnosis', label: '1. Funnel Bottlenecks', icon: ShieldAlert },
           { id: 'actions', label: '2. Priority Action Items', icon: Zap },
@@ -357,6 +357,7 @@ export const JobSearchDoctor: React.FC<JobSearchDoctorProps> = ({ applications }
                 border: isActive ? '1px solid var(--accent)' : '1px solid var(--border)',
                 transition: 'all 0.15s ease',
                 whiteSpace: 'nowrap',
+                flexShrink: 0,
               }}
             >
               <Icon size={14} />

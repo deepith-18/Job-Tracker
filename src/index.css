@@ -460,16 +460,50 @@ a { color: inherit; text-decoration: none; }
 .s-item-main.active .s-icon { color: #a5b4fc; }
 
 /* ── Page Tab Bar ─────────────────────────── */
+.scrollable-tab-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+}
+
 .page-tab-bar {
   display: flex;
   gap: 4px;
   border-bottom: 2px solid var(--border);
   padding-bottom: 0;
   overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
-.page-tab-bar::-webkit-scrollbar { display: none; }
+
+/* Subtle, sleek modern scrollbar on hover */
+.page-tab-bar::-webkit-scrollbar {
+  height: 3px;
+}
+.page-tab-bar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.page-tab-bar::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+.page-tab-bar:hover::-webkit-scrollbar-thumb {
+  background: var(--border);
+}
+.page-tab-bar::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+.tab-nav-arrow-btn {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tab-nav-arrow-btn:active {
+  transform: scale(0.92) !important;
+}
 
 .page-tab-btn {
   padding: 9px 16px;
@@ -485,11 +519,43 @@ a { color: inherit; text-decoration: none; }
   transition: color 0.15s, border-color 0.15s;
   white-space: nowrap;
   flex-shrink: 0;
+  user-select: none;
 }
 .page-tab-btn:hover { color: var(--t1); }
 .page-tab-btn.active {
   color: var(--accent);
   border-bottom-color: var(--accent);
+}
+
+/* ── Universal Sleek Horizontal Scroll Container ── */
+.horizontal-scroll {
+  display: flex !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+  -webkit-overflow-scrolling: touch !important;
+  scroll-behavior: smooth !important;
+}
+.horizontal-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+.horizontal-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.horizontal-scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+.horizontal-scroll:hover::-webkit-scrollbar-thumb {
+  background: var(--t3);
+}
+.horizontal-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+.horizontal-scroll > * {
+  flex-shrink: 0 !important;
 }
 
 

@@ -39,6 +39,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CodeQuestionVault } from '../components/journal/CodeQuestionVault';
 import { CompanyRoundNotesMdViewer } from '../components/journal/CompanyRoundNotesMdViewer';
 import { StarStoryVault } from '../components/journal/StarStoryVault';
+import { ScrollableTabBar } from '../components/common/ScrollableTabBar';
 
 // ── TABS (Vector Lucide icons, no emojis) ──
 const TABS = [
@@ -85,30 +86,11 @@ export const JournalPage: React.FC = () => {
         </p>
 
         {/* Tab Bar */}
-        <div className="page-tab-bar" style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`page-tab-btn${isActive ? ' active' : ''}`}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                <Icon style={{ width: 15, height: 15 }} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        <ScrollableTabBar
+          tabs={TABS}
+          activeTab={activeTab}
+          onSelectTab={(tabId) => setActiveTab(tabId)}
+        />
       </div>
 
       {/* Tab Content Panels */}

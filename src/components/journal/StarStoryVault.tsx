@@ -360,7 +360,7 @@ ${story.result}
           />
         </div>
 
-        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+        <div className="horizontal-scroll" style={{ display: 'flex', gap: 8, paddingBottom: 4 }}>
           {COMPETENCIES.map((comp) => (
             <button
               key={comp}
@@ -375,6 +375,7 @@ ${story.result}
                 color: selectedCompetency === comp ? '#ffffff' : 'var(--t2)',
                 border: '1px solid var(--border)',
                 whiteSpace: 'nowrap',
+                flexShrink: 0,
               }}
             >
               {comp}
