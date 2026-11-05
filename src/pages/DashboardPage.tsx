@@ -22,10 +22,12 @@ import {
 import { AppShell } from '../components/layout/AppShell';
 import { QuickAddBar } from '../components/dashboard/QuickAddBar';
 import { SearchHealthWidget } from '../components/dashboard/SearchHealthWidget';
+import { CareerStatusDashboardCard } from '../components/career/CareerStatusDashboardCard';
 import { InterviewCheatSheetModal } from '../components/common/InterviewCheatSheetModal';
 import { useApplications } from '../hooks/useApplications';
 import { useAuthStore } from '../store/authStore';
 import { useUserSettings } from '../hooks/useUserSettings';
+import { useCareerStatus } from '../hooks/useCareerStatus';
 import { differenceInDays, isToday, isPast, isTomorrow, format, formatDistanceToNow } from 'date-fns';
 import type { Application } from '../types';
 
@@ -64,6 +66,7 @@ export const DashboardPage: React.FC = () => {
   const user = useAuthStore((s) => s.user);
   const { applications, loading } = useApplications();
   const { settings } = useUserSettings();
+  const { careerStatus, jobSearchEnabled, offerDetails } = useCareerStatus();
   const [cheatSheetApp, setCheatSheetApp] = useState<Application | null>(null);
 
   const rawName = settings?.displayName || user?.displayName || user?.email?.split('@')[0] || 'Candidate';
@@ -178,6 +181,9 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       <div className="pb" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {/* ── Career Status & Lifecycle Card ── */}
+        <CareerStatusDashboardCard />
+
         {/* ── Quick Application Input Bar ── */}
         <QuickAddBar applications={applications} />
 
@@ -297,7 +303,8 @@ export const DashboardPage: React.FC = () => {
         )}
 
         {/* ── Action Center: Priority Focus Items ── */}
-        {(upcomingDeadlines.length > 0 || overdue.length > 0 || needsFollowUp.length > 0 || staleApplications.length > 0) && (
+        {((jobSearchEnabled && (upcomingDeadlines.length > 0 || overdue.length > 0 || needsFollowUp.length > 0 || staleApplications.length > 0)) ||
+          (careerStatus === 'OFFER_RECEIVED' && Boolean(offerDetails?.deadline))) && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
             <div className="card" style={{ padding: 20 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
@@ -306,8 +313,38 @@ export const DashboardPage: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {/* Upcoming interviews today / tomorrow */}
-                {upcomingDeadlines.map((a) => (
+                {/* Offer response deadline alert */}
+                {careerStatus === 'OFFER_RECEIVED' && offerDetails?.deadline && (
+                  <div
+                    style={{
+                      background: 'var(--page)',
+                      padding: '12px 16px',
+                      borderRadius: 12,
+                      borderLeft: '4px solid #8b5cf6',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 12,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '1 1 200px' }}>
+                      <Calendar style={{ width: 16, height: 16, color: '#8b5cf6', flexShrink: 0 }} />
+                      <div>
+                        <span style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--t1)' }}>{offerDetails.company || 'Job Offer'}</span>
+                        <span style={{ fontSize: 12, color: 'var(--t3)', marginLeft: 8 }}>
+                          {offerDetails.role ? `${offerDetails.role} — ` : ''}Offer Response Deadline: {offerDetails.deadline}
+                        </span>
+                      </div>
+                    </div>
+                    <Link to="/offer-calculator" className="btn btn-primary btn-sm" style={{ fontSize: 11.5, padding: '4px 10px', textDecoration: 'none' }}>
+                      Evaluate Offer
+                    </Link>
+                  </div>
+                )}
+
+                {/* Upcoming interviews today / tomorrow (when search is enabled) */}
+                {jobSearchEnabled && upcomingDeadlines.map((a) => (
                   <div
                     key={a.id}
                     style={{
@@ -349,8 +386,8 @@ export const DashboardPage: React.FC = () => {
                   </div>
                 ))}
 
-                {/* Overdue Deadlines */}
-                {overdue.map((a) => (
+                {/* Overdue Deadlines (when search is enabled) */}
+                {jobSearchEnabled && overdue.map((a) => (
                   <div
                     key={a.id}
                     style={{
@@ -378,8 +415,8 @@ export const DashboardPage: React.FC = () => {
                   </div>
                 ))}
 
-                {/* Recommended Follow-up */}
-                {needsFollowUp.slice(0, 3).map((a) => (
+                {/* Recommended Follow-up (when search is enabled) */}
+                {jobSearchEnabled && needsFollowUp.slice(0, 3).map((a) => (
                   <div
                     key={a.id}
                     style={{

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, Sparkles, Plus } from 'lucide-react';
+import { X, Sparkles, Plus, PauseCircle, Play } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import { useCareerStatus } from '../../hooks/useCareerStatus';
 import { useToast } from '../ui/ToastContext';
 import { addApplication } from '../../firebase/firestore';
 import type { ApplicationStatus } from '../../types';
@@ -16,6 +17,7 @@ const STAGES: ApplicationStatus[] = ['Wishlist', 'Applied', 'OA/Assessment', 'In
 export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, onAdded }) => {
   const user = useAuthStore((s) => s.user);
   const { addToast } = useToast();
+  const { jobSearchEnabled, toggleJobSearch } = useCareerStatus();
 
   const [input, setInput] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<ApplicationStatus>('Applied');
@@ -65,6 +67,11 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, o
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
+
+    if (!jobSearchEnabled) {
+      addToast('Job Search Paused', 'Cannot create applications while job search is paused. Resume job search to proceed.', 'info');
+      return;
+    }
 
     if (!user) {
       addToast('Please sign in to add applications', undefined, 'error');
@@ -176,6 +183,50 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, o
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {!jobSearchEnabled && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                padding: '10px 14px',
+                background: 'rgba(245, 158, 11, 0.1)',
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+                borderRadius: 10,
+                fontSize: 12.5,
+                color: 'var(--t1)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <PauseCircle size={16} style={{ color: '#d97706', flexShrink: 0 }} />
+                <span>Job search is paused. Resume to add opportunities.</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => toggleJobSearch(true)}
+                className="btn btn-sm"
+                style={{
+                  padding: '4px 10px',
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  background: '#d97706',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 6,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Play size={11} fill="#fff" />
+                <span>Resume Search</span>
+              </button>
+            </div>
+          )}
+
           {/* Main Smart Input */}
           <div>
             <label className="lbl" style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -285,7 +336,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, o
             </button>
             <button
               type="submit"
-              disabled={loading || !input.trim()}
+              disabled={loading || !input.trim() || !jobSearchEnabled}
               className="btn btn-primary"
               style={{
                 fontSize: 13,

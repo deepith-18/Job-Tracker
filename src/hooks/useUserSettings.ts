@@ -27,6 +27,8 @@ export const useUserSettings = () => {
     searchStatus: 'Actively Interviewing',
     seniorityLevel: 'Senior Level',
     topSkills: ['TypeScript', 'React', 'Node.js', 'Go', 'PostgreSQL', 'System Design'],
+    careerStatus: 'SEARCHING',
+    jobSearchEnabled: true,
   });
   const [loading, setLoading] = useState<boolean>(true);
 

@@ -4,6 +4,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from './config';
 import type { Application, ApplicationFormData, InterviewCodeQuestion, CodingLanguage } from '../types';
+import type { CareerStatus, OfferDetails, EmploymentDetails } from '../types/career';
 
 const COL = 'applications';
 
@@ -130,6 +131,30 @@ export const recordUserActivityAndStreak = async (uid: string) => {
 };
 
 export const addApplication = async (uid: string, data: ApplicationFormData) => {
+  // Backend validation: Check whether job search is active or paused for user
+  if (uid) {
+    try {
+      const sRef = doc(db, SETTINGS_COL, uid);
+      const sSnap = await getDoc(sRef);
+      if (sSnap.exists()) {
+        const sData = sSnap.data();
+        const isSearchAllowed = typeof sData.jobSearchEnabled === 'boolean'
+          ? sData.jobSearchEnabled
+          : (sData.careerStatus ? ['SEARCHING', 'OFFER_RECEIVED'].includes(sData.careerStatus) : true);
+
+        if (!isSearchAllowed) {
+          throw new Error('Job search is currently paused. Please resume your job search in your profile or dashboard before creating new applications.');
+        }
+      }
+    } catch (err: unknown) {
+      // Re-throw validation error
+      if (err instanceof Error && err.message.includes('Job search is currently paused')) {
+        throw err;
+      }
+      // Non-fatal if firestore read had transient issue
+    }
+  }
+
   const email = auth.currentUser?.email || '';
   const ref = await addDoc(collection(db, COL), {
     uid,
@@ -345,6 +370,14 @@ export interface UserSettingsData {
   searchStatus?: string;
   seniorityLevel?: string;
   topSkills?: string[];
+  // Career Status & Employment Lifecycle
+  careerStatus?: CareerStatus;
+  jobSearchEnabled?: boolean;
+  offerDetails?: OfferDetails;
+  employmentDetails?: EmploymentDetails;
+  careerStatusUpdatedAt?: string;
+  jobSearchPausedAt?: string;
+  jobSearchResumedAt?: string;
 }
 
 export const subscribeToUserSettings = (
@@ -377,6 +410,19 @@ export const subscribeToUserSettings = (
           githubUrl: typeof data.githubUrl === 'string' ? data.githubUrl : '',
           linkedinUrl: typeof data.linkedinUrl === 'string' ? data.linkedinUrl : '',
           portfolioUrl: typeof data.portfolioUrl === 'string' ? data.portfolioUrl : '',
+          leetcodeUrl: typeof data.leetcodeUrl === 'string' ? data.leetcodeUrl : '',
+          searchStatus: typeof data.searchStatus === 'string' ? data.searchStatus : 'Actively Interviewing',
+          seniorityLevel: typeof data.seniorityLevel === 'string' ? data.seniorityLevel : 'Senior Engineer',
+          topSkills: Array.isArray(data.topSkills) ? data.topSkills : ['TypeScript', 'React', 'Node.js', 'Go', 'PostgreSQL', 'System Design'],
+          careerStatus: (data.careerStatus as CareerStatus) || 'SEARCHING',
+          jobSearchEnabled: typeof data.jobSearchEnabled === 'boolean'
+            ? data.jobSearchEnabled
+            : (data.careerStatus ? ['SEARCHING', 'OFFER_RECEIVED'].includes(data.careerStatus as string) : true),
+          offerDetails: (data.offerDetails as OfferDetails) || undefined,
+          employmentDetails: (data.employmentDetails as EmploymentDetails) || undefined,
+          careerStatusUpdatedAt: typeof data.careerStatusUpdatedAt === 'string' ? data.careerStatusUpdatedAt : '',
+          jobSearchPausedAt: typeof data.jobSearchPausedAt === 'string' ? data.jobSearchPausedAt : '',
+          jobSearchResumedAt: typeof data.jobSearchResumedAt === 'string' ? data.jobSearchResumedAt : '',
         });
       } else {
         callback({
@@ -398,6 +444,17 @@ export const subscribeToUserSettings = (
           githubUrl: '',
           linkedinUrl: '',
           portfolioUrl: '',
+          leetcodeUrl: '',
+          searchStatus: 'Actively Interviewing',
+          seniorityLevel: 'Senior Engineer',
+          topSkills: ['TypeScript', 'React', 'Node.js', 'Go', 'PostgreSQL', 'System Design'],
+          careerStatus: 'SEARCHING',
+          jobSearchEnabled: true,
+          offerDetails: undefined,
+          employmentDetails: undefined,
+          careerStatusUpdatedAt: '',
+          jobSearchPausedAt: '',
+          jobSearchResumedAt: '',
         });
       }
     },

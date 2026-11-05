@@ -17,6 +17,8 @@ import {
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore, THEME_PALETTES } from '../../store/themeStore';
 import { useUserSettings } from '../../hooks/useUserSettings';
+import { useCareerStatus } from '../../hooks/useCareerStatus';
+import { CAREER_STATUS_METADATA } from '../../types/career';
 import { useApplications } from '../../hooks/useApplications';
 import { signOutUser } from '../../firebase/auth';
 
@@ -36,6 +38,7 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
 
   const user = useAuthStore((s) => s.user);
   const { settings } = useUserSettings();
+  const { careerStatus } = useCareerStatus();
   const { applications } = useApplications();
   const { resolvedTheme, toggleTheme, palette, setPalette } = useThemeStore();
 
@@ -166,8 +169,25 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
                 {initial}
               </div>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {displayName}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {displayName}
+                  </span>
+                  {careerStatus && (
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 800,
+                        padding: '1px 6px',
+                        borderRadius: 10,
+                        background: CAREER_STATUS_METADATA[careerStatus]?.badgeBg,
+                        color: CAREER_STATUS_METADATA[careerStatus]?.badgeColor,
+                        border: `1px solid ${CAREER_STATUS_METADATA[careerStatus]?.badgeColor}33`,
+                      }}
+                    >
+                      {CAREER_STATUS_METADATA[careerStatus]?.label}
+                    </span>
+                  )}
                 </div>
                 <div style={{ fontSize: 11.5, color: 'var(--accent)', fontWeight: 600, marginTop: 1 }}>
                   {targetRole}
@@ -309,6 +329,28 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
 
           {/* ── Quick Tools & Navigation Links ── */}
           <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <NavLink
+              to="/profile"
+              onClick={() => setIsOpen(false)}
+              className="dropdown-menu-item"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '8px 10px',
+                borderRadius: 8,
+                fontSize: 12.5,
+                fontWeight: 600,
+                color: 'var(--t1)',
+                textDecoration: 'none',
+                transition: 'all 0.12s ease',
+              }}
+            >
+              <Briefcase size={14} color="var(--accent)" />
+              <span style={{ flex: 1 }}>Career Status: {CAREER_STATUS_METADATA[careerStatus]?.label}</span>
+              <ChevronRight size={13} color="var(--t3)" />
+            </NavLink>
+
             <NavLink
               to="/profile"
               onClick={() => setIsOpen(false)}

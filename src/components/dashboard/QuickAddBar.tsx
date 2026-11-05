@@ -4,6 +4,7 @@ import { AlertTriangle } from 'lucide-react';
 import { useToast } from '../ui/ToastContext';
 import { addApplication } from '../../firebase/firestore';
 import { useAuthStore } from '../../store/authStore';
+import { useCareerStatus } from '../../hooks/useCareerStatus';
 import type { Application } from '../../types';
 
 interface QuickAddBarProps {
@@ -14,6 +15,7 @@ interface QuickAddBarProps {
 export const QuickAddBar: React.FC<QuickAddBarProps> = ({ applications, onAdded }) => {
   const user = useAuthStore((s) => s.user);
   const { addToast } = useToast();
+  const { jobSearchEnabled, toggleJobSearch } = useCareerStatus();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [duplicateWarn, setDuplicateWarn] = useState<{ company: string; role: string; rawLink: string } | null>(null);
@@ -96,6 +98,15 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({ applications, onAdded 
     e.preventDefault();
     if (!input.trim()) return;
 
+    if (!jobSearchEnabled) {
+      addToast(
+        'Job Search Paused',
+        'Cannot add applications while job search is paused. Click "Resume Search" to re-enable.',
+        'info'
+      );
+      return;
+    }
+
     const { company, role, jobLink } = parseInput(input);
     if (!company) return;
 
@@ -164,14 +175,18 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({ applications, onAdded 
           <input
             type="text"
             className="quick-add-input"
-            placeholder='Type "Google — Software Engineer" or paste link…'
+            placeholder={
+              !jobSearchEnabled
+                ? 'Job search is paused. Click "Resume Search" to add applications…'
+                : 'Type "Google — Software Engineer" or paste link…'
+            }
             value={input}
             onChange={(e) => {
               setInput(e.target.value);
               if (duplicateWarn) setDuplicateWarn(null);
             }}
             onKeyDown={handleKeyDown}
-            disabled={loading}
+            disabled={loading || !jobSearchEnabled}
             style={{
               flex: 1,
               minWidth: 0,
@@ -181,33 +196,56 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({ applications, onAdded 
               fontSize: 13.5,
               fontWeight: 500,
               color: 'var(--t1)',
+              opacity: !jobSearchEnabled ? 0.7 : 1,
             }}
           />
 
-          <button
-            type="submit"
-            disabled={loading || !input.trim()}
-            className="btn btn-primary"
-            style={{
-              padding: '8px 14px',
-              borderRadius: 12,
-              fontSize: 12.5,
-              fontWeight: 700,
-              flexShrink: 0,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {loading ? (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <svg className="w-4 h-4 animate-spin-os" fill="none" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={3} strokeDasharray="30 10" />
-                </svg>
-                Adding…
-              </span>
-            ) : (
-              'Quick Add ↵'
-            )}
-          </button>
+          {!jobSearchEnabled ? (
+            <button
+              type="button"
+              onClick={() => toggleJobSearch(true)}
+              className="btn btn-sm"
+              style={{
+                padding: '6px 14px',
+                borderRadius: 10,
+                fontSize: 12,
+                fontWeight: 700,
+                background: '#d97706',
+                color: '#fff',
+                border: 'none',
+                cursor: 'pointer',
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Resume Search
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={loading || !input.trim()}
+              className="btn btn-primary"
+              style={{
+                padding: '8px 14px',
+                borderRadius: 12,
+                fontSize: 12.5,
+                fontWeight: 700,
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {loading ? (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <svg className="w-4 h-4 animate-spin-os" fill="none" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={3} strokeDasharray="30 10" />
+                  </svg>
+                  Adding…
+                </span>
+              ) : (
+                'Quick Add ↵'
+              )}
+            </button>
+          )}
         </div>
       </form>
 

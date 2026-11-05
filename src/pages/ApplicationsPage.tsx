@@ -31,6 +31,8 @@ import { useApplications } from '../hooks/useApplications';
 import { useApplicationStore } from '../store/applicationStore';
 import { useAuthStore } from '../store/authStore';
 import { useUserSettings } from '../hooks/useUserSettings';
+import { useCareerStatus } from '../hooks/useCareerStatus';
+import { JobSearchPausedBanner } from '../components/career/JobSearchPausedBanner';
 import { useToast } from '../components/ui/ToastContext';
 import { addApplication, deleteApplication, updateApplication } from '../firebase/firestore';
 import type { Application, ApplicationFormData, SortKey, ApplicationStatus, ViewMode } from '../types';
@@ -132,6 +134,7 @@ export const ApplicationsPage: React.FC = () => {
   const { sortKey, setSortKey } = useApplicationStore();
   const { applications, loading, error } = useApplications();
   const { settings } = useUserSettings();
+  const { careerStatus, jobSearchEnabled, toggleJobSearch } = useCareerStatus();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -215,6 +218,10 @@ export const ApplicationsPage: React.FC = () => {
     if (!user) {
       addToast('Please sign in to add applications', undefined, 'error');
       throw new Error('Please sign in to add applications');
+    }
+    if (!jobSearchEnabled) {
+      addToast('Job Search Paused', 'Cannot create new applications while job search is paused. Resume job search to proceed.', 'info');
+      return;
     }
     setModal({ type: 'closed' });
     try {
@@ -377,8 +384,19 @@ export const ApplicationsPage: React.FC = () => {
             {/* Add Application Button */}
             <button
               type="button"
-              onClick={() => setModal({ type: 'add' })}
+              onClick={() => {
+                if (!jobSearchEnabled) {
+                  addToast(
+                    'Job Search Paused',
+                    'Application creation is paused. Resume job search to submit new applications.',
+                    'info'
+                  );
+                  return;
+                }
+                setModal({ type: 'add' });
+              }}
               className="btn btn-primary"
+              title={!jobSearchEnabled ? 'Job search is currently paused' : 'Add Application'}
               style={{
                 padding: '9px 18px',
                 borderRadius: 12,
@@ -389,6 +407,7 @@ export const ApplicationsPage: React.FC = () => {
                 alignItems: 'center',
                 gap: 6,
                 flexShrink: 0,
+                opacity: !jobSearchEnabled ? 0.7 : 1,
               }}
             >
               <Plus style={{ width: 16, height: 16 }} />
@@ -427,6 +446,14 @@ export const ApplicationsPage: React.FC = () => {
       </div>
 
       <div className="page-body">
+        {/* Paused Job Search Alert Banner */}
+        {!jobSearchEnabled && (
+          <JobSearchPausedBanner
+            careerStatus={careerStatus}
+            onResume={() => toggleJobSearch(true)}
+          />
+        )}
+
         {/* Quick Add Bar */}
         <QuickAddBar applications={applications} />
 

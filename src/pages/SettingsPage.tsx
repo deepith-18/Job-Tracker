@@ -38,6 +38,9 @@ import { useToast } from '../components/ui/ToastContext';
 import { signOutUser } from '../firebase/auth';
 import { format } from 'date-fns';
 import { useThemeStore, THEME_PALETTES, ThemePalette } from '../store/themeStore';
+import { CareerStatusSettingsSection } from '../components/career/CareerStatusSettingsSection';
+import { useCareerStatus } from '../hooks/useCareerStatus';
+import { CAREER_STATUS_METADATA } from '../types/career';
 
 const SUGGESTED_SKILLS = [
   'TypeScript',
@@ -76,6 +79,7 @@ export const SettingsPage: React.FC = () => {
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
   const { settings, loading: settingsLoading, updateSettings } = useUserSettings();
+  const { careerStatus } = useCareerStatus();
   const { applications } = useApplications();
   const { skills } = useSkills();
   const { addToast } = useToast();
@@ -391,6 +395,21 @@ export const SettingsPage: React.FC = () => {
                     >
                       {currentStatusObj.label}
                     </span>
+                    {careerStatus && (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 800,
+                          padding: '3px 9px',
+                          borderRadius: 20,
+                          background: CAREER_STATUS_METADATA[careerStatus]?.badgeBg || 'rgba(16, 185, 129, 0.12)',
+                          color: CAREER_STATUS_METADATA[careerStatus]?.badgeColor || '#10b981',
+                          border: `1px solid ${CAREER_STATUS_METADATA[careerStatus]?.badgeColor || '#10b981'}35`,
+                        }}
+                      >
+                        {CAREER_STATUS_METADATA[careerStatus]?.label}
+                      </span>
+                    )}
                   </div>
 
                   <div style={{ fontSize: 13.5, color: 'var(--accent)', fontWeight: 700, marginTop: 4 }}>
@@ -731,7 +750,10 @@ export const SettingsPage: React.FC = () => {
         <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* TAB 1: Profile & Identity */}
           {activeTab === 'profile' && (
-            <div className="card" style={{ padding: 24 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <CareerStatusSettingsSection />
+
+              <div className="card" style={{ padding: 24 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
                 <User style={{ width: 18, height: 18, color: 'var(--accent)' }} />
                 <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
@@ -818,99 +840,104 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
             </div>
+            </div>
           )}
 
           {/* TAB 2: Career Targets */}
           {activeTab === 'career' && (
-            <div className="card" style={{ padding: 24 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
-                <Briefcase style={{ width: 18, height: 18, color: 'var(--accent)' }} />
-                <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
-                  Career & Compensation Targets
-                </h3>
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <CareerStatusSettingsSection />
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
-                  <div>
-                    <label className="lbl">Target Career Role</label>
-                    <input
-                      className="inp"
-                      value={targetTitle}
-                      onChange={(e) => setTargetTitle(e.target.value)}
-                      placeholder="e.g. Senior Full-Stack Engineer"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="lbl">Seniority Track</label>
-                    <select
-                      className="inp"
-                      value={seniorityLevel}
-                      onChange={(e) => setSeniorityLevel(e.target.value)}
-                    >
-                      {SENIORITY_LEVELS.map((lvl) => (
-                        <option key={lvl} value={lvl}>
-                          {lvl}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+              <div className="card" style={{ padding: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+                  <Briefcase style={{ width: 18, height: 18, color: 'var(--accent)' }} />
+                  <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', margin: 0 }}>
+                    Career & Compensation Targets
+                  </h3>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
+                    <div>
+                      <label className="lbl">Target Career Role</label>
+                      <input
+                        className="inp"
+                        value={targetTitle}
+                        onChange={(e) => setTargetTitle(e.target.value)}
+                        placeholder="e.g. Senior Full-Stack Engineer"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="lbl">Seniority Track</label>
+                      <select
+                        className="inp"
+                        value={seniorityLevel}
+                        onChange={(e) => setSeniorityLevel(e.target.value)}
+                      >
+                        {SENIORITY_LEVELS.map((lvl) => (
+                          <option key={lvl} value={lvl}>
+                            {lvl}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div>
+                      <label className="lbl">Minimum Base Salary</label>
+                      <input
+                        type="number"
+                        className="inp"
+                        value={minSalary}
+                        onChange={(e) => setMinSalary(parseInt(e.target.value) || 0)}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="lbl">Preferred Currency</label>
+                      <select className="inp" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                        <option value="USD ($)">USD ($)</option>
+                        <option value="EUR (€)">EUR (€)</option>
+                        <option value="GBP (£)">GBP (£)</option>
+                        <option value="INR (₹)">INR (₹)</option>
+                        <option value="CAD ($)">CAD ($)</option>
+                        <option value="AUD ($)">AUD ($)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div>
+                      <label className="lbl">Workplace Preference</label>
+                      <select className="inp" value={remotePref} onChange={(e) => setRemotePref(e.target.value)}>
+                        <option value="Remote / Hybrid">Remote / Hybrid</option>
+                        <option value="Remote Only">Remote Only</option>
+                        <option value="Onsite">Onsite</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="lbl">Target Geographic Metros</label>
+                      <input
+                        className="inp"
+                        value={preferredLocations}
+                        onChange={(e) => setPreferredLocations(e.target.value)}
+                        placeholder="e.g. Remote US, San Francisco, London"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="lbl">Minimum Base Salary</label>
+                    <label className="lbl">Target / Dream Companies</label>
                     <input
-                      type="number"
                       className="inp"
-                      value={minSalary}
-                      onChange={(e) => setMinSalary(parseInt(e.target.value) || 0)}
+                      value={targetCompanies}
+                      onChange={(e) => setTargetCompanies(e.target.value)}
+                      placeholder="e.g. Google, Stripe, Linear, Vercel"
                     />
                   </div>
-
-                  <div>
-                    <label className="lbl">Preferred Currency</label>
-                    <select className="inp" value={currency} onChange={(e) => setCurrency(e.target.value)}>
-                      <option value="USD ($)">USD ($)</option>
-                      <option value="EUR (€)">EUR (€)</option>
-                      <option value="GBP (£)">GBP (£)</option>
-                      <option value="INR (₹)">INR (₹)</option>
-                      <option value="CAD ($)">CAD ($)</option>
-                      <option value="AUD ($)">AUD ($)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <div>
-                    <label className="lbl">Workplace Preference</label>
-                    <select className="inp" value={remotePref} onChange={(e) => setRemotePref(e.target.value)}>
-                      <option value="Remote / Hybrid">Remote / Hybrid</option>
-                      <option value="Remote Only">Remote Only</option>
-                      <option value="Onsite">Onsite</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="lbl">Target Geographic Metros</label>
-                    <input
-                      className="inp"
-                      value={preferredLocations}
-                      onChange={(e) => setPreferredLocations(e.target.value)}
-                      placeholder="e.g. Remote US, San Francisco, London"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="lbl">Target / Dream Companies</label>
-                  <input
-                    className="inp"
-                    value={targetCompanies}
-                    onChange={(e) => setTargetCompanies(e.target.value)}
-                    placeholder="e.g. Google, Stripe, Linear, Vercel"
-                  />
                 </div>
               </div>
             </div>
