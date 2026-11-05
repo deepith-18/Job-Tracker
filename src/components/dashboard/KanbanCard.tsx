@@ -1,7 +1,7 @@
 import React from 'react';
 import { differenceInDays, formatDistanceToNow } from 'date-fns';
 import { Draggable } from '@hello-pangea/dnd';
-import { Clock, AlertTriangle, AlertCircle } from 'lucide-react';
+import { Clock, AlertTriangle, AlertCircle, Award, CheckCircle2 } from 'lucide-react';
 import type { Application } from '../../types';
 
 interface KanbanCardProps {
@@ -11,6 +11,10 @@ interface KanbanCardProps {
 }
 
 export const KanbanCard: React.FC<KanbanCardProps> = ({ application, index, onClick }) => {
+  const isOfferDeclinedByCandidate =
+    application.declinedByCandidate ||
+    (application.rejectionReasons || []).includes('Offer Declined by Candidate');
+
   // Days since applied aging calculation
   const referenceDate = application.appliedDate || application.createdAt;
   const daysDiff = differenceInDays(new Date(), new Date(referenceDate));
@@ -19,7 +23,34 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ application, index, onCl
   let agingIcon = <Clock style={{ width: 12, height: 12 }} />;
   let agingLabel = formatDistanceToNow(new Date(referenceDate), { addSuffix: true });
 
-  if (daysDiff >= 30) {
+  if (isOfferDeclinedByCandidate) {
+    // Distinguish candidate-rejected offers from company rejections & never call them stale!
+    agingClass = 'aging-purple';
+    agingIcon = <Award style={{ width: 12, height: 12, color: '#7c3aed' }} />;
+    agingLabel = 'Offer Declined by You';
+  } else if (application.status === 'Offer') {
+    // Offers in hand are active wins, not stale applications!
+    if (application.deadline) {
+      const daysToDeadline = differenceInDays(new Date(application.deadline), new Date());
+      if (daysToDeadline < 0) {
+        agingClass = 'aging-amber';
+        agingIcon = <Clock style={{ width: 12, height: 12 }} />;
+        agingLabel = 'Deadline Passed';
+      } else if (daysToDeadline <= 3) {
+        agingClass = 'aging-amber';
+        agingIcon = <Clock style={{ width: 12, height: 12 }} />;
+        agingLabel = daysToDeadline === 0 ? 'Decision Due Today' : `Decision due in ${daysToDeadline}d`;
+      } else {
+        agingClass = 'aging-green';
+        agingIcon = <CheckCircle2 style={{ width: 12, height: 12 }} />;
+        agingLabel = `Decision in ${daysToDeadline}d`;
+      }
+    } else {
+      agingClass = 'aging-green';
+      agingIcon = <Award style={{ width: 12, height: 12, color: '#10b981' }} />;
+      agingLabel = 'Offer in Hand';
+    }
+  } else if (daysDiff >= 30) {
     agingClass = 'aging-red';
     agingIcon = <AlertCircle style={{ width: 12, height: 12 }} />;
     agingLabel = `${daysDiff}d ago · Stale`;
@@ -107,6 +138,24 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ application, index, onCl
               </div>
             </div>
 
+            {isOfferDeclinedByCandidate && (
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 800,
+                  padding: '2px 7px',
+                  borderRadius: 8,
+                  background: 'rgba(139, 92, 246, 0.12)',
+                  color: '#7c3aed',
+                  border: '1px solid rgba(139, 92, 246, 0.3)',
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
+                }}
+                title="Offer was received and declined by candidate"
+              >
+                Declined by You
+              </span>
+            )}
             {application.rating > 0 && (
               <div style={{ fontSize: 11, color: '#fbbf24', fontWeight: 700, flexShrink: 0 }}>
                 ★ {application.rating}

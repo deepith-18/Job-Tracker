@@ -85,6 +85,7 @@ export const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = (
         source: application.source,
         rating: application.rating,
         rejectionReasons: application.rejectionReasons || [],
+        declinedByCandidate: application.declinedByCandidate || (application.rejectionReasons || []).includes('Offer Declined by Candidate'),
       });
       setActiveTab('details');
       setCopied(false);
@@ -129,6 +130,7 @@ export const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = (
         source: formData.source || '',
         rating: formData.rating || 0,
         rejectionReasons: formData.rejectionReasons || [],
+        declinedByCandidate: Boolean(formData.declinedByCandidate),
       });
 
       addToast('Application Saved', `Updated ${compName} (${roleName})`, 'success');
@@ -136,6 +138,36 @@ export const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = (
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error updating';
       addToast('Failed to save', msg, 'error');
+    }
+  };
+
+  const handleDeclineOffer = async () => {
+    const currentReasons = formData.rejectionReasons || [];
+    const updatedReasons = currentReasons.includes('Offer Declined by Candidate')
+      ? currentReasons
+      : ['Offer Declined by Candidate', ...currentReasons];
+
+    const updated = {
+      ...formData,
+      status: 'Withdrawn' as ApplicationStatus,
+      declinedByCandidate: true,
+      rejectionReasons: updatedReasons,
+    };
+    setFormData(updated);
+
+    try {
+      await updateApplication(application.id, {
+        status: 'Withdrawn',
+        declinedByCandidate: true,
+        rejectionReasons: updatedReasons,
+      });
+      addToast(
+        'Offer Recorded as Declined',
+        `Marked ${application.company} as an offer you received and declined.`,
+        'success'
+      );
+    } catch {
+      addToast('Update Failed', 'Failed to update offer status', 'error');
     }
   };
 
@@ -480,6 +512,97 @@ Best regards,
                     </select>
                   </div>
                 </div>
+
+                {/* Offer Decision & Rejection Actions */}
+                {formData.status === 'Offer' && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '12px 14px',
+                      borderRadius: 12,
+                      background: 'rgba(16, 185, 129, 0.08)',
+                      border: '1px solid rgba(16, 185, 129, 0.25)',
+                      gap: 12,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: '#059669', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Award size={15} />
+                        <span>Active Offer Received</span>
+                      </div>
+                      <div style={{ fontSize: 11.5, color: 'var(--t2)', marginTop: 2 }}>
+                        Received an offer but decided to decline or reject it?
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleDeclineOffer}
+                      className="btn btn-sm"
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 700,
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        color: '#dc2626',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        borderRadius: 8,
+                        padding: '6px 12px',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Reject / Decline Offer
+                    </button>
+                  </div>
+                )}
+
+                {/* Candidate Rejected/Declined Offer Highlight Banner */}
+                {(formData.declinedByCandidate || (formData.rejectionReasons || []).includes('Offer Declined by Candidate')) && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '12px 14px',
+                      borderRadius: 12,
+                      background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(124, 58, 237, 0.05) 100%)',
+                      border: '1px solid rgba(139, 92, 246, 0.3)',
+                      gap: 12,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <Award size={18} style={{ color: '#7c3aed', flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#6d28d9' }}>
+                          Offer Declined by Candidate
+                        </div>
+                        <div style={{ fontSize: 11.5, color: 'var(--t2)', marginTop: 2 }}>
+                          You secured this offer and chose to decline/reject it. Distinguishable from company rejections.
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updatedReasons = (formData.rejectionReasons || []).filter(
+                          (r) => r !== 'Offer Declined by Candidate'
+                        );
+                        setFormData({
+                          ...formData,
+                          declinedByCandidate: false,
+                          rejectionReasons: updatedReasons,
+                        });
+                      }}
+                      className="btn btn-ghost btn-sm"
+                      style={{ fontSize: 11, padding: '3px 8px' }}
+                    >
+                      Reset
+                    </button>
+                  </div>
+                )}
 
                 {/* Applied Date & Deadline Inputs */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>

@@ -1121,6 +1121,16 @@ a { color: inherit; text-decoration: none; }
   color: #be123c;
   border: 1px solid #fecdd3;
 }
+.aging-green {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+.aging-purple {
+  background: #f5f3ff;
+  color: #6d28d9;
+  border: 1px solid #ddd6fe;
+}
 
 /* ── Modern Mobile Responsive Design System (Screens <= 768px) ────── */
 .mobile-nav-toggle {

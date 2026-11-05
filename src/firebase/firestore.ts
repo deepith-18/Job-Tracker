@@ -39,6 +39,7 @@ const docToApp = (id: string, data: Record<string, unknown>): Application => ({
   source: (data.source as string) || '',
   rating: (data.rating as number) || 0,
   rejectionReasons: (data.rejectionReasons as string[]) || [],
+  declinedByCandidate: Boolean(data.declinedByCandidate),
   createdAt: toValidDate(data.createdAt) || new Date(),
   updatedAt: toValidDate(data.updatedAt) || new Date(),
 });
@@ -192,7 +193,7 @@ const safeTimestamp = (d: unknown): Timestamp | null => {
 export const updateApplication = async (appId: string, data: Partial<ApplicationFormData>) => {
   const ref = doc(db, COL, appId);
   const u: Record<string, unknown> = { updatedAt: serverTimestamp() };
-  const fields = ['company','role','status','jobLink','notes','interviewNotes','source','rating','rejectionReasons','interviewDates'] as const;
+  const fields = ['company','role','status','jobLink','notes','interviewNotes','source','rating','rejectionReasons','interviewDates','declinedByCandidate'] as const;
   fields.forEach(k => { if (data[k] !== undefined) u[k] = data[k]; });
   
   if (data.appliedDate !== undefined) u.appliedDate = safeTimestamp(data.appliedDate);

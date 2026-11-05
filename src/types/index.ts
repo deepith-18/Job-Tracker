@@ -18,6 +18,7 @@ export const JOURNEY_STEPS: ApplicationStatus[] = [
 ];
 
 export const REJECTION_REASONS = [
+  'Offer Declined by Candidate',
   'Weak DSA', 'SQL gaps', 'System Design', 'Communication',
   'OOP / Design Patterns', 'Networking / OS', 'Resume', 'Confidence',
   'Wrong fit', 'Other',
@@ -55,6 +56,7 @@ export interface Application {
   source: string;
   rating: number;           // 1-5, dream factor
   rejectionReasons: string[];
+  declinedByCandidate?: boolean; // When student / candidate declined the offer
   interviewDates?: (Date | string)[];
   firstResponseDate?: Date | null;
   salary?: string;

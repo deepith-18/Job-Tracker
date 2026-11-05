@@ -39,13 +39,29 @@ const stepIndex = (status: ApplicationStatus): number => {
   return JOURNEY_STEPS.indexOf(status);
 };
 
-const Stepper: React.FC<{ status: ApplicationStatus }> = ({ status }) => {
+const Stepper: React.FC<{ status: ApplicationStatus; isDeclined?: boolean }> = ({ status, isDeclined }) => {
   const current = stepIndex(status);
   const isTerminal = current === -1;
   const isRejected = status === 'Rejected';
   const isGhosted = status === 'Ghosted';
 
   if (isTerminal) {
+    if (isDeclined) {
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px',
+            borderRadius: 20, fontSize: 12, fontWeight: 700,
+            background: '#f5f3ff',
+            color: '#6d28d9',
+            border: '1px solid #ddd6fe',
+          }}>
+            Offer Declined by Candidate
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14 }}>
         <div style={{
@@ -174,7 +190,10 @@ export const JourneyCard: React.FC<JourneyCardProps> = ({ app, index, onEdit, on
       </div>
 
       {/* Journey Stepper */}
-      <Stepper status={app.status} />
+      <Stepper
+        status={app.status}
+        isDeclined={Boolean(app.declinedByCandidate || (app.rejectionReasons || []).includes('Offer Declined by Candidate'))}
+      />
 
       {/* Bottom meta row */}
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border-light)' }}>
@@ -218,7 +237,16 @@ export const JourneyCard: React.FC<JourneyCardProps> = ({ app, index, onEdit, on
         )}
 
         {app.rejectionReasons.length > 0 && (
-          <span style={{ fontSize: 11.5, color: '#be123c', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 6, padding: '2px 7px' }}>
+          <span
+            style={{
+              fontSize: 11.5,
+              color: (app.declinedByCandidate || app.rejectionReasons.includes('Offer Declined by Candidate')) ? '#6d28d9' : '#be123c',
+              background: (app.declinedByCandidate || app.rejectionReasons.includes('Offer Declined by Candidate')) ? '#f5f3ff' : '#fff1f2',
+              border: `1px solid ${(app.declinedByCandidate || app.rejectionReasons.includes('Offer Declined by Candidate')) ? '#ddd6fe' : '#fecdd3'}`,
+              borderRadius: 6,
+              padding: '2px 7px',
+            }}
+          >
             <FileText className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /> {app.rejectionReasons[0]}{app.rejectionReasons.length > 1 ? ` +${app.rejectionReasons.length - 1}` : ''}
           </span>
         )}
