@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react';
-import { subscribeToDocuments, addDocumentItem, deleteDocumentItem, type UserDocumentItem } from '../firebase/firestore';
+import {
+  subscribeToDocuments,
+  addDocumentItem,
+  updateDocumentItem,
+  deleteDocumentItem,
+  type UserDocumentItem,
+} from '../firebase/firestore';
 import { useAuthStore } from '../store/authStore';
 
 export const useDocuments = () => {
@@ -39,10 +45,15 @@ export const useDocuments = () => {
     return addDocumentItem(user.uid, item);
   };
 
+  const updateDocument = async (docId: string, data: Partial<Omit<UserDocumentItem, 'id' | 'uid'>>) => {
+    if (!user) throw new Error('User not authenticated');
+    return updateDocumentItem(docId, data);
+  };
+
   const removeDocument = async (docId: string) => {
     if (!user) throw new Error('User not authenticated');
     return deleteDocumentItem(docId);
   };
 
-  return { documents, loading, error, addDocument, removeDocument };
+  return { documents, loading, error, addDocument, updateDocument, removeDocument };
 };

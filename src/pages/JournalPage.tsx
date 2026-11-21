@@ -28,6 +28,8 @@ import {
   Code2,
   FileSpreadsheet,
   BookOpen,
+  Tag,
+  X,
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { AppShell } from '../components/layout/AppShell';
@@ -411,7 +413,26 @@ const JournalNotesContent: React.FC<{ onOpenCodeVault?: (company?: string) => vo
 const JournalDocumentsContent: React.FC = () => {
   const { addToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { documents, loading, addDocument, removeDocument } = useDocuments();
+  const { documents, loading, addDocument, updateDocument, removeDocument } = useDocuments();
+  const { applications } = useApplications();
+
+  // Company tagging & filter state
+  const [taggingDocId, setTaggingDocId] = useState<string | null>(null);
+  const [customCompanyInput, setCustomCompanyInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCompanyFilter, setSelectedCompanyFilter] = useState('All');
+
+  // List of all unique company names from user's applications for instant auto-suggestions
+  const appliedCompanies = React.useMemo(() => {
+    return Array.from(new Set(applications.map((a) => a.company?.trim()).filter(Boolean))).sort();
+  }, [applications]);
+
+  // List of all companies tagged across uploaded documents
+  const taggedCompanies = React.useMemo(() => {
+    const set = new Set<string>();
+    documents.forEach((d) => (d.companies || []).forEach((c) => set.add(c)));
+    return Array.from(set).sort();
+  }, [documents]);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -440,6 +461,7 @@ const JournalDocumentsContent: React.FC = () => {
           date: new Date().toISOString().split('T')[0],
           size: sizeStr,
           url: dataUrl,
+          companies: [],
         });
         addToast(`Document Uploaded`, `Saved "${file.name}" to your vault`, 'success');
       } catch {
@@ -474,6 +496,47 @@ const JournalDocumentsContent: React.FC = () => {
     }
   };
 
+  const handleAddCompanyTag = async (docId: string, docName: string, currentCompanies: string[] | undefined, company: string) => {
+    const trimmed = company.trim();
+    if (!trimmed) return;
+    const current = currentCompanies || [];
+    if (current.includes(trimmed)) return;
+    const updated = [...current, trimmed];
+    try {
+      await updateDocument(docId, { companies: updated });
+      addToast('Company Tagged', `Tagged "${trimmed}" to ${docName}`, 'success');
+      setCustomCompanyInput('');
+    } catch {
+      addToast('Tag Error', 'Failed to update company tags', 'error');
+    }
+  };
+
+  const handleRemoveCompanyTag = async (docId: string, docName: string, currentCompanies: string[] | undefined, company: string) => {
+    const updated = (currentCompanies || []).filter((c) => c !== company);
+    try {
+      await updateDocument(docId, { companies: updated });
+      addToast('Tag Removed', `Removed ${company} from ${docName}`, 'info');
+    } catch {
+      addToast('Tag Error', 'Failed to remove tag', 'error');
+    }
+  };
+
+  // Filtered documents by search query and company filter
+  const filteredDocuments = documents.filter((doc) => {
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
+      doc.name.toLowerCase().includes(q) ||
+      doc.type.toLowerCase().includes(q) ||
+      (doc.companies || []).some((c) => c.toLowerCase().includes(q));
+
+    const matchesCompany =
+      selectedCompanyFilter === 'All' ||
+      (doc.companies || []).includes(selectedCompanyFilter);
+
+    return matchesSearch && matchesCompany;
+  });
+
   return (
     <div className="pb">
       <input
@@ -484,9 +547,15 @@ const JournalDocumentsContent: React.FC = () => {
         accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg"
       />
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <div style={{ fontSize: 13, color: 'var(--t2)' }}>
-          Manage resumes, cover letters, and technical portfolios ({documents.length} files)
+      {/* Header & Upload Action */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--t1)' }}>
+            Document Vault & Resume Tailoring
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--t2)', marginTop: 2 }}>
+            Tag companies to your resumes to easily identify which version was sent where ({documents.length} files)
+          </div>
         </div>
         <button
           onClick={handleUploadClick}
@@ -498,73 +567,348 @@ const JournalDocumentsContent: React.FC = () => {
         </button>
       </div>
 
+      {/* Search & Company Filter Controls (shown if documents exist) */}
+      {documents.length > 0 && (
+        <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {/* Search bar */}
+          <div style={{ position: 'relative', maxWidth: 420 }}>
+            <Search style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 16, height: 16, color: 'var(--t3)' }} />
+            <input
+              type="text"
+              placeholder="Search resumes by name or tagged company..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="inp"
+              style={{ paddingLeft: 36, width: '100%', fontSize: 13 }}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t3)' }}
+              >
+                <X style={{ width: 14, height: 14 }} />
+              </button>
+            )}
+          </div>
+
+          {/* Quick Company Filter Pills */}
+          {taggedCompanies.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', paddingTop: 2 }}>
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.04em', marginRight: 4 }}>
+                Filter by Company:
+              </span>
+              <button
+                onClick={() => setSelectedCompanyFilter('All')}
+                className="btn btn-sm"
+                style={{
+                  fontSize: 12,
+                  padding: '3px 10px',
+                  borderRadius: 16,
+                  background: selectedCompanyFilter === 'All' ? 'var(--accent)' : 'var(--card-hover)',
+                  color: selectedCompanyFilter === 'All' ? '#ffffff' : 'var(--t2)',
+                  border: '1px solid var(--border)',
+                  fontWeight: selectedCompanyFilter === 'All' ? 700 : 500,
+                }}
+              >
+                All ({documents.length})
+              </button>
+              {taggedCompanies.map((comp) => {
+                const count = documents.filter((d) => (d.companies || []).includes(comp)).length;
+                const isSelected = selectedCompanyFilter === comp;
+                return (
+                  <button
+                    key={comp}
+                    onClick={() => setSelectedCompanyFilter(isSelected ? 'All' : comp)}
+                    className="btn btn-sm"
+                    style={{
+                      fontSize: 12,
+                      padding: '3px 10px',
+                      borderRadius: 16,
+                      background: isSelected ? 'rgba(99, 102, 241, 0.2)' : 'var(--card-hover)',
+                      color: isSelected ? '#6366f1' : 'var(--t2)',
+                      border: isSelected ? '1px solid #6366f1' : '1px solid var(--border)',
+                      fontWeight: isSelected ? 700 : 500,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                    }}
+                  >
+                    <Building2 style={{ width: 12, height: 12 }} />
+                    <span>{comp}</span>
+                    <span style={{ opacity: 0.7, fontSize: 11 }}>({count})</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Empty State */}
       {documents.length === 0 && !loading ? (
         <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--t3)' }}>
           <Folder style={{ width: 36, height: 36, margin: '0 auto 12px', opacity: 0.5 }} />
           <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--t1)' }}>Vault is empty</div>
-          <div style={{ fontSize: 13, marginTop: 4 }}>Upload your resumes and cover letters for easy reference during applications.</div>
+          <div style={{ fontSize: 13, marginTop: 4 }}>Upload your resumes and cover letters, then tag which company you submitted them to!</div>
+        </div>
+      ) : filteredDocuments.length === 0 ? (
+        <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--t3)' }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--t1)' }}>No resumes match your filter</div>
+          <div style={{ fontSize: 12.5, marginTop: 4 }}>Try clearing your search query or selecting "All" companies.</div>
+          <button
+            onClick={() => { setSearchQuery(''); setSelectedCompanyFilter('All'); }}
+            className="btn btn-ghost btn-sm"
+            style={{ marginTop: 12 }}
+          >
+            Clear Filters
+          </button>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {documents.map((doc) => (
-            <div
-              key={doc.id}
-              className="card card-hover"
-              style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 14 }}
-            >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {filteredDocuments.map((doc) => {
+            const isTagging = taggingDocId === doc.id;
+            const docCompanies = doc.companies || [];
+
+            return (
               <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
-                  background: 'var(--accent-bg)',
-                  color: 'var(--accent)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
+                key={doc.id}
+                className="card card-hover"
+                style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12, transition: 'all 0.2s ease' }}
               >
-                <FileText style={{ width: 22, height: 22 }} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--t1)' }}>{doc.name}</div>
-                <div style={{ fontSize: 12, color: 'var(--t2)', marginTop: 2 }}>
-                  {doc.type} • {doc.size} • {doc.date}
+                {/* Main Card Row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 12,
+                      background: 'var(--accent-bg)',
+                      color: 'var(--accent)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <FileText style={{ width: 22, height: 22 }} />
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14.5, color: 'var(--t1)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span>{doc.name}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 12, background: 'var(--card-hover)', color: 'var(--t2)', border: '1px solid var(--border)' }}>
+                        {doc.type}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--t2)', marginTop: 2 }}>
+                      {doc.size} • Uploaded {doc.date}
+                    </div>
+                  </div>
+
+                  {/* Actions (View, Download, Delete) */}
+                  <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                    <button
+                      onClick={() => {
+                        if (doc.url) window.open(doc.url, '_blank');
+                      }}
+                      className="btn btn-ghost btn-sm"
+                      title="View document"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                    >
+                      <Eye style={{ width: 14, height: 14 }} />
+                      <span className="hidden sm:inline">View</span>
+                    </button>
+                    <button
+                      onClick={() => handleDownload(doc)}
+                      className="btn btn-ghost btn-sm"
+                      title="Download file"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                    >
+                      <Download style={{ width: 14, height: 14 }} />
+                      <span className="hidden sm:inline">Download</span>
+                    </button>
+                    <button
+                      onClick={() => handleDelete(doc.id, doc.name)}
+                      className="btn btn-ghost btn-sm"
+                      style={{ color: '#ef4444' }}
+                      title="Delete document"
+                    >
+                      <Trash2 style={{ width: 14, height: 14 }} />
+                    </button>
+                  </div>
                 </div>
+
+                {/* Tagged Companies Row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingTop: 8, borderTop: '1px solid var(--border-light, rgba(255,255,255,0.06))' }}>
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--t3)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <Tag style={{ width: 13, height: 13 }} />
+                    <span>Applied for:</span>
+                  </span>
+
+                  {/* Existing Company Badges */}
+                  {docCompanies.length === 0 && (
+                    <span style={{ fontSize: 12, color: 'var(--t3)', fontStyle: 'italic' }}>
+                      No company tagged yet
+                    </span>
+                  )}
+
+                  {docCompanies.map((comp) => (
+                    <span
+                      key={comp}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        padding: '3px 8px 3px 10px',
+                        borderRadius: 14,
+                        background: 'rgba(99, 102, 241, 0.12)',
+                        color: '#6366f1',
+                        border: '1px solid rgba(99, 102, 241, 0.3)',
+                      }}
+                      title={`This resume was submitted for ${comp}`}
+                    >
+                      <Building2 style={{ width: 12, height: 12 }} />
+                      <span>{comp}</span>
+                      <button
+                        onClick={() => handleRemoveCompanyTag(doc.id, doc.name, doc.companies, comp)}
+                        title={`Remove ${comp} tag`}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#6366f1',
+                          cursor: 'pointer',
+                          padding: 0,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          marginLeft: 2,
+                          opacity: 0.7,
+                        }}
+                      >
+                        <X style={{ width: 12, height: 12 }} />
+                      </button>
+                    </span>
+                  ))}
+
+                  {/* + Tag Company Button */}
+                  <button
+                    onClick={() => {
+                      setTaggingDocId(isTagging ? null : doc.id);
+                      setCustomCompanyInput('');
+                    }}
+                    className="btn btn-sm"
+                    style={{
+                      fontSize: 11.5,
+                      fontWeight: 700,
+                      padding: '3px 9px',
+                      borderRadius: 14,
+                      background: isTagging ? 'var(--accent)' : 'var(--card-hover)',
+                      color: isTagging ? '#ffffff' : 'var(--t2)',
+                      border: '1px dashed var(--border)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      marginLeft: 2,
+                    }}
+                  >
+                    <Plus style={{ width: 12, height: 12 }} />
+                    <span>{isTagging ? 'Close' : '+ Tag Company'}</span>
+                  </button>
+                </div>
+
+                {/* Inline Company Tagging Popover */}
+                {isTagging && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    style={{
+                      background: 'var(--card-hover)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 12,
+                      padding: '12px 14px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 10,
+                      marginTop: 2,
+                    }}
+                  >
+                    {/* Auto-suggest from student's job applications */}
+                    {appliedCompanies.filter((c) => !docCompanies.includes(c)).length > 0 && (
+                      <div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--t3)', textTransform: 'uppercase', marginBottom: 6 }}>
+                          Suggestions from your active job applications:
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          {appliedCompanies
+                            .filter((c) => !docCompanies.includes(c))
+                            .map((comp) => (
+                              <button
+                                key={comp}
+                                type="button"
+                                onClick={() => handleAddCompanyTag(doc.id, doc.name, doc.companies, comp)}
+                                className="btn btn-sm"
+                                style={{
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  padding: '4px 10px',
+                                  borderRadius: 12,
+                                  background: 'rgba(99, 102, 241, 0.08)',
+                                  color: '#6366f1',
+                                  border: '1px solid rgba(99, 102, 241, 0.25)',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                }}
+                              >
+                                <Plus style={{ width: 11, height: 11 }} />
+                                <span>{comp}</span>
+                              </button>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Custom Company Input */}
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <input
+                        type="text"
+                        placeholder="Type any company name (e.g. Google, Microsoft, Startup)..."
+                        value={customCompanyInput}
+                        onChange={(e) => setCustomCompanyInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddCompanyTag(doc.id, doc.name, doc.companies, customCompanyInput);
+                          }
+                        }}
+                        className="inp"
+                        style={{ fontSize: 12.5, flex: 1, padding: '6px 12px' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleAddCompanyTag(doc.id, doc.name, doc.companies, customCompanyInput)}
+                        disabled={!customCompanyInput.trim()}
+                        className="btn btn-primary btn-sm"
+                        style={{ fontSize: 12, fontWeight: 700, padding: '6px 14px' }}
+                      >
+                        Add Tag
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTaggingDocId(null)}
+                        className="btn btn-ghost btn-sm"
+                        style={{ fontSize: 12 }}
+                      >
+                        Done
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  onClick={() => {
-                    if (doc.url) window.open(doc.url, '_blank');
-                  }}
-                  className="btn btn-ghost btn-sm"
-                  title="View document"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                >
-                  <Eye style={{ width: 14, height: 14 }} />
-                  <span>View</span>
-                </button>
-                <button
-                  onClick={() => handleDownload(doc)}
-                  className="btn btn-ghost btn-sm"
-                  title="Download file"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                >
-                  <Download style={{ width: 14, height: 14 }} />
-                  <span>Download</span>
-                </button>
-                <button
-                  onClick={() => handleDelete(doc.id, doc.name)}
-                  className="btn btn-ghost btn-sm"
-                  style={{ color: '#ef4444' }}
-                  title="Delete document"
-                >
-                  <Trash2 style={{ width: 14, height: 14 }} />
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

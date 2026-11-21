@@ -230,6 +230,8 @@ export interface UserDocumentItem {
   date: string;
   size: string;
   url?: string;
+  companies?: string[];
+  notes?: string;
   createdAt?: Date;
 }
 
@@ -252,6 +254,8 @@ export const subscribeToDocuments = (
           date: (data.date as string) || new Date().toISOString().split('T')[0],
           size: (data.size as string) || '0 KB',
           url: (data.url as string) || '',
+          companies: Array.isArray(data.companies) ? (data.companies as string[]) : [],
+          notes: (data.notes as string) || '',
         };
       });
       callback(items);
@@ -270,9 +274,24 @@ export const addDocumentItem = async (uid: string, item: Omit<UserDocumentItem, 
     date: item.date,
     size: item.size,
     url: item.url || '',
+    companies: item.companies || [],
+    notes: item.notes || '',
     createdAt: serverTimestamp(),
   });
   return ref.id;
+};
+
+export const updateDocumentItem = async (
+  docId: string,
+  data: Partial<Omit<UserDocumentItem, 'id' | 'uid'>>
+) => {
+  const ref = doc(db, DOC_COL, docId);
+  const u: Record<string, unknown> = { updatedAt: serverTimestamp() };
+  if (data.name !== undefined) u.name = data.name;
+  if (data.type !== undefined) u.type = data.type;
+  if (data.companies !== undefined) u.companies = data.companies;
+  if (data.notes !== undefined) u.notes = data.notes;
+  await setDoc(ref, u, { merge: true });
 };
 
 export const deleteDocumentItem = async (docId: string) => deleteDoc(doc(db, DOC_COL, docId));
