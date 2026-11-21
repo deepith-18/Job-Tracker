@@ -7,6 +7,8 @@ import {
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
+  setPersistence,
+  browserLocalPersistence,
   type User,
 } from 'firebase/auth';
 import { auth } from './config';
@@ -29,6 +31,18 @@ export const signInWithGoogle = async () => {
     return await signInWithPopup(auth, provider);
   } catch (err: unknown) {
     const code = (err as { code?: string }).code ?? '';
+    const msg = (err as { message?: string }).message ?? '';
+
+    // If Chrome's IndexedDB connection is closing/locked, switch auth persistence to localStorage and retry immediately
+    if (msg.includes('Database is closing') || msg.includes('database connection is closing') || code === 'auth/internal-error') {
+      console.warn('IndexedDB closing/locked detected. Retrying with browserLocalPersistence (localStorage)...');
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+        return await signInWithPopup(auth, provider);
+      } catch (retryErr) {
+        throw retryErr;
+      }
+    }
 
     // If popup was explicitly blocked by the browser, try redirect fallback
     if (code === 'auth/popup-blocked') {

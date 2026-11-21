@@ -118,6 +118,8 @@ export const AuthPage: React.FC = () => {
         setError('Sign-in popup was blocked by your browser. Please allow popups for this site in your browser settings (click the popup icon in your URL address bar).');
       } else if (code === 'auth/popup-closed-by-user') {
         // User closed popup without signing in
+      } else if (message.includes('Database is closing') || message.includes('database connection is closing')) {
+        setError('Browser storage connection timed out or is closing. Please click Google again to retry.');
       } else {
         setError(`Google authentication failed: ${message || code || 'Unknown error'}`);
       }

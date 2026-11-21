@@ -1,5 +1,11 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import {
+  getAuth,
+  initializeAuth,
+  browserLocalPersistence,
+  browserPopupRedirectResolver,
+  indexedDBLocalPersistence,
+} from 'firebase/auth';
 import {
   initializeFirestore,
   persistentLocalCache,
@@ -47,7 +53,20 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-export const auth = getAuth(app);
+// Use browserLocalPersistence (localStorage) as primary persistence with indexedDB fallback.
+// This prevents Chrome's "Database is closing / hidden" IndexedDB lock when popups open or multiple tabs exist.
+export const auth = typeof window !== 'undefined'
+  ? (() => {
+      try {
+        return initializeAuth(app, {
+          persistence: [browserLocalPersistence, indexedDBLocalPersistence],
+          popupRedirectResolver: browserPopupRedirectResolver,
+        });
+      } catch {
+        return getAuth(app);
+      }
+    })()
+  : getAuth(app);
 
 // Enable persistent IndexedDB cache with multi-tab support.
 // This caches Firestore data locally so:
