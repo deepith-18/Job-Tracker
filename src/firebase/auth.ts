@@ -23,18 +23,23 @@ export const signInWithGoogle = async () => {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
 
-  // Try popup first on all platforms (iOS Safari & Android Chrome support popup auth smoothly on direct tap).
-  // This avoids iOS Safari ITP (Intelligent Tracking Prevention) issues that break cross-domain redirect auth.
+  // Use signInWithPopup - it communicates via direct window messaging and does NOT rely on
+  // cross-origin cookies or redirect handlers, which are blocked by Safari ITP and Chrome storage isolation.
   try {
     return await signInWithPopup(auth, provider);
   } catch (err: unknown) {
     const code = (err as { code?: string }).code ?? '';
-    if (code === 'auth/popup-closed-by-user') {
-      throw err;
+
+    // If popup was explicitly blocked by the browser, try redirect fallback
+    if (code === 'auth/popup-blocked') {
+      console.warn('Popup login blocked by browser, attempting redirect fallback...');
+      return await signInWithRedirect(auth, provider);
     }
-    // If popup is blocked by browser settings, fall back to redirect
-    console.warn('Popup login blocked or failed, falling back to redirect:', code);
-    return signInWithRedirect(auth, provider);
+
+    // Do NOT redirect for configuration or user cancellation errors:
+    // auth/unauthorized-domain, auth/operation-not-allowed, auth/popup-closed-by-user, etc.
+    // Must be thrown so the application can display actionable feedback.
+    throw err;
   }
 };
 

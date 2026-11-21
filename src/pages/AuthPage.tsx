@@ -25,6 +25,7 @@ const SIGNUP_ERRORS: Record<string, string> = {
 export const AuthPage: React.FC = () => {
   const user = useAuthStore((s) => s.user);
   const authLoading = useAuthStore((s) => s.loading);
+  const authStoreError = useAuthStore((s) => s.authError);
   const location = useLocation();
   const navigate = useNavigate();
   const { addToast } = useToast();
@@ -60,6 +61,7 @@ export const AuthPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    useAuthStore.getState().setAuthError(null);
 
     if (mode === 'signup') {
       if (password !== confirm) {
@@ -93,22 +95,31 @@ export const AuthPage: React.FC = () => {
 
   const handleGoogleSignIn = async () => {
     setError('');
+    useAuthStore.getState().setAuthError(null);
     setGoogleLoading(true);
     try {
-      await signInWithGoogle();
-      addToast('Welcome back', 'Signed in with Google successfully', 'success');
-      navigate('/dashboard');
+      const cred = await signInWithGoogle();
+      if (cred?.user) {
+        addToast('Welcome back', 'Signed in with Google successfully', 'success');
+        navigate('/dashboard');
+      }
     } catch (err: unknown) {
       const code = (err as { code?: string }).code ?? '';
       const message = (err as { message?: string }).message ?? '';
-      if (code !== 'auth/popup-closed-by-user') {
-        if (code === 'auth/operation-not-allowed') {
-          setError('Google Sign-In is not enabled in Firebase Console. Go to Authentication > Sign-in method to enable it.');
-        } else if (code === 'auth/unauthorized-domain') {
-          setError('This domain is not authorized in Firebase Console (Authentication > Settings > Authorized domains).');
-        } else {
-          setError(`Google authentication failed: ${message || code || 'Unknown error'}`);
-        }
+      const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'current domain';
+
+      if (code === 'auth/unauthorized-domain') {
+        setError(
+          `This domain (${currentHost}) is not authorized in Firebase Console. Please add "${currentHost}" under Firebase Console → Authentication → Settings → Authorized domains.`
+        );
+      } else if (code === 'auth/operation-not-allowed') {
+        setError('Google Sign-In is not enabled in Firebase Console. Go to Authentication → Sign-in method and enable Google.');
+      } else if (code === 'auth/popup-blocked') {
+        setError('Sign-in popup was blocked by your browser. Please allow popups for this site in your browser settings (click the popup icon in your URL address bar).');
+      } else if (code === 'auth/popup-closed-by-user') {
+        // User closed popup without signing in
+      } else {
+        setError(`Google authentication failed: ${message || code || 'Unknown error'}`);
       }
     } finally {
       setGoogleLoading(false);
@@ -467,7 +478,7 @@ export const AuthPage: React.FC = () => {
 
           {/* Error Alert */}
           <AnimatePresence>
-            {error && (
+            {(error || authStoreError) && (
               <motion.div
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -486,7 +497,7 @@ export const AuthPage: React.FC = () => {
                 }}
               >
                 <span><AlertTriangle className="inline-block w-4 h-4 mr-1.5 align-text-bottom" /></span>
-                <span>{error}</span>
+                <span>{error || authStoreError}</span>
               </motion.div>
             )}
           </AnimatePresence>
